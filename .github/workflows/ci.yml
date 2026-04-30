@@ -18,4 +18,17 @@ jobs:
 
       - run: dotnet restore
       - run: dotnet build --configuration Release --no-restore
-      - run: dotnet test --configuration Release --no-build
+      - name: Test
+        run: dotnet test --configuration Release --no-build --logger "trx;LogFileName=test-results.trx" --results-directory TestResults
+
+      - name: Upload test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-artifacts
+          if-no-files-found: warn
+          retention-days: 14
+          path: |
+            Difflection.Tests/UI/Artifacts/**
+            Difflection.Tests/UI/Baselines/**
+            TestResults/**/*.trx
