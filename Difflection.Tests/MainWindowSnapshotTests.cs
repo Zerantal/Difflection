@@ -16,6 +16,10 @@ namespace Difflection.Tests;
 
 public sealed class MainWindowSnapshotTests
 {
+    private const double SnapshotWidth = 1100;
+    private const double SnapshotHeight = 700;
+    private const double SnapshotRenderScale = 1.0;
+
     [AvaloniaFact]
     public void Default_side_by_side_shell_matches_snapshot()
     {
@@ -75,11 +79,12 @@ public sealed class MainWindowSnapshotTests
     {
         var window = new MainWindow
         {
-            Width = 1100,
-            Height = 700,
+            Width = SnapshotWidth,
+            Height = SnapshotHeight,
             DataContext = viewModel,
         };
 
+        window.SetRenderScaling(SnapshotRenderScale);
         window.Show();
         Dispatcher.UIThread.RunJobs();
         return window;
