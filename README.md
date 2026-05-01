@@ -26,8 +26,21 @@ The app is intended to be cross-platform through Avalonia, but Linux is the curr
 ```bash
 dotnet restore
 dotnet build
-dotnet run --project Difflection/Difflection.csproj
+dotnet run --project Difflection.Desktop/Difflection.Desktop.csproj
 ```
+
+## Browser Host
+
+An initial Avalonia WebAssembly host lives in `Difflection.Browser`.
+
+The project currently builds as part of the solution. Running or publishing it as WebAssembly requires the .NET `wasm-tools` workload:
+
+```bash
+dotnet workload restore Difflection.Browser/Difflection.Browser.csproj
+dotnet run --project Difflection.Browser/Difflection.Browser.csproj -p:RuntimeIdentifier=browser-wasm
+```
+
+The browser host is an early scaffold. The next browser-specific work is adapting image file/drop behavior for browser sandbox constraints.
 
 ## Test
 

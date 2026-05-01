@@ -30,7 +30,8 @@ public partial class MainWindowViewModel : ViewModelBase
             }
 
             var previous = _leftImage;
-            SetProperty(ref _leftImage, value);
+            _leftImage = value;
+            OnPropertyChanged();
             previous?.Dispose();
             OnPropertyChanged(nameof(HasLeftImage));
             OnPropertyChanged(nameof(HasAnyImage));
@@ -50,7 +51,8 @@ public partial class MainWindowViewModel : ViewModelBase
             }
 
             var previous = _rightImage;
-            SetProperty(ref _rightImage, value);
+            _rightImage = value;
+            OnPropertyChanged();
             previous?.Dispose();
             OnPropertyChanged(nameof(HasRightImage));
             OnPropertyChanged(nameof(HasAnyImage));
@@ -189,7 +191,7 @@ public partial class MainWindowViewModel : ViewModelBase
     public async Task LoadImageAsync(ImageSlot slot, IStorageFile file)
     {
         await using var stream = await file.OpenReadAsync();
-        var bitmap = new Bitmap(stream);
+        var bitmap = await CreateBitmapAsync(stream);
 
         switch (slot)
         {
@@ -210,7 +212,7 @@ public partial class MainWindowViewModel : ViewModelBase
     public async Task LoadImageAsync(ImageSlot slot, string filePath)
     {
         await using var stream = File.OpenRead(filePath);
-        var bitmap = new Bitmap(stream);
+        var bitmap = await CreateBitmapAsync(stream);
 
         switch (slot)
         {
@@ -234,6 +236,19 @@ public partial class MainWindowViewModel : ViewModelBase
         RightImage?.Dispose();
         _leftImage = null;
         _rightImage = null;
+    }
+
+    private static async Task<Bitmap> CreateBitmapAsync(Stream stream)
+    {
+        if (OperatingSystem.IsBrowser() || !stream.CanSeek)
+        {
+            await using var buffer = new MemoryStream();
+            await stream.CopyToAsync(buffer);
+            buffer.Position = 0;
+            return new Bitmap(buffer);
+        }
+
+        return new Bitmap(stream);
     }
 
     private void UpdateStageSize()
