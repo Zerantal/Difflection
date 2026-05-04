@@ -17,7 +17,7 @@ public static partial class BrowserDropBridge
 
     internal static void Detach(MainView view)
     {
-        if (ReferenceEquals(_view, view)) 
+        if (ReferenceEquals(_view, view))
         {
             _view = null;
         }
