@@ -53,6 +53,24 @@ public sealed class MainWindowSnapshotTests
     }
 
     [AvaloniaFact]
+    public async Task Side_by_side_with_two_images_matches_snapshot()
+    {
+        var viewModel = new MainWindowViewModel();
+        await LoadFixtureImagesAsync(viewModel);
+        viewModel.TrySetZoomText("50%");
+
+        var window = CreateWindow(viewModel);
+        try
+        {
+            AssertSnapshot(window, "main-window-side-by-side-with-images");
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
     public async Task Ctrl_wheel_zoom_does_not_push_toolbar_actions_offscreen()
     {
         var viewModel = new MainWindowViewModel();

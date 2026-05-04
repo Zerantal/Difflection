@@ -1,0 +1,210 @@
+    <UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:views="using:Difflection.Views"
+             xmlns:vm="using:Difflection.ViewModels"
+             x:Class="Difflection.Views.ComparisonStage"
+             x:DataType="vm:MainWindowViewModel"
+             d:DesignWidth="400"
+             d:DesignHeight="200"
+             Background="#1B1B1B">
+
+    <UserControl.Styles>
+        <Style Selector="Border.imageLayer">
+            <Setter Property="ClipToBounds" Value="True" />
+        </Style>
+    </UserControl.Styles>
+        
+        <Grid ClipToBounds="True"
+          RowDefinitions="28,*"
+          ColumnDefinitions="44,*"
+          Background="#1B1B1B"  
+          SizeChanged="StageViewport_OnSizeChanged">
+        <Border Grid.Row="1"
+                Grid.Column="1"
+                IsVisible="{Binding IsSideBySideView}"
+                BorderBrush="#242424"
+                BorderThickness="1"
+                Background="#050505">
+            <ScrollViewer x:Name="SideBySideScrollViewer"
+                          HorizontalScrollBarVisibility="Auto"
+                          VerticalScrollBarVisibility="Auto"
+                          ScrollChanged="StageScrollViewer_OnScrollChanged">
+                <Grid HorizontalAlignment="Center"
+                      VerticalAlignment="Center">
+                    <LayoutTransformControl>
+                        <LayoutTransformControl.LayoutTransform>
+                            <ScaleTransform ScaleX="{Binding ZoomScale}" ScaleY="{Binding ZoomScale}" />
+                        </LayoutTransformControl.LayoutTransform>
+                        <Grid x:Name="SideBySideSurface"
+                              Width="{Binding SideBySideStageWidth}"
+                              Height="{Binding StageHeight}"
+                              ClipToBounds="True">
+                            <Border Background="#060606" />
+
+                            <StackPanel Orientation="Horizontal"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center">
+                                <Border Width="{Binding StageWidth}"
+                                        Height="{Binding StageHeight}"
+                                        Classes="imageLayer"
+                                        IsVisible="{Binding HasLeftImage}">
+                                    <Image Source="{Binding LeftImage}"
+                                           Stretch="Uniform"
+                                           RenderOptions.BitmapInterpolationMode="None" />
+                                </Border>
+
+                                <Border Width="16"
+                                        Background="#101010"
+                                        IsVisible="{Binding HasBothImages}" />
+
+                                <Border Width="{Binding StageWidth}"
+                                        Height="{Binding StageHeight}"
+                                        Classes="imageLayer"
+                                        IsVisible="{Binding HasRightImage}">
+                                    <Image Source="{Binding RightImage}"
+                                           Stretch="Uniform"
+                                           RenderOptions.BitmapInterpolationMode="None" />
+                                </Border>
+                            </StackPanel>
+
+                            <Border x:Name="SideBySideDropSurface"
+                                    DragDrop.AllowDrop="True"
+                                    DragDrop.DragOver="StageSurface_OnDragOver"
+                                    DragDrop.Drop="StageSurface_OnDrop"
+                                    Background="Transparent" />
+                        </Grid>
+                    </LayoutTransformControl>
+                </Grid>
+            </ScrollViewer>
+        </Border>
+
+        <views:PixelRuler x:Name="SideBySideTopRuler"
+                          Grid.Row="0"
+                          Grid.Column="1"
+                          Height="28"
+                          IsVisible="{Binding IsSideBySideView}"
+                          Orientation="Horizontal"
+                          Mode="ResetPerImage"
+                          BackgroundBrush="#1B1B1B"
+                          BorderBrush="#343434"
+                          MajorTickBrush="#AEB4BC"
+                          MinorTickBrush="#6A707A"
+                          LabelBrush="#D7DADF"
+                          IsHitTestVisible="False" />
+        <views:PixelRuler x:Name="SideBySideLeftRuler"
+                          Grid.Row="1"
+                          Grid.Column="0"
+                          Width="44"
+                          IsVisible="{Binding IsSideBySideView}"
+                          Orientation="Vertical"
+                          Mode="Continuous"
+                          BackgroundBrush="#1B1B1B"
+                          BorderBrush="#343434"
+                          MajorTickBrush="#AEB4BC"
+                          MinorTickBrush="#6A707A"
+                          LabelBrush="#D7DADF"
+                          IsHitTestVisible="False" />
+        <Border Grid.Row="0"
+                Grid.Column="0"
+                IsVisible="{Binding IsSideBySideView}"
+                Background="#1B1B1B"
+                BorderBrush="#343434"
+                BorderThickness="0,0,1,1"
+                IsHitTestVisible="False" />
+
+        <Border Grid.Row="1"
+                Grid.Column="1"
+                IsVisible="{Binding IsSplitScreenView}"
+                BorderBrush="#242424"
+                BorderThickness="1"
+                Background="#050505">
+            <ScrollViewer x:Name="SplitScreenScrollViewer"
+                          HorizontalScrollBarVisibility="Auto"
+                          VerticalScrollBarVisibility="Auto"
+                          ScrollChanged="StageScrollViewer_OnScrollChanged">
+                <Grid HorizontalAlignment="Center"
+                      VerticalAlignment="Center">
+                    <LayoutTransformControl x:Name="StageTransform">
+                        <LayoutTransformControl.LayoutTransform>
+                            <ScaleTransform ScaleX="{Binding ZoomScale}" ScaleY="{Binding ZoomScale}" />
+                        </LayoutTransformControl.LayoutTransform>
+                        <Grid x:Name="StageSurface"
+                              Width="{Binding StageWidth}"
+                              Height="{Binding StageHeight}"
+                              ClipToBounds="True"
+                              SizeChanged="StageSurface_OnSizeChanged">
+                            <Border Background="#060606" />
+
+                            <Border x:Name="LeftImageLayer"
+                                    Classes="imageLayer">
+                                <Image Source="{Binding LeftImage}"
+                                       Stretch="Uniform"
+                                       RenderOptions.BitmapInterpolationMode="None" />
+                            </Border>
+
+                            <Border x:Name="RightImageLayer"
+                                    Classes="imageLayer">
+                                <Image Source="{Binding RightImage}"
+                                       Stretch="Uniform"
+                                       RenderOptions.BitmapInterpolationMode="None" />
+                            </Border>
+
+                            <Border x:Name="StageDropSurface"
+                                    DragDrop.AllowDrop="True"
+                                    DragDrop.DragOver="StageSurface_OnDragOver"
+                                    DragDrop.Drop="StageSurface_OnDrop"
+                                    Background="Transparent" />
+
+                            <Border x:Name="SplitDivider"
+                                    Width="1"
+                                    Background="#F1F1F1"
+                                    HorizontalAlignment="Left" />
+
+                            <Border x:Name="SplitDragSurface"
+                                    Width="24"
+                                    Background="Transparent"
+                                    HorizontalAlignment="Left"
+                                    Cursor="SizeWestEast"
+                                    PointerPressed="SplitDivider_OnPointerPressed" />
+                        </Grid>
+                    </LayoutTransformControl>
+                </Grid>
+            </ScrollViewer>
+        </Border>
+
+        <views:PixelRuler x:Name="SplitTopRuler"
+                          Grid.Row="0"
+                          Grid.Column="1"
+                          Height="28"
+                          IsVisible="{Binding IsSplitScreenView}"
+                          Orientation="Horizontal"
+                          Mode="Continuous"
+                          BackgroundBrush="#1B1B1B"
+                          BorderBrush="#343434"
+                          MajorTickBrush="#AEB4BC"
+                          MinorTickBrush="#6A707A"
+                          LabelBrush="#D7DADF"
+                          IsHitTestVisible="False" />
+        <views:PixelRuler x:Name="SplitLeftRuler"
+                          Grid.Row="1"
+                          Grid.Column="0"
+                          Width="44"
+                          IsVisible="{Binding IsSplitScreenView}"
+                          Orientation="Vertical"
+                          Mode="Continuous"
+                          BackgroundBrush="#1B1B1B"
+                          BorderBrush="#343434"
+                          MajorTickBrush="#AEB4BC"
+                          MinorTickBrush="#6A707A"
+                          LabelBrush="#D7DADF"
+                          IsHitTestVisible="False" />
+        <Border Grid.Row="0"
+                Grid.Column="0"
+                IsVisible="{Binding IsSplitScreenView}"
+                Background="#1B1B1B"
+                BorderBrush="#343434"
+                BorderThickness="0,0,1,1"
+                IsHitTestVisible="False" />
+    </Grid>
+</UserControl>
