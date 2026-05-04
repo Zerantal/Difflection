@@ -29,6 +29,8 @@ dotnet build
 dotnet run --project Difflection.Desktop/Difflection.Desktop.csproj
 ```
 
+For Rider, use the launch profiles in `Difflection.Desktop/Properties/launchSettings.json` and `Difflection.Browser/Properties/launchSettings.json`.
+
 ## Browser Host
 
 An initial Avalonia WebAssembly host lives in `Difflection.Browser`.

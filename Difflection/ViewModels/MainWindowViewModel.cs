@@ -230,6 +230,26 @@ public partial class MainWindowViewModel : ViewModelBase
         }
     }
 
+    public async Task LoadImageAsync(ImageSlot slot, string fileName, Stream stream)
+    {
+        var bitmap = await CreateBitmapAsync(stream);
+
+        switch (slot)
+        {
+            case ImageSlot.Left:
+                LeftImage = bitmap;
+                LeftFileName = Path.GetFileName(fileName);
+                break;
+            case ImageSlot.Right:
+                RightImage = bitmap;
+                RightFileName = Path.GetFileName(fileName);
+                break;
+            default:
+                bitmap.Dispose();
+                throw new ArgumentOutOfRangeException(nameof(slot), slot, null);
+        }
+    }
+
     public void DisposeImages()
     {
         LeftImage?.Dispose();

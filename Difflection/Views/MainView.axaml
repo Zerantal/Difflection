@@ -217,6 +217,7 @@
                                             <Border x:Name="SideBySideDropSurface"
                                                     DragDrop.AllowDrop="True"
                                                     DragDrop.DragOver="StageSurface_OnDragOver"
+                                                    DragDrop.Drop="StageSurface_OnDrop"
                                                     Background="Transparent" />
                                         </Grid>
                                     </LayoutTransformControl>
@@ -261,6 +262,7 @@
                                             <Border x:Name="StageDropSurface"
                                                     DragDrop.AllowDrop="True"
                                                     DragDrop.DragOver="StageSurface_OnDragOver"
+                                                    DragDrop.Drop="StageSurface_OnDrop"
                                                     Background="Transparent" />
 
                                             <Border x:Name="SplitDivider"

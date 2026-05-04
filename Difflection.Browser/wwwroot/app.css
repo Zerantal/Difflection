@@ -12,6 +12,11 @@ body {
     font-family: Inter, system-ui, sans-serif;
 }
 
+body.difflection-drop-active #out {
+    outline: 2px dashed #f97316;
+    outline-offset: -8px;
+}
+
 .splash {
     box-sizing: border-box;
     width: 100%;

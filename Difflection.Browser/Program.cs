@@ -1,4 +1,3 @@
-using System;
 using Avalonia;
 using Avalonia.Browser;
 using Difflection;
@@ -10,16 +9,11 @@ internal sealed partial class Program
 {
     private static Task Main(string[] args)
     {
+        BrowserInterop.AttachBrowserBridge = BrowserDropBridge.Attach;
+        BrowserInterop.DetachBrowserBridge = BrowserDropBridge.Detach;
+
         return BuildAvaloniaApp()
-            .StartBrowserAppAsync("out", new BrowserPlatformOptions 
-            { 
-                RenderingMode =
-                [
-                    BrowserRenderingMode.WebGL2, 
-                    BrowserRenderingMode.WebGL1, 
-                    BrowserRenderingMode.Software2D
-                ]
-            });
+            .StartBrowserAppAsync("out");
     }
 
     private static AppBuilder BuildAvaloniaApp() =>
@@ -27,8 +21,4 @@ internal sealed partial class Program
             .WithInterFont()
             .UseBrowser()
             .LogToTrace();
-    
-    
 }
-
-

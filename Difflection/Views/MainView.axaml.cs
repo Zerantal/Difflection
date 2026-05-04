@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Avalonia;
@@ -10,7 +11,6 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
-using Avalonia.VisualTree;
 using Difflection.ViewModels;
 
 namespace Difflection.Views;
@@ -36,28 +36,12 @@ public partial class MainView : UserControl
         DetachedFromVisualTree += OnDetachedFromVisualTree;
         SideBySideScrollViewer.AddHandler(PointerWheelChangedEvent, StageScrollViewer_OnPointerWheelChanged, RoutingStrategies.Tunnel);
         SplitScreenScrollViewer.AddHandler(PointerWheelChangedEvent, StageScrollViewer_OnPointerWheelChanged, RoutingStrategies.Tunnel);
-        RegisterDragDropHandlers();
 
         UpdateSplitVisuals();
         UpdateDropHints();
         UpdateViewControls();
-    }
 
-    private void RegisterDragDropHandlers()
-    {
-        try
-        {
-            DragDrop.AddDragOverHandler(StageDropSurface, StageSurface_OnDragOver);
-            DragDrop.AddDropHandler(StageDropSurface, StageSurface_OnDrop);
-            DragDrop.AddDragOverHandler(SideBySideDropSurface, StageSurface_OnDragOver);
-            DragDrop.AddDropHandler(SideBySideDropSurface, StageSurface_OnDrop);
-        }
-        catch (PlatformNotSupportedException)
-        {
-        }
-        catch (NotSupportedException)
-        {
-        }
+        BrowserInterop.AttachBrowserBridge?.Invoke(this);
     }
 
     private void SideBySideViewTab_OnPointerPressed(object? sender, PointerPressedEventArgs e)
@@ -143,7 +127,7 @@ public partial class MainView : UserControl
 
     private void StageSurface_OnDragOver(object? sender, DragEventArgs e)
     {
-        var hasFiles = e.DataTransfer.TryGetFiles() is { Length: > 0 };
+        var hasFiles = e.DataTransfer.Formats.Contains(DataFormat.File);
         e.DragEffects = hasFiles ? DragDropEffects.Copy : DragDropEffects.None;
         e.Handled = true;
     }
@@ -186,12 +170,46 @@ public partial class MainView : UserControl
         FitZoomToStage();
     }
 
+    public async Task LoadBrowserDroppedFilesAsync(IReadOnlyList<string> fileNames, IReadOnlyList<byte[]> fileContents)
+    {
+        if (_viewModel is null || fileNames.Count != fileContents.Count)
+        {
+            return;
+        }
+
+        var files = fileNames
+            .Zip(fileContents, (name, bytes) => (Name: name, Bytes: bytes))
+            .Take(2)
+            .ToArray();
+
+        if (files.Length == 0)
+        {
+            return;
+        }
+
+        if (files.Length >= 2)
+        {
+            using var leftStream = new MemoryStream(files[0].Bytes, writable: false);
+            await _viewModel.LoadImageAsync(ImageSlot.Left, files[0].Name, leftStream);
+
+            using var rightStream = new MemoryStream(files[1].Bytes, writable: false);
+            await _viewModel.LoadImageAsync(ImageSlot.Right, files[1].Name, rightStream);
+
+            FitZoomToStage();
+            return;
+        }
+
+        var slot = ResolveNextSlot();
+        using var stream = new MemoryStream(files[0].Bytes, writable: false);
+        await _viewModel.LoadImageAsync(slot, files[0].Name, stream);
+        FitZoomToStage();
+    }
+
     private ImageSlot ResolveNextSlot() =>
         _viewModel switch
         {
             null => ImageSlot.Left,
             { HasLeftImage: false } => ImageSlot.Left,
-            { HasRightImage: false } => ImageSlot.Right,
             _ => ImageSlot.Right,
         };
 
@@ -392,10 +410,8 @@ public partial class MainView : UserControl
     {
         SideBySideScrollViewer.RemoveHandler(PointerWheelChangedEvent, StageScrollViewer_OnPointerWheelChanged);
         SplitScreenScrollViewer.RemoveHandler(PointerWheelChangedEvent, StageScrollViewer_OnPointerWheelChanged);
-        DragDrop.RemoveDragOverHandler(StageDropSurface, StageSurface_OnDragOver);
-        DragDrop.RemoveDropHandler(StageDropSurface, StageSurface_OnDrop);
-        DragDrop.RemoveDragOverHandler(SideBySideDropSurface, StageSurface_OnDragOver);
-        DragDrop.RemoveDropHandler(SideBySideDropSurface, StageSurface_OnDrop);
+
+        BrowserInterop.DetachBrowserBridge?.Invoke(this);
 
         if (_viewModel is not null)
         {
@@ -403,4 +419,5 @@ public partial class MainView : UserControl
             _viewModel.DisposeImages();
         }
     }
+
 }
