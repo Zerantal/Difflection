@@ -20,12 +20,12 @@ public partial class MainView : UserControl
         InitializeComponent();
 
         DataContextChanged += OnDataContextChanged;
+        AttachedToVisualTree += OnAttachedToVisualTree;
         DetachedFromVisualTree += OnDetachedFromVisualTree;
 
         UpdateDropHints();
         UpdateViewControls();
 
-        BrowserInterop.AttachBrowserBridge?.Invoke(this);
     }
 
     private void SideBySideViewTab_OnPointerPressed(object? sender, PointerPressedEventArgs e)
@@ -130,5 +130,10 @@ public partial class MainView : UserControl
         {
             _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
         }
+    }
+
+    private void OnAttachedToVisualTree(object? sender, VisualTreeAttachmentEventArgs e)
+    {
+        BrowserInterop.AttachBrowserBridge?.Invoke(this);
     }
 }
