@@ -2,6 +2,7 @@ using System;
 using System.Globalization;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Media;
 // ReSharper disable MemberCanBePrivate.Global
 
@@ -27,6 +28,15 @@ public sealed class PixelRuler : Control
     private static readonly SolidColorBrush DefaultMinorTickBrush = new(Color.Parse("#6A707A"));
     private static readonly SolidColorBrush DefaultLabelBrush = new(Color.Parse("#D7DADF"));
 
+    public static readonly StyledProperty<IBrush?> BackgroundProperty =
+        TemplatedControl.BackgroundProperty.AddOwner<PixelRuler>(new StyledPropertyMetadata<IBrush?>(DefaultBackgroundBrush));
+
+    public static readonly StyledProperty<IBrush?> BorderBrushProperty =
+        TemplatedControl.BorderBrushProperty.AddOwner<PixelRuler>(new StyledPropertyMetadata<IBrush?>(DefaultBorderBrush));
+
+    public static readonly StyledProperty<IBrush?> ForegroundProperty =
+        TemplatedControl.ForegroundProperty.AddOwner<PixelRuler>(new StyledPropertyMetadata<IBrush?>(DefaultLabelBrush));
+
     public static readonly StyledProperty<PixelRulerOrientation> OrientationProperty =
         AvaloniaProperty.Register<PixelRuler, PixelRulerOrientation>(nameof(Orientation));
 
@@ -51,20 +61,11 @@ public sealed class PixelRuler : Control
     public static readonly StyledProperty<double> SecondarySegmentLengthProperty =
         AvaloniaProperty.Register<PixelRuler, double>(nameof(SecondarySegmentLength));
 
-    public static readonly StyledProperty<IBrush> BackgroundBrushProperty =
-        AvaloniaProperty.Register<PixelRuler, IBrush>(nameof(BackgroundBrush), DefaultBackgroundBrush);
-
-    public static readonly StyledProperty<IBrush> BorderBrushProperty =
-        AvaloniaProperty.Register<PixelRuler, IBrush>(nameof(BorderBrush), DefaultBorderBrush);
-
     public static readonly StyledProperty<IBrush> MajorTickBrushProperty =
         AvaloniaProperty.Register<PixelRuler, IBrush>(nameof(MajorTickBrush), DefaultMajorTickBrush);
 
     public static readonly StyledProperty<IBrush> MinorTickBrushProperty =
         AvaloniaProperty.Register<PixelRuler, IBrush>(nameof(MinorTickBrush), DefaultMinorTickBrush);
-
-    public static readonly StyledProperty<IBrush> LabelBrushProperty =
-        AvaloniaProperty.Register<PixelRuler, IBrush>(nameof(LabelBrush), DefaultLabelBrush);
 
     static PixelRuler()
     {
@@ -77,90 +78,38 @@ public sealed class PixelRuler : Control
             PrimarySegmentLengthProperty,
             SecondarySegmentStartProperty,
             SecondarySegmentLengthProperty,
-            BackgroundBrushProperty,
+            BackgroundProperty,
             BorderBrushProperty,
+            ForegroundProperty,
             MajorTickBrushProperty,
-            MinorTickBrushProperty,
-            LabelBrushProperty);
+            MinorTickBrushProperty);
     }
 
-    public PixelRulerOrientation Orientation
-    {
-        get => GetValue(OrientationProperty);
-        set => SetValue(OrientationProperty, value);
-    }
+    public PixelRulerOrientation Orientation { get => GetValue(OrientationProperty); set => SetValue(OrientationProperty, value); }
 
-    public PixelRulerMode Mode
-    {
-        get => GetValue(ModeProperty);
-        set => SetValue(ModeProperty, value);
-    }
+    public PixelRulerMode Mode { get => GetValue(ModeProperty); set => SetValue(ModeProperty, value); }
 
-    public double ZoomScale
-    {
-        get => GetValue(ZoomScaleProperty);
-        set => SetValue(ZoomScaleProperty, value);
-    }
+    public double ZoomScale { get => GetValue(ZoomScaleProperty); set => SetValue(ZoomScaleProperty, value); }
 
-    public double ContentOriginX
-    {
-        get => GetValue(ContentOriginXProperty);
-        set => SetValue(ContentOriginXProperty, value);
-    }
+    public double ContentOriginX { get => GetValue(ContentOriginXProperty); set => SetValue(ContentOriginXProperty, value); }
 
-    public double ContentOriginY
-    {
-        get => GetValue(ContentOriginYProperty);
-        set => SetValue(ContentOriginYProperty, value);
-    }
+    public double ContentOriginY { get => GetValue(ContentOriginYProperty); set => SetValue(ContentOriginYProperty, value); }
 
-    public double PrimarySegmentLength
-    {
-        get => GetValue(PrimarySegmentLengthProperty);
-        set => SetValue(PrimarySegmentLengthProperty, value);
-    }
+    public double PrimarySegmentLength { get => GetValue(PrimarySegmentLengthProperty); set => SetValue(PrimarySegmentLengthProperty, value); }
 
-    public double SecondarySegmentStart
-    {
-        get => GetValue(SecondarySegmentStartProperty);
-        set => SetValue(SecondarySegmentStartProperty, value);
-    }
+    public double SecondarySegmentStart { get => GetValue(SecondarySegmentStartProperty); set => SetValue(SecondarySegmentStartProperty, value); }
 
-    public double SecondarySegmentLength
-    {
-        get => GetValue(SecondarySegmentLengthProperty);
-        set => SetValue(SecondarySegmentLengthProperty, value);
-    }
+    public double SecondarySegmentLength { get => GetValue(SecondarySegmentLengthProperty); set => SetValue(SecondarySegmentLengthProperty, value); }
 
-    public IBrush BackgroundBrush
-    {
-        get => GetValue(BackgroundBrushProperty);
-        set => SetValue(BackgroundBrushProperty, value);
-    }
+    public IBrush? Background { get => GetValue(BackgroundProperty); set => SetValue(BackgroundProperty, value); }
 
-    public IBrush BorderBrush
-    {
-        get => GetValue(BorderBrushProperty);
-        set => SetValue(BorderBrushProperty, value);
-    }
+    public IBrush? BorderBrush { get => GetValue(BorderBrushProperty); set => SetValue(BorderBrushProperty, value); }
 
-    public IBrush MajorTickBrush
-    {
-        get => GetValue(MajorTickBrushProperty);
-        set => SetValue(MajorTickBrushProperty, value);
-    }
+    public IBrush? Foreground { get => GetValue(ForegroundProperty); set => SetValue(ForegroundProperty, value); }
 
-    public IBrush MinorTickBrush
-    {
-        get => GetValue(MinorTickBrushProperty);
-        set => SetValue(MinorTickBrushProperty, value);
-    }
+    public IBrush MajorTickBrush { get => GetValue(MajorTickBrushProperty); set => SetValue(MajorTickBrushProperty, value); }
 
-    public IBrush LabelBrush
-    {
-        get => GetValue(LabelBrushProperty);
-        set => SetValue(LabelBrushProperty, value);
-    }
+    public IBrush MinorTickBrush { get => GetValue(MinorTickBrushProperty); set => SetValue(MinorTickBrushProperty, value); }
 
     public override void Render(DrawingContext context)
     {
@@ -174,17 +123,17 @@ public sealed class PixelRuler : Control
 
         var typeface = new Typeface("Inter");
 
-        context.FillRectangle(BackgroundBrush, bounds);
+        context.FillRectangle(Background ?? DefaultBackgroundBrush, bounds);
 
         if (Orientation == PixelRulerOrientation.Horizontal)
         {
             DrawHorizontal(context, bounds, typeface);
-            context.DrawLine(new Pen(BorderBrush), new Point(0, bounds.Height - 0.5), new Point(bounds.Width, bounds.Height - 0.5));
+            context.DrawLine(new Pen(BorderBrush ?? DefaultBorderBrush), new Point(0, bounds.Height - 0.5), new Point(bounds.Width, bounds.Height - 0.5));
         }
         else
         {
             DrawVertical(context, bounds, typeface);
-            context.DrawLine(new Pen(BorderBrush), new Point(bounds.Width - 0.5, 0), new Point(bounds.Width - 0.5, bounds.Height));
+            context.DrawLine(new Pen(BorderBrush ?? DefaultBorderBrush), new Point(bounds.Width - 0.5, 0), new Point(bounds.Width - 0.5, bounds.Height));
         }
     }
 
@@ -262,7 +211,7 @@ public sealed class PixelRuler : Control
                 FlowDirection.LeftToRight,
                 typeface,
                 10,
-                LabelBrush);
+                Foreground ?? DefaultLabelBrush);
 
             context.DrawText(layout, new Point(screenX + 3, 2));
         }
@@ -321,7 +270,7 @@ public sealed class PixelRuler : Control
                 FlowDirection.LeftToRight,
                 typeface,
                 10,
-                LabelBrush);
+                Foreground ?? DefaultLabelBrush);
 
             context.DrawText(layout, new Point(3, screenY - 6));
         }

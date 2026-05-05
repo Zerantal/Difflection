@@ -27,11 +27,11 @@
                           Height="28"
                           Orientation="Horizontal"
                           Mode="Continuous"
-                          BackgroundBrush="#1B1B1B"
+                          Background="#1B1B1B"
                           BorderBrush="#343434"
                           MajorTickBrush="#AEB4BC"
                           MinorTickBrush="#6A707A"
-                          LabelBrush="#D7DADF"
+                          Foreground="#D7DADF"
                           IsHitTestVisible="False" />
 
         <views:PixelRuler Grid.Row="1"
@@ -40,11 +40,11 @@
                           Width="44"
                           Orientation="Vertical"
                           Mode="Continuous"
-                          BackgroundBrush="#1B1B1B"
+                          Background="#1B1B1B"
                           BorderBrush="#343434"
                           MajorTickBrush="#AEB4BC"
                           MinorTickBrush="#6A707A"
-                          LabelBrush="#D7DADF"
+                          Foreground="#D7DADF"
                           IsHitTestVisible="False" />
 
         <Border Grid.Row="1"
