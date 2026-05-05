@@ -56,7 +56,8 @@
                 <ScrollViewer x:Name="ScrollViewer"
                               HorizontalScrollBarVisibility="Auto"
                               VerticalScrollBarVisibility="Auto"
-                              ScrollChanged="ScrollViewer_OnScrollChanged">
+                              ScrollChanged="ScrollViewer_OnScrollChanged"
+                              Background="{StaticResource ImageViewportFillBrush}">
                     <Grid HorizontalAlignment="Center"
                           VerticalAlignment="Center">
                         <LayoutTransformControl>
@@ -69,7 +70,7 @@
                                   Height="{Binding SurfaceHeight, ElementName=Root}"
                                   ClipToBounds="True"
                                   SizeChanged="Surface_OnSizeChanged">
-                                <Border Background="#060606" />
+                                <Border Background="Transparent" />
 
                                 <Border x:Name="ImageLayer"
                                         Classes="imageLayer">
