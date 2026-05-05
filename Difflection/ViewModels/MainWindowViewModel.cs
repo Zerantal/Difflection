@@ -8,11 +8,8 @@ namespace Difflection.ViewModels;
 
 public partial class MainWindowViewModel : ViewModelBase
 {
-    private Bitmap? _leftImage;
-    private Bitmap? _rightImage;
+    private readonly ComparisonImagesModel _images = new();
     private ComparisonViewMode _selectedViewMode = ComparisonViewMode.SideBySide;
-    private string _leftFileName = "Reference image";
-    private string _rightFileName = "Candidate image";
     private string _splitPercentageText = "50 / 50";
     private double _zoomScale = 1.0;
     private string _zoomText = "100%";
@@ -21,16 +18,16 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public Bitmap? LeftImage
     {
-        get => _leftImage;
+        get => _images.LeftImage;
         private set
         {
-            if (ReferenceEquals(_leftImage, value))
+            if (ReferenceEquals(_images.LeftImage, value))
             {
                 return;
             }
 
-            var previous = _leftImage;
-            _leftImage = value;
+            var previous = _images.LeftImage;
+            _images.LeftImage = value;
             OnPropertyChanged();
             previous?.Dispose();
             OnPropertyChanged(nameof(HasLeftImage));
@@ -42,16 +39,16 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public Bitmap? RightImage
     {
-        get => _rightImage;
+        get => _images.RightImage;
         private set
         {
-            if (ReferenceEquals(_rightImage, value))
+            if (ReferenceEquals(_images.RightImage, value))
             {
                 return;
             }
 
-            var previous = _rightImage;
-            _rightImage = value;
+            var previous = _images.RightImage;
+            _images.RightImage = value;
             OnPropertyChanged();
             previous?.Dispose();
             OnPropertyChanged(nameof(HasRightImage));
@@ -68,6 +65,14 @@ public partial class MainWindowViewModel : ViewModelBase
     public bool HasAnyImage => HasLeftImage || HasRightImage;
 
     public bool HasBothImages => HasLeftImage && HasRightImage;
+
+    public double LeftImageWidth => LeftImage?.PixelSize.Width ?? StageWidth;
+
+    public double LeftImageHeight => LeftImage?.PixelSize.Height ?? StageHeight;
+
+    public double RightImageWidth => RightImage?.PixelSize.Width ?? StageWidth;
+
+    public double RightImageHeight => RightImage?.PixelSize.Height ?? StageHeight;
 
     public ComparisonViewMode SelectedViewMode
     {
@@ -97,18 +102,50 @@ public partial class MainWindowViewModel : ViewModelBase
         _ => "Side-by-side",
     };
 
-    public double SideBySideStageWidth => HasBothImages ? (StageWidth * 2) + 16 : StageWidth;
+    public double SideBySideStageWidth => HasBothImages
+        ? LeftImageWidth + 16 + RightImageWidth
+        : HasLeftImage
+            ? LeftImageWidth
+            : HasRightImage
+                ? RightImageWidth
+                : StageWidth;
+
+    public double SideBySideStageHeight => HasBothImages
+        ? Math.Max(LeftImageHeight, RightImageHeight)
+        : HasLeftImage
+            ? LeftImageHeight
+            : HasRightImage
+                ? RightImageHeight
+                : StageHeight;
 
     public string LeftFileName
     {
-        get => _leftFileName;
-        private set => SetProperty(ref _leftFileName, value);
+        get => _images.LeftFileName;
+        private set
+        {
+            if (_images.LeftFileName == value)
+            {
+                return;
+            }
+
+            _images.LeftFileName = value;
+            OnPropertyChanged();
+        }
     }
 
     public string RightFileName
     {
-        get => _rightFileName;
-        private set => SetProperty(ref _rightFileName, value);
+        get => _images.RightFileName;
+        private set
+        {
+            if (_images.RightFileName == value)
+            {
+                return;
+            }
+
+            _images.RightFileName = value;
+            OnPropertyChanged();
+        }
     }
 
     public string SplitPercentageText
@@ -254,8 +291,8 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         LeftImage?.Dispose();
         RightImage?.Dispose();
-        _leftImage = null;
-        _rightImage = null;
+        _images.LeftImage = null;
+        _images.RightImage = null;
     }
 
     private static async Task<Bitmap> CreateBitmapAsync(Stream stream)
@@ -280,14 +317,24 @@ public partial class MainWindowViewModel : ViewModelBase
 
         StageWidth = Math.Max(920, Math.Max(leftWidth, rightWidth));
         StageHeight = Math.Max(560, Math.Max(leftHeight, rightHeight));
+        OnPropertyChanged(nameof(LeftImageWidth));
+        OnPropertyChanged(nameof(LeftImageHeight));
+        OnPropertyChanged(nameof(RightImageWidth));
+        OnPropertyChanged(nameof(RightImageHeight));
         OnPropertyChanged(nameof(SideBySideStageWidth));
+        OnPropertyChanged(nameof(SideBySideStageHeight));
     }
 
     private void OnImageAvailabilityChanged()
     {
         OnPropertyChanged(nameof(HasBothImages));
         OnPropertyChanged(nameof(CanUseSplitScreen));
+        OnPropertyChanged(nameof(LeftImageWidth));
+        OnPropertyChanged(nameof(LeftImageHeight));
+        OnPropertyChanged(nameof(RightImageWidth));
+        OnPropertyChanged(nameof(RightImageHeight));
         OnPropertyChanged(nameof(SideBySideStageWidth));
+        OnPropertyChanged(nameof(SideBySideStageHeight));
 
         if (!CanUseSplitScreen && IsSplitScreenView)
         {

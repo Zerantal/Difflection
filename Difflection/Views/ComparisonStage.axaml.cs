@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -8,7 +7,6 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
-using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using Difflection.ViewModels;
@@ -18,27 +16,16 @@ namespace Difflection.Views;
 public partial class ComparisonStage : UserControl
 {
     private const double ZoomStepFactor = 1.15;
-    private const double SplitDragSurfaceWidth = 24;
-    private const double SplitRatioMin = 0.0;
-    private const double SplitRatioMax = 1.0;
 
     private MainWindowViewModel? _viewModel;
-    private bool _isDraggingSplit;
-    private double _splitRatio = 0.5;
 
     public ComparisonStage()
     {
         InitializeComponent();
 
         DataContextChanged += OnDataContextChanged;
-        PointerMoved += OnWindowPointerMoved;
-        PointerReleased += OnWindowPointerReleased;
+        AddHandler(PointerWheelChangedEvent, StageOverlay_OnPointerWheelChanged, RoutingStrategies.Tunnel);
         DetachedFromVisualTree += OnDetachedFromVisualTree;
-        SideBySideScrollViewer.AddHandler(PointerWheelChangedEvent, StageScrollViewer_OnPointerWheelChanged, RoutingStrategies.Tunnel);
-        SplitScreenScrollViewer.AddHandler(PointerWheelChangedEvent, StageScrollViewer_OnPointerWheelChanged, RoutingStrategies.Tunnel);
-        
-        UpdateSplitVisuals();
-        UpdateRulers();
     }
 
     public async Task OpenFilePickerAndLoadAsync()
@@ -63,7 +50,7 @@ public partial class ComparisonStage : UserControl
             ],
         });
 
-        await LoadDroppedFilesAsync(files);
+        await LoadDroppedFilesAsync(null, files);
     }
 
     public async Task LoadBrowserDroppedFilesAsync(IReadOnlyList<string> fileNames, IReadOnlyList<byte[]> fileContents)
@@ -106,80 +93,7 @@ public partial class ComparisonStage : UserControl
         FitZoomToStageInternal();
     }
 
-    private void SplitDivider_OnPointerPressed(object? sender, PointerPressedEventArgs e)
-    {
-        _isDraggingSplit = true;
-        e.Pointer.Capture(SplitDragSurface);
-        UpdateSplitRatio(e.GetPosition(StageSurface).X);
-        e.Handled = true;
-    }
-
-    private void OnWindowPointerMoved(object? sender, PointerEventArgs e)
-    {
-        if (!_isDraggingSplit)
-        {
-            return;
-        }
-
-        UpdateSplitRatio(e.GetPosition(StageSurface).X);
-    }
-
-    private void OnWindowPointerReleased(object? sender, PointerReleasedEventArgs e)
-    {
-        if (!_isDraggingSplit)
-        {
-            return;
-        }
-
-        _isDraggingSplit = false;
-        e.Pointer.Capture(null);
-        e.Handled = true;
-    }
-
-    private void StageSurface_OnSizeChanged(object? sender, SizeChangedEventArgs e)
-    {
-        UpdateSplitVisuals();
-        UpdateRulers();
-    }
-
-    private void StageViewport_OnSizeChanged(object? sender, SizeChangedEventArgs e)
-    {
-        ConstrainStageScrollViewers();
-        UpdateRulers();
-    }
-
-    private void StageScrollViewer_OnScrollChanged(object? sender, ScrollChangedEventArgs e)
-    {
-        UpdateRulers();
-    }
-
-    private void StageSurface_OnDragOver(object? sender, DragEventArgs e)
-    {
-        var hasFiles = GetDroppedFiles(e.DataTransfer).Any();
-        e.DragEffects = hasFiles ? DragDropEffects.Copy : DragDropEffects.None;
-        e.Handled = true;
-    }
-
-    private async void StageSurface_OnDrop(object? sender, DragEventArgs e)
-    {
-        var files = GetDroppedFiles(e.DataTransfer).Take(2).ToArray();
-        if (!files.Any())
-        {
-            return;
-        }
-
-        await LoadDroppedFilesAsync(files);
-        e.Handled = true;
-    }
-
-    private static IEnumerable<IStorageFile> GetDroppedFiles(IDataTransfer dataTransfer)
-    {
-        return dataTransfer.Items
-            .Select(item => item.TryGetRaw(DataFormat.File))
-            .OfType<IStorageFile>();
-    }
-
-    private async Task LoadDroppedFilesAsync(IEnumerable<IStorageItem> items)
+    internal async Task LoadDroppedFilesAsync(ImageSlot? preferredSlot, IEnumerable<IStorageItem> items)
     {
         if (_viewModel is null)
         {
@@ -200,9 +114,125 @@ public partial class ComparisonStage : UserControl
             return;
         }
 
-        var slot = ResolveNextSlot();
+        var slot = preferredSlot ?? ResolveNextSlot();
         await _viewModel.LoadImageAsync(slot, files[0]);
         FitZoomToStage();
+    }
+
+    private void StageOverlay_OnDragOver(object? sender, DragEventArgs e)
+    {
+        var hasFiles = GetDroppedFiles(e.DataTransfer).Any();
+        e.DragEffects = hasFiles ? DragDropEffects.Copy : DragDropEffects.None;
+        e.Handled = true;
+    }
+
+    private async void StageOverlay_OnDrop(object? sender, DragEventArgs e)
+    {
+        var files = GetDroppedFiles(e.DataTransfer).Take(2).ToArray();
+        if (!files.Any())
+        {
+            return;
+        }
+
+        await LoadDroppedFilesAsync(null, files);
+        e.Handled = true;
+    }
+
+    private void StageOverlay_OnPointerWheelChanged(object? sender, PointerWheelEventArgs e)
+    {
+        if (_viewModel is null || !_viewModel.HasAnyImage)
+        {
+            return;
+        }
+
+        if (e.KeyModifiers.HasFlag(KeyModifiers.Control))
+        {
+            e.Handled = true;
+
+            var zoomTarget = GetWheelTargetPane(e);
+            if (zoomTarget is null)
+            {
+                return;
+            }
+
+            var scrollViewer = zoomTarget.Value.ScrollViewer;
+            var surface = zoomTarget.Value.Surface;
+            var stagePoint = e.GetPosition(surface);
+            var pointerInViewer = e.GetPosition(scrollViewer);
+            var oldZoom = _viewModel.ZoomScale;
+            var oldOffset = scrollViewer.Offset;
+            var relativePoint = GetRelativePoint(stagePoint, surface);
+            var otherTarget = _viewModel.IsSideBySideView && _viewModel.HasBothImages
+                ? GetOtherSideBySideTarget(scrollViewer)
+                : null;
+            var otherOldOffset = otherTarget is null ? default : otherTarget.Value.ScrollViewer.Offset;
+            var otherRelativePoint = otherTarget is null
+                ? default
+                : new Point(relativePoint.X * otherTarget.Value.Surface.Bounds.Width, relativePoint.Y * otherTarget.Value.Surface.Bounds.Height);
+            var otherPointerInViewer = otherTarget is null
+                ? default
+                : otherTarget.Value.Surface.TranslatePoint(otherRelativePoint, otherTarget.Value.ScrollViewer) ?? otherRelativePoint;
+
+            if (e.Delta.Y > 0)
+            {
+                _viewModel.SetZoomScale(_viewModel.ZoomScale * ZoomStepFactor);
+            }
+            else if (e.Delta.Y < 0)
+            {
+                _viewModel.SetZoomScale(_viewModel.ZoomScale / ZoomStepFactor);
+            }
+
+            if (!oldZoom.Equals(_viewModel.ZoomScale))
+            {
+                ApplyZoomAnchor(scrollViewer, pointerInViewer, oldOffset, oldZoom, _viewModel.ZoomScale);
+                if (otherTarget is not null)
+                {
+                    ApplyZoomAnchor(otherTarget.Value.ScrollViewer, otherPointerInViewer, otherOldOffset, oldZoom, _viewModel.ZoomScale);
+                }
+            }
+
+            return;
+        }
+
+        var scrollTarget = GetWheelTargetPane(e);
+        if (scrollTarget is null)
+        {
+            return;
+        }
+
+        e.Handled = true;
+        var step = 48.0;
+        var deltaX = e.Delta.X * step;
+        var deltaY = e.Delta.Y * step;
+        var target = scrollTarget.Value;
+        var offset = target.ScrollViewer.Offset;
+
+        if (e.KeyModifiers.HasFlag(KeyModifiers.Shift))
+        {
+            deltaX += deltaY;
+            deltaY = 0;
+        }
+
+        var newOffset = new Vector(
+            Math.Max(0, offset.X - deltaX),
+            Math.Max(0, offset.Y - deltaY));
+
+        target.ScrollViewer.Offset = newOffset;
+        if (_viewModel.IsSideBySideView && _viewModel.HasBothImages)
+        {
+            var otherTarget = GetOtherSideBySideTarget(target.ScrollViewer);
+            if (otherTarget is not null)
+            {
+                otherTarget.Value.ScrollViewer.Offset = newOffset;
+            }
+        }
+    }
+
+    private static IEnumerable<IStorageFile> GetDroppedFiles(IDataTransfer dataTransfer)
+    {
+        return dataTransfer.Items
+            .Select(item => item.TryGetRaw(DataFormat.File))
+            .OfType<IStorageFile>();
     }
 
     private ImageSlot ResolveNextSlot() =>
@@ -212,44 +242,6 @@ public partial class ComparisonStage : UserControl
             { HasLeftImage: false } => ImageSlot.Left,
             _ => ImageSlot.Right,
         };
-
-    private void UpdateSplitRatio(double pointerX)
-    {
-        if (StageSurface.Bounds.Width <= 0)
-        {
-            return;
-        }
-
-        _splitRatio = Math.Clamp(pointerX / StageSurface.Bounds.Width, SplitRatioMin, SplitRatioMax);
-        UpdateSplitVisuals();
-    }
-
-    private void UpdateSplitVisuals()
-    {
-        if (StageSurface.Bounds.Width <= 0)
-        {
-            return;
-        }
-
-        var splitX = StageSurface.Bounds.Width * _splitRatio;
-        var stageWidth = StageSurface.Bounds.Width;
-        var stageHeight = StageSurface.Bounds.Height;
-        var rightWidth = Math.Max(0, stageWidth - splitX);
-
-        LeftImageLayer.Clip = new RectangleGeometry(new Rect(0, 0, Math.Max(0, splitX), stageHeight));
-        RightImageLayer.Clip = new RectangleGeometry(new Rect(splitX, 0, rightWidth, stageHeight));
-
-        SplitDivider.Margin = new Thickness(Math.Max(0, splitX - 1), 0, 0, 0);
-        SplitDragSurface.Margin = new Thickness(Math.Max(0, splitX - (SplitDragSurfaceWidth / 2)), 0, 0, 0);
-
-        if (_viewModel is not null)
-        {
-            var leftPercent = (int)Math.Round(_splitRatio * 100);
-            _viewModel.SplitPercentageText = $"{leftPercent} / {100 - leftPercent}";
-        }
-
-        UpdateRulers();
-    }
 
     private void OnDataContextChanged(object? sender, EventArgs e)
     {
@@ -265,62 +257,36 @@ public partial class ComparisonStage : UserControl
             _viewModel.PropertyChanged += OnViewModelPropertyChanged;
         }
 
-        UpdateSplitVisuals();
-        UpdateRulers();
+        UpdateSideBySideLayout();
+        FitZoomToStage();
     }
 
-    private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    private void OnViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
-        if (e.PropertyName is nameof(MainWindowViewModel.ZoomScale)
-            or nameof(MainWindowViewModel.StageWidth)
+        if (e.PropertyName is nameof(MainWindowViewModel.StageWidth)
             or nameof(MainWindowViewModel.StageHeight)
             or nameof(MainWindowViewModel.SideBySideStageWidth)
+            or nameof(MainWindowViewModel.SideBySideStageHeight)
+            or nameof(MainWindowViewModel.HasLeftImage)
+            or nameof(MainWindowViewModel.HasRightImage)
+            or nameof(MainWindowViewModel.HasBothImages)
             or nameof(MainWindowViewModel.SelectedViewMode))
         {
-            UpdateSplitVisuals();
-            UpdateRulers();
+            UpdateSideBySideLayout();
+            FitZoomToStage();
         }
     }
 
-    private void ConstrainStageScrollViewers()
+    private void UpdateSideBySideLayout()
     {
-        var width = Math.Max(0, Bounds.Width);
-        var height = Math.Max(0, Bounds.Height);
-
-        SideBySideScrollViewer.Width = width;
-        SideBySideScrollViewer.Height = height;
-        SplitScreenScrollViewer.Width = width;
-        SplitScreenScrollViewer.Height = height;
+        Grid.SetColumnSpan(SideBySideLeftPane, _viewModel?.HasBothImages == true ? 1 : 3);
     }
 
-    private void StageScrollViewer_OnPointerWheelChanged(object? sender, PointerWheelEventArgs e)
+    private static Point GetRelativePoint(Point point, Control surface)
     {
-        if (_viewModel is null || !e.KeyModifiers.HasFlag(KeyModifiers.Control))
-        {
-            return;
-        }
-
-        e.Handled = true;
-
-        var scrollViewer = GetActiveScrollViewer();
-        var surface = GetActiveSurface();
-        var stagePoint = e.GetPosition(surface);
-        var pointerInViewer = e.GetPosition(scrollViewer);
-        var oldZoom = _viewModel.ZoomScale;
-
-        if (e.Delta.Y > 0)
-        {
-            _viewModel.SetZoomScale(_viewModel.ZoomScale * ZoomStepFactor);
-        }
-        else if (e.Delta.Y < 0)
-        {
-            _viewModel.SetZoomScale(_viewModel.ZoomScale / ZoomStepFactor);
-        }
-
-        if (!oldZoom.Equals(_viewModel.ZoomScale))
-        {
-            PreservePointerAnchor(surface, scrollViewer, stagePoint, pointerInViewer);
-        }
+        var width = Math.Max(1, surface.Bounds.Width);
+        var height = Math.Max(1, surface.Bounds.Height);
+        return new Point(point.X / width, point.Y / height);
     }
 
     private void FitZoomToStageInternal()
@@ -332,95 +298,76 @@ public partial class ComparisonStage : UserControl
 
         Dispatcher.UIThread.Post(() =>
         {
-            ConstrainStageScrollViewers();
+            if (!_viewModel.HasAnyImage)
+            {
+                return;
+            }
 
-            var scrollViewer = GetActiveScrollViewer();
+            var scrollViewer = _viewModel.IsSplitScreenView
+                ? SplitPane.ActiveScrollViewer
+                : SideBySideLeftPane.ActiveScrollViewer;
             if (scrollViewer.Bounds.Width <= 0 || scrollViewer.Bounds.Height <= 0)
             {
                 return;
             }
 
             var targetWidth = _viewModel.IsSideBySideView ? _viewModel.SideBySideStageWidth : _viewModel.StageWidth;
+            var targetHeight = _viewModel.IsSideBySideView ? _viewModel.SideBySideStageHeight : _viewModel.StageHeight;
             var scaleX = scrollViewer.Bounds.Width / Math.Max(1, targetWidth);
-            var scaleY = scrollViewer.Bounds.Height / Math.Max(1, _viewModel.StageHeight);
+            var scaleY = scrollViewer.Bounds.Height / Math.Max(1, targetHeight);
             _viewModel.SetZoomScale(Math.Min(scaleX, scaleY));
         }, DispatcherPriority.Loaded);
     }
 
-    private void PreservePointerAnchor(Control surface, ScrollViewer scrollViewer, Point stagePoint, Point pointerInViewer)
+    private static void ApplyZoomAnchor(ScrollViewer scrollViewer, Point anchorInViewer, Vector oldOffset, double oldZoom, double newZoom)
     {
-        Dispatcher.UIThread.Post(() =>
-        {
-            var translated = surface.TranslatePoint(stagePoint, scrollViewer);
-            if (translated is null)
-            {
-                return;
-            }
-
-            var deltaX = translated.Value.X - pointerInViewer.X;
-            var deltaY = translated.Value.Y - pointerInViewer.Y;
-            var offset = scrollViewer.Offset;
-            scrollViewer.Offset = new Vector(
-                Math.Max(0, offset.X + deltaX),
-                Math.Max(0, offset.Y + deltaY));
-
-            UpdateRulers();
-        }, DispatcherPriority.Loaded);
+        var ratio = newZoom / Math.Max(0.0001, oldZoom);
+        scrollViewer.Offset = new Vector(
+            Math.Max(0, (oldOffset.X + anchorInViewer.X) * ratio - anchorInViewer.X),
+            Math.Max(0, (oldOffset.Y + anchorInViewer.Y) * ratio - anchorInViewer.Y));
     }
 
-    private ScrollViewer GetActiveScrollViewer() =>
-        _viewModel?.IsSplitScreenView == true ? SplitScreenScrollViewer : SideBySideScrollViewer;
-
-    private Control GetActiveSurface() =>
-        _viewModel?.IsSplitScreenView == true ? StageSurface : SideBySideSurface;
-
-    private void UpdateRulers()
+    private (ScrollViewer ScrollViewer, Control Surface)? GetWheelTargetPane(PointerWheelEventArgs e)
     {
-        if (_viewModel is null)
+        if (_viewModel?.IsSplitScreenView == true)
         {
-            return;
+            return (SplitPane.ActiveScrollViewer, SplitPane.ActiveSurface);
         }
 
-        var topOrigin = GetContentOrigin(_viewModel.IsSplitScreenView ? StageSurface : SideBySideSurface,
-            _viewModel.IsSplitScreenView ? SplitTopRuler : SideBySideTopRuler);
-        var leftOrigin = GetContentOrigin(_viewModel.IsSplitScreenView ? StageSurface : SideBySideSurface,
-            _viewModel.IsSplitScreenView ? SplitLeftRuler : SideBySideLeftRuler);
-
-        if (_viewModel.IsSideBySideView)
+        if (!HasSecondPane)
         {
-            SideBySideTopRuler.ZoomScale = _viewModel.ZoomScale;
-            SideBySideTopRuler.ContentOriginX = topOrigin.X;
-            SideBySideTopRuler.PrimarySegmentLength = _viewModel.StageWidth;
-            SideBySideTopRuler.SecondarySegmentStart = _viewModel.StageWidth + (_viewModel.HasBothImages ? 16 : 0);
-            SideBySideTopRuler.SecondarySegmentLength = _viewModel.HasBothImages ? _viewModel.StageWidth : 0;
-
-            SideBySideLeftRuler.ZoomScale = _viewModel.ZoomScale;
-            SideBySideLeftRuler.ContentOriginY = leftOrigin.Y;
-            SideBySideLeftRuler.PrimarySegmentLength = _viewModel.StageHeight;
+            return (SideBySideLeftPane.ActiveScrollViewer, SideBySideLeftPane.ActiveSurface);
         }
 
-        if (_viewModel.IsSplitScreenView)
+        var rightPoint = e.GetPosition(SideBySideRightPane);
+        if (SideBySideRightPane.IsVisible && SideBySideRightPane.Bounds.Contains(rightPoint))
         {
-            SplitTopRuler.ZoomScale = _viewModel.ZoomScale;
-            SplitTopRuler.ContentOriginX = topOrigin.X;
-            SplitTopRuler.PrimarySegmentLength = _viewModel.StageWidth;
-
-            SplitLeftRuler.ZoomScale = _viewModel.ZoomScale;
-            SplitLeftRuler.ContentOriginY = leftOrigin.Y;
-            SplitLeftRuler.PrimarySegmentLength = _viewModel.StageHeight;
+            return (SideBySideRightPane.ActiveScrollViewer, SideBySideRightPane.ActiveSurface);
         }
+
+        return (SideBySideLeftPane.ActiveScrollViewer, SideBySideLeftPane.ActiveSurface);
     }
 
-    private static Point GetContentOrigin(Control surface, Control ruler)
+    private (ScrollViewer ScrollViewer, Control Surface)? GetOtherSideBySideTarget(ScrollViewer currentScrollViewer)
     {
-        var translated = surface.TranslatePoint(new Point(0, 0), ruler);
-        return translated ?? new Point(0, 0);
+        if (ReferenceEquals(currentScrollViewer, SideBySideLeftPane.ActiveScrollViewer))
+        {
+            return (SideBySideRightPane.ActiveScrollViewer, SideBySideRightPane.ActiveSurface);
+        }
+
+        if (ReferenceEquals(currentScrollViewer, SideBySideRightPane.ActiveScrollViewer))
+        {
+            return (SideBySideLeftPane.ActiveScrollViewer, SideBySideLeftPane.ActiveSurface);
+        }
+
+        return null;
     }
+
+    private bool HasSecondPane => _viewModel?.HasBothImages == true;
 
     private void OnDetachedFromVisualTree(object? sender, VisualTreeAttachmentEventArgs e)
     {
-        SideBySideScrollViewer.RemoveHandler(PointerWheelChangedEvent, StageScrollViewer_OnPointerWheelChanged);
-        SplitScreenScrollViewer.RemoveHandler(PointerWheelChangedEvent, StageScrollViewer_OnPointerWheelChanged);
+        RemoveHandler(PointerWheelChangedEvent, StageOverlay_OnPointerWheelChanged);
 
         if (_viewModel is not null)
         {

@@ -1,13 +1,16 @@
 using System;
 using System.IO;
 using System.Reflection;
+using System.Linq;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using Difflection.ViewModels;
 using Difflection.Views;
 using SkiaSharp;
@@ -18,6 +21,186 @@ namespace Difflection.Tests;
 public sealed class ComparisonStageDragDropUiTests
 {
     [AvaloniaFact]
+    public async Task Split_screen_divider_starts_centered()
+    {
+        var viewModel = new MainWindowViewModel();
+        await viewModel.LoadImageAsync(ImageSlot.Left, CreateStorageFile("left.png"));
+        await viewModel.LoadImageAsync(ImageSlot.Right, CreateStorageFile("right.png"));
+        viewModel.SelectSplitScreenView();
+
+        var window = CreateWindow(viewModel);
+        try
+        {
+            var mainView = window.Content as MainView ?? throw new InvalidOperationException("MainView not found.");
+            var pane = mainView.GetVisualDescendants().OfType<RuledSplitImagePane>().FirstOrDefault()
+                ?? throw new InvalidOperationException("SplitPane not found.");
+            var divider = pane.FindControl<Border>("SplitDivider") ?? throw new InvalidOperationException("SplitDivider not found.");
+            var surface = pane.FindControl<Grid>("Surface") ?? throw new InvalidOperationException("Surface not found.");
+
+            await WaitForAsync(() => divider.Bounds.Width > 0 && surface.Bounds.Width > 0);
+
+            Assert.InRange(
+                Math.Abs(divider.Bounds.X - (surface.Bounds.Width * 0.5)),
+                0,
+                4.0);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task Side_by_side_wheel_scrolls_vertical_and_shift_scrolls_horizontal()
+    {
+        var viewModel = new MainWindowViewModel();
+        await viewModel.LoadImageAsync(ImageSlot.Left, CreateStorageFile("reference.png", 1600, 1200));
+
+        var window = CreateWindow(viewModel);
+        try
+        {
+            var mainView = window.Content as MainView ?? throw new InvalidOperationException("MainView not found.");
+            var stage = mainView.FindControl<ComparisonStage>("ComparisonStage") ?? throw new InvalidOperationException("ComparisonStage not found.");
+            var leftPane = stage.FindControl<RuledImagePane>("SideBySideLeftPane") ?? throw new InvalidOperationException("SideBySideLeftPane not found.");
+            var scrollViewer = leftPane.ActiveScrollViewer;
+
+            viewModel.TrySetZoomText("200%");
+            Dispatcher.UIThread.RunJobs();
+            await WaitForAsync(() => viewModel.ZoomScale > 1.5);
+            await WaitForAsync(() => scrollViewer.Extent.Width > scrollViewer.Bounds.Width || scrollViewer.Extent.Height > scrollViewer.Bounds.Height);
+
+            var before = scrollViewer.Offset;
+            window.MouseWheel(new Point(500, 350), new Vector(0, -1));
+            Dispatcher.UIThread.RunJobs();
+            await WaitForAsync(() => scrollViewer.Offset.Y > before.Y || scrollViewer.Offset.X > before.X);
+
+            var afterVertical = scrollViewer.Offset;
+            Assert.True(afterVertical.Y > before.Y || afterVertical.X > before.X);
+
+            window.MouseWheel(new Point(500, 350), new Vector(0, -1), RawInputModifiers.Shift);
+            Dispatcher.UIThread.RunJobs();
+            await WaitForAsync(() => scrollViewer.Offset.X > afterVertical.X);
+
+            Assert.True(scrollViewer.Offset.X > afterVertical.X);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task Side_by_side_ctrl_zoom_keeps_both_panes_anchored()
+    {
+        var viewModel = new MainWindowViewModel();
+        await viewModel.LoadImageAsync(ImageSlot.Left, CreateStorageFile("left.png", 1600, 1200));
+        await viewModel.LoadImageAsync(ImageSlot.Right, CreateStorageFile("right.png", 1600, 1200));
+
+        var window = CreateWindow(viewModel);
+        try
+        {
+            var mainView = window.Content as MainView ?? throw new InvalidOperationException("MainView not found.");
+            var stage = mainView.FindControl<ComparisonStage>("ComparisonStage") ?? throw new InvalidOperationException("ComparisonStage not found.");
+            var leftPane = stage.FindControl<RuledImagePane>("SideBySideLeftPane") ?? throw new InvalidOperationException("SideBySideLeftPane not found.");
+            var rightPane = stage.FindControl<RuledImagePane>("SideBySideRightPane") ?? throw new InvalidOperationException("SideBySideRightPane not found.");
+
+            viewModel.TrySetZoomText("200%");
+            Dispatcher.UIThread.RunJobs();
+            await WaitForAsync(() => viewModel.ZoomScale > 1.5);
+
+            var leftBefore = leftPane.ActiveScrollViewer.Offset;
+            var rightBefore = rightPane.ActiveScrollViewer.Offset;
+
+            window.MouseWheel(new Point(500, 350), new Vector(0, 1), RawInputModifiers.Control);
+            Dispatcher.UIThread.RunJobs();
+
+            await WaitForAsync(() =>
+                leftPane.ActiveScrollViewer.Offset != leftBefore ||
+                rightPane.ActiveScrollViewer.Offset != rightBefore);
+
+            var leftAfter = leftPane.ActiveScrollViewer.Offset;
+            var rightAfter = rightPane.ActiveScrollViewer.Offset;
+
+            Assert.True(leftAfter.X > leftBefore.X || leftAfter.Y > leftBefore.Y);
+            Assert.True(rightAfter.X > rightBefore.X || rightAfter.Y > rightBefore.Y);
+            Assert.InRange(Math.Abs(leftAfter.X - rightAfter.X), 0, 1.0);
+            Assert.InRange(Math.Abs(leftAfter.Y - rightAfter.Y), 0, 1.0);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task Split_screen_divider_can_be_dragged()
+    {
+        var viewModel = new MainWindowViewModel();
+        await viewModel.LoadImageAsync(ImageSlot.Left, CreateStorageFile("left.png"));
+        await viewModel.LoadImageAsync(ImageSlot.Right, CreateStorageFile("right.png"));
+        viewModel.SelectSplitScreenView();
+
+        var window = CreateWindow(viewModel);
+        try
+        {
+            var mainView = window.Content as MainView ?? throw new InvalidOperationException("MainView not found.");
+            var pane = mainView.GetVisualDescendants().OfType<RuledSplitImagePane>().FirstOrDefault()
+                ?? throw new InvalidOperationException("SplitPane not found.");
+            var divider = pane.FindControl<Border>("SplitDivider") ?? throw new InvalidOperationException("SplitDivider not found.");
+            var dragSurface = pane.FindControl<Border>("SplitDragSurface") ?? throw new InvalidOperationException("SplitDragSurface not found.");
+
+            await WaitForAsync(() => divider.Bounds.Width > 0 && dragSurface.Bounds.Width > 0);
+
+            var before = divider.Bounds.X;
+            var start = dragSurface.TranslatePoint(new Point(dragSurface.Bounds.Width / 2, dragSurface.Bounds.Height / 2), window)
+                ?? throw new InvalidOperationException("Could not translate drag surface point.");
+
+            window.MouseDown(start, MouseButton.Left);
+            window.MouseMove(new Point(start.X + 120, start.Y));
+            Dispatcher.UIThread.RunJobs();
+
+            await WaitForAsync(() => Math.Abs(divider.Bounds.X - before) > 5);
+
+            Assert.True(Math.Abs(divider.Bounds.X - before) > 5);
+
+            window.MouseUp(new Point(start.X + 120, start.Y), MouseButton.Left);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task Side_by_side_starts_with_a_single_left_pane()
+    {
+        var viewModel = new MainWindowViewModel();
+        var window = CreateWindow(viewModel);
+        try
+        {
+            var mainView = window.Content as MainView ?? throw new InvalidOperationException("MainView not found.");
+            var stage = mainView.FindControl<ComparisonStage>("ComparisonStage") ?? throw new InvalidOperationException("ComparisonStage not found.");
+            var leftPane = stage.FindControl<RuledImagePane>("SideBySideLeftPane") ?? throw new InvalidOperationException("SideBySideLeftPane not found.");
+            var rightPane = stage.FindControl<RuledImagePane>("SideBySideRightPane");
+            var layout = stage.FindControl<Grid>("SideBySideSurface") ?? throw new InvalidOperationException("SideBySideSurface not found.");
+            var surface = leftPane.FindControl<Grid>("Surface") ?? throw new InvalidOperationException("Surface not found.");
+            var ruler = leftPane.FindControl<PixelRuler>("TopRuler") ?? throw new InvalidOperationException("TopRuler not found.");
+
+            await WaitForAsync(() => ruler.Bounds.Width > 0 && surface.Bounds.Width > 0 && layout.Bounds.Width > 0);
+
+            Assert.True(leftPane.IsVisible);
+            Assert.True(surface.Bounds.Width > 0);
+            Assert.InRange(Math.Abs(leftPane.Bounds.Width - layout.Bounds.Width), 0, 2.1);
+            Assert.True(ruler.Bounds.Width > surface.Bounds.Width);
+            Assert.True(rightPane is null || !rightPane.IsVisible);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
     public async Task Side_by_side_drop_raises_drag_over_and_loads_left_image()
     {
         var viewModel = new MainWindowViewModel();
@@ -26,7 +209,7 @@ public sealed class ComparisonStageDragDropUiTests
         {
             var mainView = window.Content as MainView ?? throw new InvalidOperationException("MainView not found.");
             var stage = mainView.FindControl<ComparisonStage>("ComparisonStage") ?? throw new InvalidOperationException("ComparisonStage not found.");
-            var surface = stage.FindControl<Border>("SideBySideDropSurface") ?? throw new InvalidOperationException("SideBySideDropSurface not found.");
+            var surface = stage.FindControl<Border>("SideBySideDropOverlay") ?? throw new InvalidOperationException("SideBySideDropOverlay not found.");
             var file = CreateStorageFile("reference.png");
             var transfer = CreateTransfer(file);
 
@@ -64,8 +247,9 @@ public sealed class ComparisonStageDragDropUiTests
         try
         {
             var mainView = window.Content as MainView ?? throw new InvalidOperationException("MainView not found.");
-            var stage = mainView.FindControl<ComparisonStage>("ComparisonStage") ?? throw new InvalidOperationException("ComparisonStage not found.");
-            var surface = stage.FindControl<Border>("StageDropSurface") ?? throw new InvalidOperationException("StageDropSurface not found.");
+            var pane = mainView.GetVisualDescendants().OfType<RuledSplitImagePane>().FirstOrDefault()
+                ?? throw new InvalidOperationException("SplitPane not found.");
+            var surface = pane.Content as Grid ?? throw new InvalidOperationException("Split pane root not found.");
             var transfer = CreateTransfer(CreateStorageFile("swap-left.png"), CreateStorageFile("swap-right.png"));
 
             var dragOver = new DragEventArgs(DragDrop.DragOverEvent, transfer, surface, new Point(10, 10), KeyModifiers.None);
@@ -76,11 +260,37 @@ public sealed class ComparisonStageDragDropUiTests
             var drop = new DragEventArgs(DragDrop.DropEvent, transfer, surface, new Point(10, 10), KeyModifiers.None);
             surface.RaiseEvent(drop);
 
-            await WaitForAsync(() => viewModel.LeftFileName == "swap-left.png" && viewModel.RightFileName == "swap-right.png");
+            await WaitForAsync(() => viewModel is { LeftFileName: "swap-left.png", RightFileName: "swap-right.png" });
 
             Assert.Equal("swap-left.png", viewModel.LeftFileName);
             Assert.Equal("swap-right.png", viewModel.RightFileName);
             Assert.True(viewModel.HasBothImages);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task Ctrl_wheel_zoom_stays_applied()
+    {
+        var viewModel = new MainWindowViewModel();
+        await viewModel.LoadImageAsync(ImageSlot.Left, CreateStorageFile("reference.png"));
+
+        var window = CreateWindow(viewModel);
+        try
+        {
+            var mainView = window.Content as MainView ?? throw new InvalidOperationException("MainView not found.");
+            _ = mainView.FindControl<ComparisonStage>("ComparisonStage") ?? throw new InvalidOperationException("ComparisonStage not found.");
+
+            var before = viewModel.ZoomScale;
+            window.MouseWheel(new Point(500, 350), new Vector(0, 1), RawInputModifiers.Control);
+            Dispatcher.UIThread.RunJobs();
+
+            await WaitForAsync(() => viewModel.ZoomScale > before);
+
+            Assert.True(viewModel.ZoomScale > before);
         }
         finally
         {
@@ -115,23 +325,28 @@ public sealed class ComparisonStageDragDropUiTests
         return transfer;
     }
 
-    private static IStorageFile CreateStorageFile(string fileName)
+    private static IStorageFile CreateStorageFile(string fileName, int width = 48, int height = 48)
     {
         var path = Path.Combine(Path.GetTempPath(), "Difflection.Tests", fileName);
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        WriteFixtureImage(path, fileName.Contains("left", StringComparison.OrdinalIgnoreCase) ? SKColors.DarkSlateBlue : SKColors.OrangeRed);
+        WriteFixtureImage(
+            path,
+            width,
+            height,
+            fileName.Contains("left", StringComparison.OrdinalIgnoreCase) ? SKColors.DarkSlateBlue : SKColors.OrangeRed);
 
         var proxy = DispatchProxy.Create<IStorageFile, StorageFileProxy>();
-        var typed = (StorageFileProxy)(object)proxy;
+        // ReSharper disable once SuspiciousTypeConversion.Global
+        var typed = (StorageFileProxy)proxy;
         typed.Name = fileName;
         typed.Path = new Uri(path);
         typed.FilePath = path;
         return proxy;
     }
 
-    private static void WriteFixtureImage(string path, SKColor color)
+    private static void WriteFixtureImage(string path, int width, int height, SKColor color)
     {
-        using var bitmap = new SKBitmap(48, 48);
+        using var bitmap = new SKBitmap(width, height);
         using var canvas = new SKCanvas(bitmap);
         canvas.Clear(color);
 

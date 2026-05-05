@@ -2,8 +2,8 @@ using System;
 using System.Globalization;
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Layout;
 using Avalonia.Media;
+// ReSharper disable MemberCanBePrivate.Global
 
 namespace Difflection.Views;
 
@@ -28,28 +28,28 @@ public sealed class PixelRuler : Control
     private static readonly SolidColorBrush DefaultLabelBrush = new(Color.Parse("#D7DADF"));
 
     public static readonly StyledProperty<PixelRulerOrientation> OrientationProperty =
-        AvaloniaProperty.Register<PixelRuler, PixelRulerOrientation>(nameof(Orientation), PixelRulerOrientation.Horizontal);
+        AvaloniaProperty.Register<PixelRuler, PixelRulerOrientation>(nameof(Orientation));
 
     public static readonly StyledProperty<PixelRulerMode> ModeProperty =
-        AvaloniaProperty.Register<PixelRuler, PixelRulerMode>(nameof(Mode), PixelRulerMode.Continuous);
+        AvaloniaProperty.Register<PixelRuler, PixelRulerMode>(nameof(Mode));
 
     public static readonly StyledProperty<double> ZoomScaleProperty =
         AvaloniaProperty.Register<PixelRuler, double>(nameof(ZoomScale), 1.0);
 
     public static readonly StyledProperty<double> ContentOriginXProperty =
-        AvaloniaProperty.Register<PixelRuler, double>(nameof(ContentOriginX), 0.0);
+        AvaloniaProperty.Register<PixelRuler, double>(nameof(ContentOriginX));
 
     public static readonly StyledProperty<double> ContentOriginYProperty =
-        AvaloniaProperty.Register<PixelRuler, double>(nameof(ContentOriginY), 0.0);
+        AvaloniaProperty.Register<PixelRuler, double>(nameof(ContentOriginY));
 
     public static readonly StyledProperty<double> PrimarySegmentLengthProperty =
-        AvaloniaProperty.Register<PixelRuler, double>(nameof(PrimarySegmentLength), 0.0);
+        AvaloniaProperty.Register<PixelRuler, double>(nameof(PrimarySegmentLength));
 
     public static readonly StyledProperty<double> SecondarySegmentStartProperty =
-        AvaloniaProperty.Register<PixelRuler, double>(nameof(SecondarySegmentStart), 0.0);
+        AvaloniaProperty.Register<PixelRuler, double>(nameof(SecondarySegmentStart));
 
     public static readonly StyledProperty<double> SecondarySegmentLengthProperty =
-        AvaloniaProperty.Register<PixelRuler, double>(nameof(SecondarySegmentLength), 0.0);
+        AvaloniaProperty.Register<PixelRuler, double>(nameof(SecondarySegmentLength));
 
     public static readonly StyledProperty<IBrush> BackgroundBrushProperty =
         AvaloniaProperty.Register<PixelRuler, IBrush>(nameof(BackgroundBrush), DefaultBackgroundBrush);
@@ -179,12 +179,12 @@ public sealed class PixelRuler : Control
         if (Orientation == PixelRulerOrientation.Horizontal)
         {
             DrawHorizontal(context, bounds, typeface);
-            context.DrawLine(new Pen(BorderBrush, 1), new Point(0, bounds.Height - 0.5), new Point(bounds.Width, bounds.Height - 0.5));
+            context.DrawLine(new Pen(BorderBrush), new Point(0, bounds.Height - 0.5), new Point(bounds.Width, bounds.Height - 0.5));
         }
         else
         {
             DrawVertical(context, bounds, typeface);
-            context.DrawLine(new Pen(BorderBrush, 1), new Point(bounds.Width - 0.5, 0), new Point(bounds.Width - 0.5, bounds.Height));
+            context.DrawLine(new Pen(BorderBrush), new Point(bounds.Width - 0.5, 0), new Point(bounds.Width - 0.5, bounds.Height));
         }
     }
 
@@ -225,8 +225,8 @@ public sealed class PixelRuler : Control
         var mediumStep = tickStep * 5;
         var labelStep = tickStep * 10;
         var segmentScreenStart = ContentOriginX + (segmentStart * ZoomScale);
-        var visibleLocalStart = Math.Max(0, (-segmentScreenStart) / ZoomScale);
-        var visibleLocalEnd = Math.Min(segmentLength, (bounds.Width - segmentScreenStart) / ZoomScale);
+        var visibleLocalStart = (-segmentScreenStart) / ZoomScale;
+        var visibleLocalEnd = (bounds.Width - segmentScreenStart) / ZoomScale;
         if (visibleLocalEnd < visibleLocalStart)
         {
             return;
@@ -284,8 +284,8 @@ public sealed class PixelRuler : Control
         var mediumStep = tickStep * 5;
         var labelStep = tickStep * 10;
         var segmentScreenStart = ContentOriginY + (segmentStart * ZoomScale);
-        var visibleLocalStart = Math.Max(0, (-segmentScreenStart) / ZoomScale);
-        var visibleLocalEnd = Math.Min(segmentLength, (bounds.Height - segmentScreenStart) / ZoomScale);
+        var visibleLocalStart = (-segmentScreenStart) / ZoomScale;
+        var visibleLocalEnd = (bounds.Height - segmentScreenStart) / ZoomScale;
         if (visibleLocalEnd < visibleLocalStart)
         {
             return;
