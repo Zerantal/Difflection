@@ -121,7 +121,7 @@ public sealed class PixelRuler : Control
             return;
         }
 
-        var typeface = new Typeface(FontFamily.Default);
+        var typeface = new Typeface(FontManager.Current.DefaultFontFamily);
 
         context.FillRectangle(Background ?? DefaultBackgroundBrush, bounds);
 
