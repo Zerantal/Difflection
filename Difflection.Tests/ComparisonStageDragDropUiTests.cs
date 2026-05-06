@@ -133,6 +133,40 @@ public sealed class ComparisonStageDragDropUiTests
     }
 
     [AvaloniaFact]
+    public async Task Side_by_side_ruler_zero_stays_aligned_with_image_origin_after_zoom()
+    {
+        var viewModel = new MainWindowViewModel();
+        await viewModel.LoadImageAsync(ImageSlot.Left, CreateStorageFile("reference.png", 1600, 1200));
+
+        var window = CreateWindow(viewModel);
+        try
+        {
+            var mainView = window.Content as MainView ?? throw new InvalidOperationException("MainView not found.");
+            var stage = mainView.FindControl<ComparisonStage>("ComparisonStage") ?? throw new InvalidOperationException("ComparisonStage not found.");
+            var leftPane = stage.FindControl<RuledImagePane>("SideBySideLeftPane") ?? throw new InvalidOperationException("SideBySideLeftPane not found.");
+            var transform = leftPane.FindControl<LayoutTransformControl>("Transform") ?? throw new InvalidOperationException("Transform not found.");
+            var topRuler = leftPane.FindControl<PixelRuler>("TopRuler") ?? throw new InvalidOperationException("TopRuler not found.");
+            var leftRuler = leftPane.FindControl<PixelRuler>("LeftRuler") ?? throw new InvalidOperationException("LeftRuler not found.");
+
+            viewModel.TrySetZoomText("50%");
+            Dispatcher.UIThread.RunJobs();
+
+            await WaitForAsync(() => RulerZeroIsAlignedWithOrigin(transform, topRuler, leftRuler, window));
+            Assert.True(RulerZeroIsAlignedWithOrigin(transform, topRuler, leftRuler, window));
+
+            viewModel.TrySetZoomText("200%");
+            Dispatcher.UIThread.RunJobs();
+
+            await WaitForAsync(() => RulerZeroIsAlignedWithOrigin(transform, topRuler, leftRuler, window));
+            Assert.True(RulerZeroIsAlignedWithOrigin(transform, topRuler, leftRuler, window));
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
     public async Task Split_screen_divider_can_be_dragged()
     {
         var viewModel = new MainWindowViewModel();
@@ -298,6 +332,42 @@ public sealed class ComparisonStageDragDropUiTests
         }
     }
 
+    [AvaloniaFact]
+    public async Task Split_screen_ruler_zero_stays_aligned_with_image_origin_after_zoom()
+    {
+        var viewModel = new MainWindowViewModel();
+        await viewModel.LoadImageAsync(ImageSlot.Left, CreateStorageFile("left.png", 1600, 1200));
+        await viewModel.LoadImageAsync(ImageSlot.Right, CreateStorageFile("right.png", 1600, 1200));
+        viewModel.SelectSplitScreenView();
+
+        var window = CreateWindow(viewModel);
+        try
+        {
+            var mainView = window.Content as MainView ?? throw new InvalidOperationException("MainView not found.");
+            var stage = mainView.FindControl<ComparisonStage>("ComparisonStage") ?? throw new InvalidOperationException("ComparisonStage not found.");
+            var pane = stage.FindControl<RuledSplitImagePane>("SplitPane") ?? throw new InvalidOperationException("SplitPane not found.");
+            var transform = pane.FindControl<LayoutTransformControl>("Transform") ?? throw new InvalidOperationException("Transform not found.");
+            var topRuler = pane.FindControl<PixelRuler>("TopRuler") ?? throw new InvalidOperationException("TopRuler not found.");
+            var leftRuler = pane.FindControl<PixelRuler>("LeftRuler") ?? throw new InvalidOperationException("LeftRuler not found.");
+
+            viewModel.TrySetZoomText("50%");
+            Dispatcher.UIThread.RunJobs();
+
+            await WaitForAsync(() => RulerZeroIsAlignedWithOrigin(transform, topRuler, leftRuler, window));
+            Assert.True(RulerZeroIsAlignedWithOrigin(transform, topRuler, leftRuler, window));
+
+            viewModel.TrySetZoomText("200%");
+            Dispatcher.UIThread.RunJobs();
+
+            await WaitForAsync(() => RulerZeroIsAlignedWithOrigin(transform, topRuler, leftRuler, window));
+            Assert.True(RulerZeroIsAlignedWithOrigin(transform, topRuler, leftRuler, window));
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
     private static MainWindow CreateWindow(MainWindowViewModel viewModel)
     {
         var window = new MainWindow
@@ -342,6 +412,20 @@ public sealed class ComparisonStageDragDropUiTests
         typed.Path = new Uri(path);
         typed.FilePath = path;
         return proxy;
+    }
+
+    private static bool RulerZeroIsAlignedWithOrigin(Control originControl, PixelRuler topRuler, PixelRuler leftRuler, Visual relativeTo)
+    {
+        var origin = originControl.TranslatePoint(new Point(0, 0), relativeTo);
+        var topZero = topRuler.TranslatePoint(new Point(topRuler.ContentOriginX, 0), relativeTo);
+        var leftZero = leftRuler.TranslatePoint(new Point(0, leftRuler.ContentOriginY), relativeTo);
+        if (origin is null || topZero is null || leftZero is null)
+        {
+            return false;
+        }
+
+        return Math.Abs(origin.Value.X - topZero.Value.X) <= 1.0 &&
+            Math.Abs(origin.Value.Y - leftZero.Value.Y) <= 1.0;
     }
 
     private static void WriteFixtureImage(string path, int width, int height, SKColor color)

@@ -36,13 +36,15 @@ public partial class RuledImagePane : UserControl
         AvaloniaProperty.Register<RuledImagePane, double>(nameof(SurfaceHeight));
 
     private readonly IDisposable _zoomSubscription;
+    private bool _rulersDirty = true;
 
     public RuledImagePane()
     {
         InitializeComponent();
 
-        _zoomSubscription = this.GetObservable(ZoomScaleProperty).Subscribe(new ActionObserver(UpdateRulers));
+        _zoomSubscription = this.GetObservable(ZoomScaleProperty).Subscribe(new ActionObserver(RequestUpdateRulers));
         SizeChanged += Pane_OnSizeChanged;
+        LayoutUpdated += Pane_OnLayoutUpdated;
         DetachedFromVisualTree += Pane_OnDetachedFromVisualTree;
     }
 
@@ -78,30 +80,46 @@ public partial class RuledImagePane : UserControl
 
     private void Pane_OnSizeChanged(object? sender, SizeChangedEventArgs e)
     {
-        UpdateRulers();
+        RequestUpdateRulers();
     }
 
     private void Surface_OnSizeChanged(object? sender, SizeChangedEventArgs e)
     {
-        UpdateRulers();
+        RequestUpdateRulers();
     }
 
     private void ScrollViewer_OnScrollChanged(object? sender, ScrollChangedEventArgs e)
     {
+        RequestUpdateRulers();
+    }
+
+    private void RequestUpdateRulers()
+    {
+        _rulersDirty = true;
+    }
+
+    private void Pane_OnLayoutUpdated(object? sender, EventArgs e)
+    {
+        if (!_rulersDirty)
+        {
+            return;
+        }
+
+        _rulersDirty = false;
         UpdateRulers();
     }
 
     private void UpdateRulers()
     {
-        if (TopRuler is null || LeftRuler is null || Surface is null || ImageLayer is null)
+        if (TopRuler is null || LeftRuler is null || Surface is null || Transform is null)
         {
             return;
         }
 
         TopRuler.ZoomScale = ZoomScale;
         LeftRuler.ZoomScale = ZoomScale;
-        TopRuler.ContentOriginX = GetContentOrigin(ImageLayer, TopRuler).X;
-        LeftRuler.ContentOriginY = GetContentOrigin(ImageLayer, LeftRuler).Y;
+        TopRuler.ContentOriginX = GetContentOrigin(Transform, TopRuler).X;
+        LeftRuler.ContentOriginY = GetContentOrigin(Transform, LeftRuler).Y;
         TopRuler.PrimarySegmentLength = Math.Max(0, SurfaceWidth);
         LeftRuler.PrimarySegmentLength = Math.Max(0, SurfaceHeight);
     }

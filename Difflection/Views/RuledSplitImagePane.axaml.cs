@@ -50,15 +50,17 @@ public partial class RuledSplitImagePane : UserControl
     private readonly IDisposable _zoomSubscription;
     private bool _isDraggingSplit;
     private double _splitRatio = 0.5;
+    private bool _splitVisualsDirty = true;
 
     public RuledSplitImagePane()
     {
         InitializeComponent();
 
-        _zoomSubscription = this.GetObservable(ZoomScaleProperty).Subscribe(new ActionObserver(UpdateSplitVisuals));
+        _zoomSubscription = this.GetObservable(ZoomScaleProperty).Subscribe(new ActionObserver(RequestUpdateSplitVisuals));
         PointerMoved += OnPointerMoved;
         PointerReleased += OnPointerReleased;
         SizeChanged += Pane_OnSizeChanged;
+        LayoutUpdated += Pane_OnLayoutUpdated;
         DetachedFromVisualTree += Pane_OnDetachedFromVisualTree;
     }
 
@@ -109,17 +111,17 @@ public partial class RuledSplitImagePane : UserControl
 
     private void Pane_OnSizeChanged(object? sender, SizeChangedEventArgs e)
     {
-        UpdateSplitVisuals();
+        RequestUpdateSplitVisuals();
     }
 
     private void Surface_OnSizeChanged(object? sender, SizeChangedEventArgs e)
     {
-        UpdateSplitVisuals();
+        RequestUpdateSplitVisuals();
     }
 
     private void ScrollViewer_OnScrollChanged(object? sender, ScrollChangedEventArgs e)
     {
-        UpdateRulers();
+        RequestUpdateSplitVisuals();
     }
 
     private void Pane_OnDragOver(object? sender, DragEventArgs e)
@@ -214,9 +216,25 @@ public partial class RuledSplitImagePane : UserControl
         UpdateRulers();
     }
 
+    private void RequestUpdateSplitVisuals()
+    {
+        _splitVisualsDirty = true;
+    }
+
+    private void Pane_OnLayoutUpdated(object? sender, EventArgs e)
+    {
+        if (!_splitVisualsDirty)
+        {
+            return;
+        }
+
+        _splitVisualsDirty = false;
+        UpdateSplitVisuals();
+    }
+
     private void UpdateRulers()
     {
-        if (TopRuler is null || LeftRuler is null || Surface is null)
+        if (TopRuler is null || LeftRuler is null || Surface is null || Transform is null)
         {
             return;
         }
@@ -226,11 +244,11 @@ public partial class RuledSplitImagePane : UserControl
         var topVisibleLength = Math.Max(0, TopRuler.Bounds.Width) / zoom;
 
         TopRuler.ZoomScale = ZoomScale;
-        TopRuler.ContentOriginX = GetContentOrigin(Surface, TopRuler).X;
+        TopRuler.ContentOriginX = GetContentOrigin(Transform, TopRuler).X;
         TopRuler.PrimarySegmentLength = Math.Max(SurfaceWidth, topVisibleLength);
 
         LeftRuler.ZoomScale = ZoomScale;
-        LeftRuler.ContentOriginY = GetContentOrigin(Surface, LeftRuler).Y;
+        LeftRuler.ContentOriginY = GetContentOrigin(Transform, LeftRuler).Y;
         LeftRuler.PrimarySegmentLength = Math.Max(SurfaceHeight, leftVisibleLength);
     }
 

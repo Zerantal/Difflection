@@ -60,7 +60,7 @@
                               Background="{StaticResource ImageViewportFillBrush}">
                     <Grid HorizontalAlignment="Center"
                           VerticalAlignment="Center">
-                        <LayoutTransformControl>
+                        <LayoutTransformControl x:Name="Transform">
                             <LayoutTransformControl.LayoutTransform>
                                 <ScaleTransform ScaleX="{Binding ZoomScale, ElementName=Root}"
                                                 ScaleY="{Binding ZoomScale, ElementName=Root}" />
