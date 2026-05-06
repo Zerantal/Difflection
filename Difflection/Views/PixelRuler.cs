@@ -289,7 +289,7 @@ public sealed class PixelRuler : Control
             : fraction <= 5 ? 5
             : 10;
 
-        return niceFraction * scale;
+        return Math.Max(1.0, niceFraction * scale);
     }
 
     private static bool IsMultiple(double value, double step)
