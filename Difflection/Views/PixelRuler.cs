@@ -121,7 +121,7 @@ public sealed class PixelRuler : Control
             return;
         }
 
-        var typeface = new Typeface(FontManager.Current.DefaultFontFamily);
+        var typeface = new Typeface("fonts:Inter#Inter");
 
         context.FillRectangle(Background ?? DefaultBackgroundBrush, bounds);
 
