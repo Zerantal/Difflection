@@ -32,6 +32,8 @@ public partial class RuledSplitImagePane : UserControl
     private const double SplitRatioMin = 0.0;
     private const double SplitRatioMax = 1.0;
 
+    public event EventHandler<double>? SplitRatioChanged;
+
     public static readonly StyledProperty<IImage?> LeftImageProperty =
         AvaloniaProperty.Register<RuledSplitImagePane, IImage?>(nameof(LeftImage));
 
@@ -102,6 +104,7 @@ public partial class RuledSplitImagePane : UserControl
     {
         _splitRatio = Math.Clamp(ratio, SplitRatioMin, SplitRatioMax);
         UpdateSplitVisuals();
+        SplitRatioChanged?.Invoke(this, _splitRatio);
     }
 
     public void RefreshLayout()
@@ -193,6 +196,7 @@ public partial class RuledSplitImagePane : UserControl
 
         _splitRatio = Math.Clamp(pointerX / Surface.Bounds.Width, SplitRatioMin, SplitRatioMax);
         UpdateSplitVisuals();
+        SplitRatioChanged?.Invoke(this, _splitRatio);
     }
 
     private void UpdateSplitVisuals()

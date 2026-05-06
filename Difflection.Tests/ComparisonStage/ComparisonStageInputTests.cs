@@ -153,6 +153,7 @@ public sealed partial class ComparisonStageTests
             var pane = TestUiSupport.GetSplitPane(TestUiSupport.GetComparisonStage(window));
             var divider = pane.FindControl<Border>("SplitDivider") ?? throw new InvalidOperationException("SplitDivider not found.");
             var dragSurface = pane.FindControl<Border>("SplitDragSurface") ?? throw new InvalidOperationException("SplitDragSurface not found.");
+            var initialSplitText = viewModel.SplitPercentageText;
 
             await TestUiSupport.WaitForAsync(() => divider.Bounds.Width > 0 && dragSurface.Bounds.Width > 0);
 
@@ -165,8 +166,16 @@ public sealed partial class ComparisonStageTests
             Dispatcher.UIThread.RunJobs();
 
             await TestUiSupport.WaitForAsync(() => Math.Abs(divider.Bounds.X - before) > 5);
+            await TestUiSupport.WaitForAsync(() => viewModel.SplitPercentageText != initialSplitText);
 
             Assert.True(Math.Abs(divider.Bounds.X - before) > 5);
+            Assert.NotEqual(initialSplitText, viewModel.SplitPercentageText);
+
+            var parts = viewModel.SplitPercentageText.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            Assert.Equal(3, parts.Length);
+            Assert.True(int.TryParse(parts[0], out var leftPercent));
+            Assert.True(int.TryParse(parts[2], out var rightPercent));
+            Assert.Equal(100, leftPercent + rightPercent);
 
             window.MouseUp(new Point(start.X + 120, start.Y), MouseButton.Left);
         }
