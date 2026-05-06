@@ -4,7 +4,7 @@ using System.Security.Cryptography;
 using Avalonia.Media.Imaging;
 using Xunit;
 
-namespace Difflection.Tests;
+namespace Difflection.Tests.Infrastructure;
 
 internal static class SnapshotAssert
 {
@@ -102,15 +102,15 @@ internal static class SnapshotAssert
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
         while (directory is not null)
         {
-            var testProjectDirectory = Path.Combine(directory.FullName, "Difflection.Tests");
-            if (Directory.Exists(testProjectDirectory))
+            var candidate = Path.Combine(directory.FullName, "UI");
+            if (Directory.Exists(candidate))
             {
-                return Path.Combine(testProjectDirectory, "UI");
+                return candidate;
             }
 
             directory = directory.Parent;
         }
 
-        throw new DirectoryNotFoundException("Could not locate Difflection.Tests for snapshot storage.");
+        throw new DirectoryNotFoundException("Could not locate snapshot directory.");
     }
 }
