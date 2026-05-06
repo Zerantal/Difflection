@@ -16,5 +16,6 @@
         <PackageReference Include="Avalonia.Themes.Fluent" Version="12.0.999-cibuild0064469-alpha"/>
         <PackageReference Include="Avalonia.Fonts.Inter" Version="12.0.999-cibuild0064469-alpha"/>
         <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.1"/>
+        <PackageReference Include="JetBrains.Annotations" Version="2025.2.4" />
     </ItemGroup>
 </Project>

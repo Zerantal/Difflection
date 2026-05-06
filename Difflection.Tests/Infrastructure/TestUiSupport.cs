@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Avalonia;
@@ -9,12 +8,11 @@ using Avalonia.Headless;
 using Avalonia.Input;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
-using Avalonia.VisualTree;
 using Difflection.ViewModels;
 using Difflection.Views;
 using SkiaSharp;
 
-namespace Difflection.Tests;
+namespace Difflection.Tests.Infrastructure;
 
 internal static class TestUiSupport
 {
@@ -24,7 +22,7 @@ internal static class TestUiSupport
         {
             Width = width,
             Height = height,
-            DataContext = viewModel,
+            DataContext = viewModel
         };
 
         window.SetRenderScaling(renderScale);
@@ -33,19 +31,20 @@ internal static class TestUiSupport
         return window;
     }
 
+    // ReSharper disable once MemberCanBePrivate.Global
     internal static MainView GetMainView(Window window) =>
         window.Content as MainView ?? throw new InvalidOperationException("MainView not found.");
 
-    internal static ComparisonStage GetComparisonStage(Window window) =>
-        GetMainView(window).FindControl<ComparisonStage>("ComparisonStage") ?? throw new InvalidOperationException("ComparisonStage not found.");
+    internal static Difflection.Views.ComparisonStage GetComparisonStage(Window window) =>
+        GetMainView(window).FindControl<Difflection.Views.ComparisonStage>("ComparisonStage") ?? throw new InvalidOperationException("ComparisonStage not found.");
 
-    internal static RuledImagePane GetSideBySideLeftPane(ComparisonStage stage) =>
+    internal static RuledImagePane GetSideBySideLeftPane(Difflection.Views.ComparisonStage stage) =>
         stage.FindControl<RuledImagePane>("SideBySideLeftPane") ?? throw new InvalidOperationException("SideBySideLeftPane not found.");
 
-    internal static RuledImagePane GetSideBySideRightPane(ComparisonStage stage) =>
+    internal static RuledImagePane GetSideBySideRightPane(Difflection.Views.ComparisonStage stage) =>
         stage.FindControl<RuledImagePane>("SideBySideRightPane") ?? throw new InvalidOperationException("SideBySideRightPane not found.");
 
-    internal static RuledSplitImagePane GetSplitPane(ComparisonStage stage) =>
+    internal static RuledSplitImagePane GetSplitPane(Difflection.Views.ComparisonStage stage) =>
         stage.FindControl<RuledSplitImagePane>("SplitPane") ?? throw new InvalidOperationException("SplitPane not found.");
 
     internal static DataTransfer CreateTransfer(params IStorageFile[] files)
@@ -72,6 +71,7 @@ internal static class TestUiSupport
             fileName.Contains("left", StringComparison.OrdinalIgnoreCase) ? SKColors.DarkSlateBlue : SKColors.OrangeRed);
 
         var proxy = DispatchProxy.Create<IStorageFile, StorageFileProxy>();
+        // ReSharper disable once SuspiciousTypeConversion.Global
         var typed = (StorageFileProxy)proxy;
         typed.Name = fileName;
         typed.Path = new Uri(path);
@@ -123,7 +123,7 @@ internal static class TestUiSupport
     {
         public string Name { get; set; } = string.Empty;
 
-        public Uri Path { get; set; } = new Uri("file:///tmp/placeholder.png");
+        public Uri Path { get; set; } = new("file:///tmp/placeholder.png");
 
         public string FilePath { get; set; } = string.Empty;
 
@@ -142,7 +142,7 @@ internal static class TestUiSupport
                 "OpenReadAsync" => Task.FromResult<Stream>(File.OpenRead(FilePath)),
                 "OpenWriteAsync" => Task.FromException<Stream>(new NotSupportedException()),
                 "Dispose" => null,
-                _ => throw new NotSupportedException($"Unexpected call to {targetMethod?.Name}."),
+                _ => throw new NotSupportedException($"Unexpected call to {targetMethod?.Name}.")
             };
         }
     }

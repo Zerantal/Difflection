@@ -3,11 +3,12 @@ using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using Avalonia.Threading;
+using Difflection.Tests.Infrastructure;
 using Difflection.ViewModels;
 using Difflection.Views;
 using Xunit;
 
-namespace Difflection.Tests;
+namespace Difflection.Tests.ComparisonStage;
 
 public sealed partial class ComparisonStageTests
 {

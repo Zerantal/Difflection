@@ -1,13 +1,13 @@
 using System;
-using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
+using Difflection.Tests.Infrastructure;
 using Difflection.ViewModels;
 using Difflection.Views;
 using Xunit;
 
-namespace Difflection.Tests;
+namespace Difflection.Tests.ComparisonStage;
 
 public sealed partial class ComparisonStageTests
 {
@@ -29,7 +29,7 @@ public sealed partial class ComparisonStageTests
             await TestUiSupport.WaitForAsync(() => divider.Bounds.Width > 0 && surface.Bounds.Width > 0);
 
             Assert.InRange(
-                Math.Abs(divider.Bounds.X - (surface.Bounds.Width * 0.5)),
+                Math.Abs(divider.Bounds.X - surface.Bounds.Width * 0.5),
                 0,
                 4.0);
         }

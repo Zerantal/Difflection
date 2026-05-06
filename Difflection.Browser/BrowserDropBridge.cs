@@ -2,8 +2,9 @@ using System.Runtime.InteropServices.JavaScript;
 using System.Runtime.Versioning;
 using System.Threading.Tasks;
 using Difflection.Views;
+using JetBrains.Annotations;
 
-namespace Difflection;
+namespace Difflection.Browser;
 
 [SupportedOSPlatform("browser")]
 public static partial class BrowserDropBridge
@@ -24,6 +25,7 @@ public static partial class BrowserDropBridge
     }
 
     [JSExport]
+    [UsedImplicitly]
     public static async Task AcceptDroppedFile(string fileName, byte[] fileBytes)
     {
         var view = _view;
@@ -36,6 +38,7 @@ public static partial class BrowserDropBridge
     }
 
     [JSExport]
+    [UsedImplicitly]
     public static async Task AcceptDroppedPair(string leftFileName, byte[] leftFileBytes, string rightFileName, byte[] rightFileBytes)
     {
         var view = _view;

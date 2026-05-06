@@ -1,12 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using Avalonia.VisualTree;
+using JetBrains.Annotations;
 
 namespace Difflection.Views;
 
@@ -31,6 +33,8 @@ public partial class RuledSplitImagePane : UserControl
     private const double SplitDragSurfaceWidth = 24;
     private const double SplitRatioMin = 0.0;
     private const double SplitRatioMax = 1.0;
+
+    public event EventHandler<double>? SplitRatioChanged;
 
     public static readonly StyledProperty<IImage?> LeftImageProperty =
         AvaloniaProperty.Register<RuledSplitImagePane, IImage?>(nameof(LeftImage));
@@ -102,6 +106,7 @@ public partial class RuledSplitImagePane : UserControl
     {
         _splitRatio = Math.Clamp(ratio, SplitRatioMin, SplitRatioMax);
         UpdateSplitVisuals();
+        SplitRatioChanged?.Invoke(this, _splitRatio);
     }
 
     public void RefreshLayout()
@@ -124,6 +129,7 @@ public partial class RuledSplitImagePane : UserControl
         RequestUpdateSplitVisuals();
     }
 
+    [UsedImplicitly]
     private void Pane_OnDragOver(object? sender, DragEventArgs e)
     {
         var hasFiles = GetDroppedFiles(e.DataTransfer).Any();
@@ -131,7 +137,14 @@ public partial class RuledSplitImagePane : UserControl
         e.Handled = true;
     }
 
-    private async void Pane_OnDrop(object? sender, DragEventArgs e)
+    [UsedImplicitly]
+    private void Pane_OnDrop(object? sender, DragEventArgs e)
+    {
+        e.Handled = true;
+        _ = Pane_OnDropAsync(e);
+    }
+
+    private async Task Pane_OnDropAsync(DragEventArgs e)
     {
         var files = GetDroppedFiles(e.DataTransfer).Take(2).ToArray();
         if (files.Length == 0)
@@ -146,7 +159,6 @@ public partial class RuledSplitImagePane : UserControl
         }
 
         await stage.LoadDroppedFilesAsync(null, files);
-        e.Handled = true;
     }
 
     private void SplitDivider_OnPointerPressed(object? sender, PointerPressedEventArgs e)
@@ -193,6 +205,7 @@ public partial class RuledSplitImagePane : UserControl
 
         _splitRatio = Math.Clamp(pointerX / Surface.Bounds.Width, SplitRatioMin, SplitRatioMax);
         UpdateSplitVisuals();
+        SplitRatioChanged?.Invoke(this, _splitRatio);
     }
 
     private void UpdateSplitVisuals()

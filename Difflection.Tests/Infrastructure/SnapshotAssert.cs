@@ -19,7 +19,7 @@ internal static class SnapshotAssert
         Matches(snapshotName, stream.ToArray());
     }
 
-    public static void Matches(string snapshotName, byte[] pngBytes)
+    private static void Matches(string snapshotName, byte[] pngBytes)
     {
         var snapshotDirectory = FindSnapshotDirectory();
         var baselinesDirectory = Path.Combine(snapshotDirectory, "Baselines");
@@ -103,7 +103,7 @@ internal static class SnapshotAssert
             string.Empty,
             "## Update",
             "Set `UPDATE_SNAPSHOTS=1` and rerun the test command to accept the new baseline.",
-            string.Empty,
+            string.Empty
         };
 
         File.WriteAllLines(reportPath, lines);

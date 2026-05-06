@@ -10,6 +10,7 @@ using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using Difflection.ViewModels;
+using JetBrains.Annotations;
 
 namespace Difflection.Views;
 
@@ -23,6 +24,7 @@ public partial class ComparisonStage : UserControl
     {
         InitializeComponent();
 
+        SplitPane.SplitRatioChanged += SplitPane_OnSplitRatioChanged;
         DataContextChanged += OnDataContextChanged;
         AddHandler(PointerWheelChangedEvent, StageOverlay_OnPointerWheelChanged, RoutingStrategies.Tunnel);
         DetachedFromVisualTree += OnDetachedFromVisualTree;
@@ -45,9 +47,9 @@ public partial class ComparisonStage : UserControl
                 new FilePickerFileType("Image files")
                 {
                     Patterns = ["*.png", "*.jpg", "*.jpeg", "*.bmp", "*.gif", "*.webp", "*.tif", "*.tiff"],
-                    MimeTypes = ["image/*"],
-                },
-            ],
+                    MimeTypes = ["image/*"]
+                }
+            ]
         });
 
         await LoadDroppedFilesAsync(null, files);
@@ -119,6 +121,7 @@ public partial class ComparisonStage : UserControl
         FitZoomToStage();
     }
 
+    [UsedImplicitly]
     private void StageOverlay_OnDragOver(object? sender, DragEventArgs e)
     {
         var hasFiles = GetDroppedFiles(e.DataTransfer).Any();
@@ -126,7 +129,14 @@ public partial class ComparisonStage : UserControl
         e.Handled = true;
     }
 
-    private async void StageOverlay_OnDrop(object? sender, DragEventArgs e)
+    [UsedImplicitly]
+    private void StageOverlay_OnDrop(object? sender, DragEventArgs e)
+    {
+        e.Handled = true;
+        _ = StageOverlay_OnDropAsync(e);
+    }
+
+    private async Task StageOverlay_OnDropAsync(DragEventArgs e)
     {
         var files = GetDroppedFiles(e.DataTransfer).Take(2).ToArray();
         if (!files.Any())
@@ -135,7 +145,6 @@ public partial class ComparisonStage : UserControl
         }
 
         await LoadDroppedFilesAsync(null, files);
-        e.Handled = true;
     }
 
     private void StageOverlay_OnPointerWheelChanged(object? sender, PointerWheelEventArgs e)
@@ -240,7 +249,7 @@ public partial class ComparisonStage : UserControl
         {
             null => ImageSlot.Left,
             { HasLeftImage: false } => ImageSlot.Left,
-            _ => ImageSlot.Right,
+            _ => ImageSlot.Right
         };
 
     private void OnDataContextChanged(object? sender, EventArgs e)
@@ -259,6 +268,7 @@ public partial class ComparisonStage : UserControl
 
         UpdateSideBySideLayout();
         FitZoomToStage();
+        SyncSplitPercentageText();
     }
 
     private void OnViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
@@ -320,6 +330,24 @@ public partial class ComparisonStage : UserControl
         }, DispatcherPriority.Loaded);
     }
 
+    private void SplitPane_OnSplitRatioChanged(object? sender, double ratio)
+    {
+        SyncSplitPercentageText(ratio);
+    }
+
+    private void SyncSplitPercentageText(double? splitRatio = null)
+    {
+        if (_viewModel is null)
+        {
+            return;
+        }
+
+        var ratio = splitRatio ?? 0.5;
+        var leftPercent = Math.Round(Math.Clamp(ratio, 0.0, 1.0) * 100.0);
+        var rightPercent = 100.0 - leftPercent;
+        _viewModel.SplitPercentageText = $"{leftPercent:0} / {rightPercent:0}";
+    }
+
     private static void ApplyZoomAnchor(ScrollViewer scrollViewer, Point anchorInViewer, Vector oldOffset, double oldZoom, double newZoom)
     {
         var ratio = newZoom / Math.Max(0.0001, oldZoom);
@@ -369,6 +397,7 @@ public partial class ComparisonStage : UserControl
     private void OnDetachedFromVisualTree(object? sender, VisualTreeAttachmentEventArgs e)
     {
         RemoveHandler(PointerWheelChangedEvent, StageOverlay_OnPointerWheelChanged);
+        SplitPane.SplitRatioChanged -= SplitPane_OnSplitRatioChanged;
 
         if (_viewModel is not null)
         {
