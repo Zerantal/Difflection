@@ -130,7 +130,13 @@ public partial class ComparisonStage : UserControl
     }
 
     [UsedImplicitly]
-    private async void StageOverlay_OnDrop(object? sender, DragEventArgs e)
+    private void StageOverlay_OnDrop(object? sender, DragEventArgs e)
+    {
+        e.Handled = true;
+        _ = StageOverlay_OnDropAsync(e);
+    }
+
+    private async Task StageOverlay_OnDropAsync(DragEventArgs e)
     {
         var files = GetDroppedFiles(e.DataTransfer).Take(2).ToArray();
         if (!files.Any())
@@ -139,7 +145,6 @@ public partial class ComparisonStage : UserControl
         }
 
         await LoadDroppedFilesAsync(null, files);
-        e.Handled = true;
     }
 
     private void StageOverlay_OnPointerWheelChanged(object? sender, PointerWheelEventArgs e)

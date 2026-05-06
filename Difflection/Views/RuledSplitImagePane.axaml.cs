@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
@@ -137,7 +138,13 @@ public partial class RuledSplitImagePane : UserControl
     }
 
     [UsedImplicitly]
-    private async void Pane_OnDrop(object? sender, DragEventArgs e)
+    private void Pane_OnDrop(object? sender, DragEventArgs e)
+    {
+        e.Handled = true;
+        _ = Pane_OnDropAsync(e);
+    }
+
+    private async Task Pane_OnDropAsync(DragEventArgs e)
     {
         var files = GetDroppedFiles(e.DataTransfer).Take(2).ToArray();
         if (files.Length == 0)
@@ -152,7 +159,6 @@ public partial class RuledSplitImagePane : UserControl
         }
 
         await stage.LoadDroppedFilesAsync(null, files);
-        e.Handled = true;
     }
 
     private void SplitDivider_OnPointerPressed(object? sender, PointerPressedEventArgs e)
