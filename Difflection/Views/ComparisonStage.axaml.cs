@@ -10,6 +10,7 @@ using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using Difflection.ViewModels;
+using JetBrains.Annotations;
 
 namespace Difflection.Views;
 
@@ -46,9 +47,9 @@ public partial class ComparisonStage : UserControl
                 new FilePickerFileType("Image files")
                 {
                     Patterns = ["*.png", "*.jpg", "*.jpeg", "*.bmp", "*.gif", "*.webp", "*.tif", "*.tiff"],
-                    MimeTypes = ["image/*"],
-                },
-            ],
+                    MimeTypes = ["image/*"]
+                }
+            ]
         });
 
         await LoadDroppedFilesAsync(null, files);
@@ -120,6 +121,7 @@ public partial class ComparisonStage : UserControl
         FitZoomToStage();
     }
 
+    [UsedImplicitly]
     private void StageOverlay_OnDragOver(object? sender, DragEventArgs e)
     {
         var hasFiles = GetDroppedFiles(e.DataTransfer).Any();
@@ -127,6 +129,7 @@ public partial class ComparisonStage : UserControl
         e.Handled = true;
     }
 
+    [UsedImplicitly]
     private async void StageOverlay_OnDrop(object? sender, DragEventArgs e)
     {
         var files = GetDroppedFiles(e.DataTransfer).Take(2).ToArray();
@@ -241,7 +244,7 @@ public partial class ComparisonStage : UserControl
         {
             null => ImageSlot.Left,
             { HasLeftImage: false } => ImageSlot.Left,
-            _ => ImageSlot.Right,
+            _ => ImageSlot.Right
         };
 
     private void OnDataContextChanged(object? sender, EventArgs e)

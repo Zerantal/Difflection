@@ -4,11 +4,11 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
+using Difflection.Tests.Infrastructure;
 using Difflection.ViewModels;
-using Difflection.Views;
 using Xunit;
 
-namespace Difflection.Tests;
+namespace Difflection.Tests.ComparisonStage;
 
 public sealed partial class ComparisonStageTests
 {
@@ -20,7 +20,7 @@ public sealed partial class ComparisonStageTests
         try
         {
             var stage = TestUiSupport.GetComparisonStage(window);
-            var surface = stage.FindControl<Border>("SideBySideDropOverlay") ?? throw new InvalidOperationException("SideBySideDropOverlay not found.");
+            var surface = ControlExtensions.FindControl<Border>(stage, "SideBySideDropOverlay") ?? throw new InvalidOperationException("SideBySideDropOverlay not found.");
             var file = TestUiSupport.CreateStorageFile("reference.png");
             var transfer = TestUiSupport.CreateTransfer(file);
 

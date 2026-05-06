@@ -103,7 +103,7 @@ internal static class SnapshotAssert
             string.Empty,
             "## Update",
             "Set `UPDATE_SNAPSHOTS=1` and rerun the test command to accept the new baseline.",
-            string.Empty,
+            string.Empty
         };
 
         File.WriteAllLines(reportPath, lines);

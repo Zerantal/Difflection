@@ -14,7 +14,7 @@ public static class AvaloniaTestApp
             .WithInterFont()
             .UseHeadless(new AvaloniaHeadlessPlatformOptions
             {
-                UseHeadlessDrawing = false,
+                UseHeadlessDrawing = false
             })
             .LogToTrace();
 }

@@ -1,9 +1,10 @@
 using System.Threading.Tasks;
 using Avalonia.Headless.XUnit;
+using Difflection.Tests.Infrastructure;
 using Difflection.ViewModels;
 using Xunit;
 
-namespace Difflection.Tests;
+namespace Difflection.Tests.ViewModels;
 
 public sealed class MainWindowViewModelTests
 {

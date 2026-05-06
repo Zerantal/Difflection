@@ -6,7 +6,7 @@ using Difflection.Views;
 
 namespace Difflection;
 
-public partial class App : Application
+public class App : Application
 {
     public override void Initialize()
     {
@@ -19,14 +19,14 @@ public partial class App : Application
         {
             desktop.MainWindow = new MainWindow
             {
-                DataContext = new MainWindowViewModel(),
+                DataContext = new MainWindowViewModel()
             };
         }
         else if (ApplicationLifetime is ISingleViewApplicationLifetime singleView)
         {
             singleView.MainView = new MainView
             {
-                DataContext = new MainWindowViewModel(),
+                DataContext = new MainWindowViewModel()
             };
         }
 

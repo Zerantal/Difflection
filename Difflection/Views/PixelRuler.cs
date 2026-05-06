@@ -11,13 +11,13 @@ namespace Difflection.Views;
 public enum PixelRulerOrientation
 {
     Horizontal,
-    Vertical,
+    Vertical
 }
 
 public enum PixelRulerMode
 {
     Continuous,
-    ResetPerImage,
+    ResetPerImage
 }
 
 public sealed class PixelRuler : Control

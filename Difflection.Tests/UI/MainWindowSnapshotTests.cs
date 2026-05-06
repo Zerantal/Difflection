@@ -1,4 +1,3 @@
-using System;
 using System.IO;
 using System.Threading.Tasks;
 using Avalonia;
@@ -12,18 +11,14 @@ using Difflection.ViewModels;
 using SkiaSharp;
 using Xunit;
 
-namespace Difflection.Tests;
+namespace Difflection.Tests.UI;
 
 public sealed class MainWindowSnapshotTests
 {
-    private const double SnapshotWidth = 1100;
-    private const double SnapshotHeight = 700;
-    private const double SnapshotRenderScale = 1.0;
-
     [AvaloniaFact]
     public void Default_side_by_side_shell_matches_snapshot()
     {
-        var window = TestUiSupport.CreateWindow(new MainWindowViewModel(), SnapshotWidth, SnapshotHeight, SnapshotRenderScale);
+        var window = TestUiSupport.CreateWindow(new MainWindowViewModel());
         try
         {
             AssertSnapshot(window, "main-window-default-side-by-side");
@@ -41,7 +36,7 @@ public sealed class MainWindowSnapshotTests
         await LoadFixtureImagesAsync(viewModel);
         viewModel.SelectSplitScreenView();
 
-        var window = TestUiSupport.CreateWindow(viewModel, SnapshotWidth, SnapshotHeight, SnapshotRenderScale);
+        var window = TestUiSupport.CreateWindow(viewModel);
         try
         {
             AssertSnapshot(window, "main-window-split-screen-with-images");
@@ -59,7 +54,7 @@ public sealed class MainWindowSnapshotTests
         await LoadFixtureImagesAsync(viewModel);
         viewModel.TrySetZoomText("50%");
 
-        var window = TestUiSupport.CreateWindow(viewModel, SnapshotWidth, SnapshotHeight, SnapshotRenderScale);
+        var window = TestUiSupport.CreateWindow(viewModel);
         try
         {
             AssertSnapshot(window, "main-window-side-by-side-with-images");
@@ -76,7 +71,7 @@ public sealed class MainWindowSnapshotTests
         var viewModel = new MainWindowViewModel();
         await LoadFixtureImagesAsync(viewModel);
 
-        var window = TestUiSupport.CreateWindow(viewModel, SnapshotWidth, SnapshotHeight, SnapshotRenderScale);
+        var window = TestUiSupport.CreateWindow(viewModel);
         try
         {
             for (var i = 0; i < 14; i++)
@@ -122,20 +117,16 @@ public sealed class MainWindowSnapshotTests
         using var canvas = new SKCanvas(bitmap);
         canvas.Clear(background);
 
-        using var fillPaint = new SKPaint
-        {
-            Color = accent,
-            IsAntialias = true,
-            Style = SKPaintStyle.Fill,
-        };
+        using var fillPaint = new SKPaint();
+        fillPaint.Color = accent;
+        fillPaint.IsAntialias = true;
+        fillPaint.Style = SKPaintStyle.Fill;
 
-        using var strokePaint = new SKPaint
-        {
-            Color = SKColors.White.WithAlpha(210),
-            IsAntialias = true,
-            StrokeWidth = 8,
-            Style = SKPaintStyle.Stroke,
-        };
+        using var strokePaint = new SKPaint();
+        strokePaint.Color = SKColors.White.WithAlpha(210);
+        strokePaint.IsAntialias = true;
+        strokePaint.StrokeWidth = 8;
+        strokePaint.Style = SKPaintStyle.Stroke;
 
         canvas.DrawRoundRect(new SKRoundRect(new SKRect(28, 24, 228, 136), 12, 12), fillPaint);
         canvas.DrawLine(44, 116, 212, 44, strokePaint);

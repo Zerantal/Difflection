@@ -92,7 +92,7 @@ internal sealed record ImageDifferenceMetric(
 
     private sealed class ManagedFramebuffer : ILockedFramebuffer
     {
-        private readonly GCHandle _handle;
+        private GCHandle _handle;
 
         public ManagedFramebuffer(byte[] pixels, PixelSize size, int rowBytes)
         {
@@ -119,6 +119,7 @@ internal sealed record ImageDifferenceMetric(
             if (_handle.IsAllocated)
             {
                 _handle.Free();
+                _handle = default;
             }
         }
     }

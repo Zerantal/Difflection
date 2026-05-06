@@ -3,7 +3,7 @@ using System.Reflection;
 using Difflection.Views;
 using Xunit;
 
-namespace Difflection.Tests;
+namespace Difflection.Tests.Views;
 
 public sealed class PixelRulerTests
 {

@@ -13,25 +13,25 @@ public partial class MainWindowViewModel : ViewModelBase
     [NotifyPropertyChangedFor(nameof(IsSideBySideView))]
     [NotifyPropertyChangedFor(nameof(IsSplitScreenView))]
     [NotifyPropertyChangedFor(nameof(CurrentViewTitle))]
-    private ComparisonViewMode _selectedViewMode = ComparisonViewMode.SideBySide;
+    public partial ComparisonViewMode SelectedViewMode { get; set; } = ComparisonViewMode.SideBySide;
 
     [ObservableProperty]
-    private string _splitPercentageText = "50 / 50";
+    public partial string SplitPercentageText { get; set; } = "50 / 50";
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ZoomText))]
-    private double _zoomScale = 1.0;
+    public partial double ZoomScale { get; set; } = 1.0;
 
     [ObservableProperty]
     private string _zoomText = "100%";
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(SideBySideStageWidth))]
-    private double _stageWidth = 920;
+    public partial double StageWidth { get; set; } = 920;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(SideBySideStageHeight))]
-    private double _stageHeight = 560;
+    public partial double StageHeight { get; set; } = 560;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasLeftImage))]
@@ -42,7 +42,7 @@ public partial class MainWindowViewModel : ViewModelBase
     [NotifyPropertyChangedFor(nameof(LeftImageHeight))]
     [NotifyPropertyChangedFor(nameof(SideBySideStageWidth))]
     [NotifyPropertyChangedFor(nameof(SideBySideStageHeight))]
-    private Bitmap? _leftImage;
+    public partial Bitmap? LeftImage { get; set; }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasRightImage))]
@@ -53,13 +53,13 @@ public partial class MainWindowViewModel : ViewModelBase
     [NotifyPropertyChangedFor(nameof(RightImageHeight))]
     [NotifyPropertyChangedFor(nameof(SideBySideStageWidth))]
     [NotifyPropertyChangedFor(nameof(SideBySideStageHeight))]
-    private Bitmap? _rightImage;
+    public partial Bitmap? RightImage { get; set; }
 
     [ObservableProperty]
-    private string _leftFileName = "Reference image";
+    public partial string LeftFileName { get; set; } = "Reference image";
 
     [ObservableProperty]
-    private string _rightFileName = "Candidate image";
+    public partial string RightFileName { get; set; } = "Candidate image";
 
     [ObservableProperty]
     private string _differenceStatusText = "Load two images to compare";
@@ -89,7 +89,7 @@ public partial class MainWindowViewModel : ViewModelBase
     public string CurrentViewTitle => SelectedViewMode switch
     {
         ComparisonViewMode.SplitScreen => "Split screen",
-        _ => "Side-by-side",
+        _ => "Side-by-side"
     };
 
     public double SideBySideStageWidth => HasBothImages
@@ -280,11 +280,11 @@ public partial class MainWindowViewModel : ViewModelBase
 public enum ImageSlot
 {
     Left,
-    Right,
+    Right
 }
 
 public enum ComparisonViewMode
 {
     SideBySide,
-    SplitScreen,
+    SplitScreen
 }

@@ -7,6 +7,7 @@ using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using Avalonia.VisualTree;
+using JetBrains.Annotations;
 
 namespace Difflection.Views;
 
@@ -127,6 +128,7 @@ public partial class RuledSplitImagePane : UserControl
         RequestUpdateSplitVisuals();
     }
 
+    [UsedImplicitly]
     private void Pane_OnDragOver(object? sender, DragEventArgs e)
     {
         var hasFiles = GetDroppedFiles(e.DataTransfer).Any();
@@ -134,6 +136,7 @@ public partial class RuledSplitImagePane : UserControl
         e.Handled = true;
     }
 
+    [UsedImplicitly]
     private async void Pane_OnDrop(object? sender, DragEventArgs e)
     {
         var files = GetDroppedFiles(e.DataTransfer).Take(2).ToArray();
