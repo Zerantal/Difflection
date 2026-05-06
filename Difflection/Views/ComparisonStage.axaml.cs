@@ -310,9 +310,10 @@ public partial class ComparisonStage : UserControl
             {
                 return;
             }
-
-            var targetWidth = _viewModel.IsSideBySideView ? _viewModel.SideBySideStageWidth : _viewModel.StageWidth;
-            var targetHeight = _viewModel.IsSideBySideView ? _viewModel.SideBySideStageHeight : _viewModel.StageHeight;
+            
+            var targetWidth = Math.Max(_viewModel.LeftImageWidth, _viewModel.RightImageWidth);
+            var targetHeight = Math.Max(_viewModel.LeftImageHeight, _viewModel.RightImageHeight);
+            
             var scaleX = scrollViewer.Bounds.Width / Math.Max(1, targetWidth);
             var scaleY = scrollViewer.Bounds.Height / Math.Max(1, targetHeight);
             _viewModel.SetZoomScale(Math.Min(scaleX, scaleY));

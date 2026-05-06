@@ -95,6 +95,51 @@ public sealed partial class ComparisonStageTests
     }
 
     [AvaloniaFact]
+    public async Task Side_by_side_fit_zoom_uses_the_larger_loaded_image_dimensions()
+    {
+        var viewModel = new MainWindowViewModel();
+        await viewModel.LoadImageAsync(ImageSlot.Left, TestUiSupport.CreateStorageFile("left.png", 1600, 500));
+
+        var window = TestUiSupport.CreateWindow(viewModel);
+        try
+        {
+            var stage = TestUiSupport.GetComparisonStage(window);
+            var leftPane = TestUiSupport.GetSideBySideLeftPane(stage);
+            var scrollViewer = leftPane.ActiveScrollViewer;
+
+            await TestUiSupport.WaitForAsync(() => scrollViewer.Bounds.Width > 0 && scrollViewer.Bounds.Height > 0 && viewModel.ZoomScale > 0);
+
+            var leftOnlyZoom = viewModel.ZoomScale;
+
+            await viewModel.LoadImageAsync(ImageSlot.Right, TestUiSupport.CreateStorageFile("right.png", 800, 1200));
+            Dispatcher.UIThread.RunJobs();
+
+            await TestUiSupport.WaitForAsync(() =>
+            {
+                var targetWidth = Math.Max(viewModel.LeftImageWidth, viewModel.RightImageWidth);
+                var targetHeight = Math.Max(viewModel.LeftImageHeight, viewModel.RightImageHeight);
+                var expectedZoom = Math.Min(
+                    scrollViewer.Bounds.Width / Math.Max(1, targetWidth),
+                    scrollViewer.Bounds.Height / Math.Max(1, targetHeight));
+                return Math.Abs(viewModel.ZoomScale - expectedZoom) < 0.01;
+            });
+
+            var targetWidth = Math.Max(viewModel.LeftImageWidth, viewModel.RightImageWidth);
+            var targetHeight = Math.Max(viewModel.LeftImageHeight, viewModel.RightImageHeight);
+            var expectedZoom = Math.Min(
+                scrollViewer.Bounds.Width / Math.Max(1, targetWidth),
+                scrollViewer.Bounds.Height / Math.Max(1, targetHeight));
+
+            Assert.InRange(Math.Abs(viewModel.ZoomScale - expectedZoom), 0, 0.01);
+            Assert.NotEqual(leftOnlyZoom, viewModel.ZoomScale);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
     public async Task Split_screen_divider_can_be_dragged()
     {
         var viewModel = new MainWindowViewModel();
