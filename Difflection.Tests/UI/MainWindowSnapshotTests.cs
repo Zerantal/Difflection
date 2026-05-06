@@ -7,8 +7,8 @@ using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
 using Avalonia.Threading;
+using Difflection.Tests.Infrastructure;
 using Difflection.ViewModels;
-using Difflection.Views;
 using SkiaSharp;
 using Xunit;
 
@@ -23,7 +23,7 @@ public sealed class MainWindowSnapshotTests
     [AvaloniaFact]
     public void Default_side_by_side_shell_matches_snapshot()
     {
-        var window = CreateWindow(new MainWindowViewModel());
+        var window = TestUiSupport.CreateWindow(new MainWindowViewModel(), SnapshotWidth, SnapshotHeight, SnapshotRenderScale);
         try
         {
             AssertSnapshot(window, "main-window-default-side-by-side");
@@ -41,10 +41,28 @@ public sealed class MainWindowSnapshotTests
         await LoadFixtureImagesAsync(viewModel);
         viewModel.SelectSplitScreenView();
 
-        var window = CreateWindow(viewModel);
+        var window = TestUiSupport.CreateWindow(viewModel, SnapshotWidth, SnapshotHeight, SnapshotRenderScale);
         try
         {
             AssertSnapshot(window, "main-window-split-screen-with-images");
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task Side_by_side_with_two_images_matches_snapshot()
+    {
+        var viewModel = new MainWindowViewModel();
+        await LoadFixtureImagesAsync(viewModel);
+        viewModel.TrySetZoomText("50%");
+
+        var window = TestUiSupport.CreateWindow(viewModel, SnapshotWidth, SnapshotHeight, SnapshotRenderScale);
+        try
+        {
+            AssertSnapshot(window, "main-window-side-by-side-with-images");
         }
         finally
         {
@@ -58,7 +76,7 @@ public sealed class MainWindowSnapshotTests
         var viewModel = new MainWindowViewModel();
         await LoadFixtureImagesAsync(viewModel);
 
-        var window = CreateWindow(viewModel);
+        var window = TestUiSupport.CreateWindow(viewModel, SnapshotWidth, SnapshotHeight, SnapshotRenderScale);
         try
         {
             for (var i = 0; i < 14; i++)
@@ -73,21 +91,6 @@ public sealed class MainWindowSnapshotTests
         {
             window.Close();
         }
-    }
-
-    private static MainWindow CreateWindow(MainWindowViewModel viewModel)
-    {
-        var window = new MainWindow
-        {
-            Width = SnapshotWidth,
-            Height = SnapshotHeight,
-            DataContext = viewModel,
-        };
-
-        window.SetRenderScaling(SnapshotRenderScale);
-        window.Show();
-        Dispatcher.UIThread.RunJobs();
-        return window;
     }
 
     private static void AssertSnapshot(TopLevel topLevel, string snapshotName)

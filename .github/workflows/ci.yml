@@ -16,8 +16,17 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
       - run: dotnet restore
       - run: dotnet build --configuration Release --no-restore
+
+      - name: Test web app
+        working-directory: Difflection.Browser
+        run: npm test
+
       - name: Test
         run: dotnet test --configuration Release --no-build --logger "trx;LogFileName=test-results.trx" --results-directory TestResults
 

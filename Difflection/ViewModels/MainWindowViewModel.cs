@@ -1,65 +1,68 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Threading.Tasks;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform.Storage;
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace Difflection.ViewModels;
 
 public partial class MainWindowViewModel : ViewModelBase
 {
-    private Bitmap? _leftImage;
-    private Bitmap? _rightImage;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsSideBySideView))]
+    [NotifyPropertyChangedFor(nameof(IsSplitScreenView))]
+    [NotifyPropertyChangedFor(nameof(CurrentViewTitle))]
     private ComparisonViewMode _selectedViewMode = ComparisonViewMode.SideBySide;
-    private string _leftFileName = "Reference image";
-    private string _rightFileName = "Candidate image";
+
+    [ObservableProperty]
     private string _splitPercentageText = "50 / 50";
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ZoomText))]
     private double _zoomScale = 1.0;
+
+    [ObservableProperty]
     private string _zoomText = "100%";
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(SideBySideStageWidth))]
     private double _stageWidth = 920;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(SideBySideStageHeight))]
     private double _stageHeight = 560;
 
-    public Bitmap? LeftImage
-    {
-        get => _leftImage;
-        private set
-        {
-            if (ReferenceEquals(_leftImage, value))
-            {
-                return;
-            }
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasLeftImage))]
+    [NotifyPropertyChangedFor(nameof(HasAnyImage))]
+    [NotifyPropertyChangedFor(nameof(HasBothImages))]
+    [NotifyPropertyChangedFor(nameof(CanUseSplitScreen))]
+    [NotifyPropertyChangedFor(nameof(LeftImageWidth))]
+    [NotifyPropertyChangedFor(nameof(LeftImageHeight))]
+    [NotifyPropertyChangedFor(nameof(SideBySideStageWidth))]
+    [NotifyPropertyChangedFor(nameof(SideBySideStageHeight))]
+    private Bitmap? _leftImage;
 
-            var previous = _leftImage;
-            _leftImage = value;
-            OnPropertyChanged();
-            previous?.Dispose();
-            OnPropertyChanged(nameof(HasLeftImage));
-            OnPropertyChanged(nameof(HasAnyImage));
-            OnImageAvailabilityChanged();
-            UpdateStageSize();
-        }
-    }
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasRightImage))]
+    [NotifyPropertyChangedFor(nameof(HasAnyImage))]
+    [NotifyPropertyChangedFor(nameof(HasBothImages))]
+    [NotifyPropertyChangedFor(nameof(CanUseSplitScreen))]
+    [NotifyPropertyChangedFor(nameof(RightImageWidth))]
+    [NotifyPropertyChangedFor(nameof(RightImageHeight))]
+    [NotifyPropertyChangedFor(nameof(SideBySideStageWidth))]
+    [NotifyPropertyChangedFor(nameof(SideBySideStageHeight))]
+    private Bitmap? _rightImage;
 
-    public Bitmap? RightImage
-    {
-        get => _rightImage;
-        private set
-        {
-            if (ReferenceEquals(_rightImage, value))
-            {
-                return;
-            }
+    [ObservableProperty]
+    private string _leftFileName = "Reference image";
 
-            var previous = _rightImage;
-            _rightImage = value;
-            OnPropertyChanged();
-            previous?.Dispose();
-            OnPropertyChanged(nameof(HasRightImage));
-            OnPropertyChanged(nameof(HasAnyImage));
-            OnImageAvailabilityChanged();
-            UpdateStageSize();
-        }
-    }
+    [ObservableProperty]
+    private string _rightFileName = "Candidate image";
+
+    [ObservableProperty]
+    private string _differenceStatusText = "Load two images to compare";
 
     public bool HasLeftImage => LeftImage is not null;
 
@@ -69,21 +72,13 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public bool HasBothImages => HasLeftImage && HasRightImage;
 
-    public ComparisonViewMode SelectedViewMode
-    {
-        get => _selectedViewMode;
-        private set
-        {
-            if (!SetProperty(ref _selectedViewMode, value))
-            {
-                return;
-            }
+    public double LeftImageWidth => LeftImage?.PixelSize.Width ?? StageWidth;
 
-            OnPropertyChanged(nameof(IsSideBySideView));
-            OnPropertyChanged(nameof(IsSplitScreenView));
-            OnPropertyChanged(nameof(CurrentViewTitle));
-        }
-    }
+    public double LeftImageHeight => LeftImage?.PixelSize.Height ?? StageHeight;
+
+    public double RightImageWidth => RightImage?.PixelSize.Width ?? StageWidth;
+
+    public double RightImageHeight => RightImage?.PixelSize.Height ?? StageHeight;
 
     public bool IsSideBySideView => SelectedViewMode == ComparisonViewMode.SideBySide;
 
@@ -97,61 +92,25 @@ public partial class MainWindowViewModel : ViewModelBase
         _ => "Side-by-side",
     };
 
-    public double SideBySideStageWidth => HasBothImages ? (StageWidth * 2) + 16 : StageWidth;
+    public double SideBySideStageWidth => HasBothImages
+        ? LeftImageWidth + 16 + RightImageWidth
+        : HasLeftImage
+            ? LeftImageWidth
+            : HasRightImage
+                ? RightImageWidth
+                : StageWidth;
 
-    public string LeftFileName
-    {
-        get => _leftFileName;
-        private set => SetProperty(ref _leftFileName, value);
-    }
-
-    public string RightFileName
-    {
-        get => _rightFileName;
-        private set => SetProperty(ref _rightFileName, value);
-    }
-
-    public string SplitPercentageText
-    {
-        get => _splitPercentageText;
-        set => SetProperty(ref _splitPercentageText, value);
-    }
-
-    public double ZoomScale
-    {
-        get => _zoomScale;
-        private set => SetProperty(ref _zoomScale, value);
-    }
-
-    public string ZoomText
-    {
-        get => _zoomText;
-        set => SetProperty(ref _zoomText, value);
-    }
-
-    public double StageWidth
-    {
-        get => _stageWidth;
-        private set
-        {
-            if (SetProperty(ref _stageWidth, value))
-            {
-                OnPropertyChanged(nameof(SideBySideStageWidth));
-            }
-        }
-    }
-
-    public double StageHeight
-    {
-        get => _stageHeight;
-        private set => SetProperty(ref _stageHeight, value);
-    }
+    public double SideBySideStageHeight => HasBothImages
+        ? Math.Max(LeftImageHeight, RightImageHeight)
+        : HasLeftImage
+            ? LeftImageHeight
+            : HasRightImage
+                ? RightImageHeight
+                : StageHeight;
 
     public void SetZoomScale(double zoomScale)
     {
-        var clamped = Math.Clamp(zoomScale, 0.05, 64.0);
-        ZoomScale = clamped;
-        ZoomText = $"{Math.Round(clamped * 100):0}%";
+        ZoomScale = Math.Clamp(zoomScale, 0.05, 64.0);
     }
 
     public bool TrySetZoomText(string? text)
@@ -252,10 +211,8 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public void DisposeImages()
     {
-        LeftImage?.Dispose();
-        RightImage?.Dispose();
-        _leftImage = null;
-        _rightImage = null;
+        LeftImage = null;
+        RightImage = null;
     }
 
     private static async Task<Bitmap> CreateBitmapAsync(Stream stream)
@@ -280,19 +237,43 @@ public partial class MainWindowViewModel : ViewModelBase
 
         StageWidth = Math.Max(920, Math.Max(leftWidth, rightWidth));
         StageHeight = Math.Max(560, Math.Max(leftHeight, rightHeight));
-        OnPropertyChanged(nameof(SideBySideStageWidth));
     }
 
-    private void OnImageAvailabilityChanged()
+    private void UpdateDifferenceStatus()
     {
-        OnPropertyChanged(nameof(HasBothImages));
-        OnPropertyChanged(nameof(CanUseSplitScreen));
-        OnPropertyChanged(nameof(SideBySideStageWidth));
+        DifferenceStatusText = ImageDifferenceMetric.Compare(LeftImage, RightImage)?.ToStatusText()
+            ?? "Load two images to compare";
+    }
+
+    // ReSharper disable once UnusedParameterInPartialMethod
+    partial void OnLeftImageChanged(Bitmap? oldValue, Bitmap? newValue)
+    {
+        oldValue?.Dispose();
+        UpdateStageSize();
+        UpdateDifferenceStatus();
 
         if (!CanUseSplitScreen && IsSplitScreenView)
         {
             SelectSideBySideView();
         }
+    }
+
+    // ReSharper disable once UnusedParameterInPartialMethod
+    partial void OnRightImageChanged(Bitmap? oldValue, Bitmap? newValue)
+    {
+        oldValue?.Dispose();
+        UpdateStageSize();
+        UpdateDifferenceStatus();
+
+        if (!CanUseSplitScreen && IsSplitScreenView)
+        {
+            SelectSideBySideView();
+        }
+    }
+
+    partial void OnZoomScaleChanged(double value)
+    {
+        ZoomText = $"{Math.Round(value * 100):0}%";
     }
 }
 

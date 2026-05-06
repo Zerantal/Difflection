@@ -1,0 +1,88 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:views="using:Difflection.Views"
+             x:Class="Difflection.Views.RuledImagePane"
+             x:Name="Root"
+             Background="#1B1B1B">
+
+    <UserControl.Styles>
+        <Style Selector="Border.imageLayer">
+            <Setter Property="ClipToBounds" Value="True" />
+        </Style>
+    </UserControl.Styles>
+
+    <Grid x:Name="PaneRoot"
+          ClipToBounds="True"
+          RowDefinitions="28,*"
+          ColumnDefinitions="44,*"
+          Background="#1B1B1B">
+        <Border Background="#1B1B1B"
+                BorderBrush="#343434"
+                BorderThickness="0,0,1,1"
+                IsHitTestVisible="False" />
+
+        <views:PixelRuler Grid.Row="0"
+                          Grid.Column="1"
+                          x:Name="TopRuler"
+                          Height="28"
+                          Orientation="Horizontal"
+                          Mode="Continuous"
+                          Background="#1B1B1B"
+                          BorderBrush="#343434"
+                          MajorTickBrush="#AEB4BC"
+                          MinorTickBrush="#6A707A"
+                          Foreground="#D7DADF"
+                          IsHitTestVisible="False" />
+
+        <views:PixelRuler Grid.Row="1"
+                          Grid.Column="0"
+                          x:Name="LeftRuler"
+                          Width="44"
+                          Orientation="Vertical"
+                          Mode="Continuous"
+                          Background="#1B1B1B"
+                          BorderBrush="#343434"
+                          MajorTickBrush="#AEB4BC"
+                          MinorTickBrush="#6A707A"
+                          Foreground="#D7DADF"
+                          IsHitTestVisible="False" />
+
+        <Border Grid.Row="1"
+                Grid.Column="1"
+                BorderBrush="#242424"
+                BorderThickness="1"
+                Background="#050505">
+            <Grid ClipToBounds="True">
+                <ScrollViewer x:Name="ScrollViewer"
+                              HorizontalScrollBarVisibility="Auto"
+                              VerticalScrollBarVisibility="Auto"
+                              ScrollChanged="ScrollViewer_OnScrollChanged"
+                              Background="{StaticResource ImageViewportFillBrush}">
+                    <Grid HorizontalAlignment="Center"
+                          VerticalAlignment="Center">
+                        <LayoutTransformControl x:Name="Transform">
+                            <LayoutTransformControl.LayoutTransform>
+                                <ScaleTransform ScaleX="{Binding ZoomScale, ElementName=Root}"
+                                                ScaleY="{Binding ZoomScale, ElementName=Root}" />
+                            </LayoutTransformControl.LayoutTransform>
+                                <Grid x:Name="Surface"
+                                  Width="{Binding SurfaceWidth, ElementName=Root}"
+                                  Height="{Binding SurfaceHeight, ElementName=Root}"
+                                  ClipToBounds="True"
+                                  SizeChanged="Surface_OnSizeChanged">
+                                <Border Background="Transparent" />
+
+                                <Border x:Name="ImageLayer"
+                                        Classes="imageLayer">
+                                    <Image Source="{Binding ImageSource, ElementName=Root}"
+                                           Stretch="Uniform"
+                                           RenderOptions.BitmapInterpolationMode="None" />
+                                </Border>
+                            </Grid>
+                        </LayoutTransformControl>
+                    </Grid>
+                </ScrollViewer>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

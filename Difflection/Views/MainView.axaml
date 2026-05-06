@@ -1,6 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Difflection.ViewModels"
+             xmlns:views="using:Difflection.Views"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
@@ -58,9 +59,6 @@
             <Setter Property="FontSize" Value="13" />
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="TextTrimming" Value="CharacterEllipsis" />
-        </Style>
-        <Style Selector="Border.imageLayer">
-            <Setter Property="ClipToBounds" Value="True" />
         </Style>
     </UserControl.Styles>
 
@@ -164,162 +162,55 @@
                              KeyDown="ZoomTextBox_OnKeyDown" />
                 </Grid>
 
-                <Grid Grid.Row="1"
-                      x:Name="StageViewport"
-                      ClipToBounds="True"
-                      SizeChanged="StageViewport_OnSizeChanged">
-                    <Grid ClipToBounds="True">
-                        <Border BorderBrush="#242424"
-                                BorderThickness="1"
-                                Background="#050505"
-                                IsVisible="{Binding IsSideBySideView}">
-                            <ScrollViewer x:Name="SideBySideScrollViewer"
-                                          HorizontalScrollBarVisibility="Auto"
-                                          VerticalScrollBarVisibility="Auto">
-                                <Grid HorizontalAlignment="Center"
-                                      VerticalAlignment="Center">
-                                    <LayoutTransformControl>
-                                        <LayoutTransformControl.LayoutTransform>
-                                            <ScaleTransform ScaleX="{Binding ZoomScale}" ScaleY="{Binding ZoomScale}" />
-                                        </LayoutTransformControl.LayoutTransform>
-                                        <Grid x:Name="SideBySideSurface"
-                                              Width="{Binding SideBySideStageWidth}"
-                                              Height="{Binding StageHeight}"
-                                              ClipToBounds="True">
-                                            <Border Background="#060606" />
-
-                                            <StackPanel Orientation="Horizontal"
-                                                        HorizontalAlignment="Center"
-                                                        VerticalAlignment="Center">
-                                                <Border Width="{Binding StageWidth}"
-                                                        Height="{Binding StageHeight}"
-                                                        Classes="imageLayer"
-                                                        IsVisible="{Binding HasLeftImage}">
-                                                    <Image Source="{Binding LeftImage}"
-                                                           Stretch="Uniform"
-                                                           RenderOptions.BitmapInterpolationMode="None" />
-                                                </Border>
-
-                                                <Border Width="16"
-                                                        Background="#101010"
-                                                        IsVisible="{Binding HasBothImages}" />
-
-                                                <Border Width="{Binding StageWidth}"
-                                                        Height="{Binding StageHeight}"
-                                                        Classes="imageLayer"
-                                                        IsVisible="{Binding HasRightImage}">
-                                                    <Image Source="{Binding RightImage}"
-                                                           Stretch="Uniform"
-                                                           RenderOptions.BitmapInterpolationMode="None" />
-                                                </Border>
-                                            </StackPanel>
-
-                                            <Border x:Name="SideBySideDropSurface"
-                                                    DragDrop.AllowDrop="True"
-                                                    DragDrop.DragOver="StageSurface_OnDragOver"
-                                                    DragDrop.Drop="StageSurface_OnDrop"
-                                                    Background="Transparent" />
-                                        </Grid>
-                                    </LayoutTransformControl>
-                                </Grid>
-                            </ScrollViewer>
-                        </Border>
-
-                        <Border BorderBrush="#242424"
-                                BorderThickness="1"
-                                Background="#050505"
-                                IsVisible="{Binding IsSplitScreenView}">
-                            <ScrollViewer x:Name="SplitScreenScrollViewer"
-                                          HorizontalScrollBarVisibility="Auto"
-                                          VerticalScrollBarVisibility="Auto">
-                                <Grid HorizontalAlignment="Center"
-                                      VerticalAlignment="Center">
-                                    <LayoutTransformControl x:Name="StageTransform">
-                                        <LayoutTransformControl.LayoutTransform>
-                                            <ScaleTransform ScaleX="{Binding ZoomScale}" ScaleY="{Binding ZoomScale}" />
-                                        </LayoutTransformControl.LayoutTransform>
-                                        <Grid x:Name="StageSurface"
-                                              Width="{Binding StageWidth}"
-                                              Height="{Binding StageHeight}"
-                                              ClipToBounds="True"
-                                              SizeChanged="StageSurface_OnSizeChanged">
-                                            <Border Background="#060606" />
-
-                                            <Border x:Name="LeftImageLayer"
-                                                    Classes="imageLayer">
-                                                <Image Source="{Binding LeftImage}"
-                                                       Stretch="Uniform"
-                                                       RenderOptions.BitmapInterpolationMode="None" />
-                                            </Border>
-
-                                            <Border x:Name="RightImageLayer"
-                                                    Classes="imageLayer">
-                                                <Image Source="{Binding RightImage}"
-                                                       Stretch="Uniform"
-                                                       RenderOptions.BitmapInterpolationMode="None" />
-                                            </Border>
-
-                                            <Border x:Name="StageDropSurface"
-                                                    DragDrop.AllowDrop="True"
-                                                    DragDrop.DragOver="StageSurface_OnDragOver"
-                                                    DragDrop.Drop="StageSurface_OnDrop"
-                                                    Background="Transparent" />
-
-                                            <Border x:Name="SplitDivider"
-                                                    Width="1"
-                                                    Background="#F1F1F1"
-                                                    HorizontalAlignment="Left" />
-
-                                            <Border x:Name="SplitDragSurface"
-                                                    Width="24"
-                                                    Background="Transparent"
-                                                    HorizontalAlignment="Left"
-                                                    Cursor="SizeWestEast"
-                                                    PointerPressed="SplitDivider_OnPointerPressed" />
-                                        </Grid>
-                                    </LayoutTransformControl>
-                                </Grid>
-                            </ScrollViewer>
-                        </Border>
-                    </Grid>
-                </Grid>
+                <views:ComparisonStage x:Name="ComparisonStage"
+                                       Grid.Row="1" />
             </Grid>
         </Border>
 
-        <Border Grid.Row="3" Background="#161616" BorderBrush="#2B2B2B" BorderThickness="0,1,0,0" Padding="18,16">
-            <StackPanel Orientation="Horizontal" Spacing="14">
-                <Border Classes="imageCard"
-                        Width="320"
-                        IsVisible="{Binding HasLeftImage}">
-                    <Grid ColumnDefinitions="72,*" ColumnSpacing="12">
-                        <Border Width="72" Height="48" Background="#111827" CornerRadius="4" ClipToBounds="True">
-                            <Image Source="{Binding LeftImage}"
-                                   Stretch="UniformToFill"
-                                   RenderOptions.BitmapInterpolationMode="None" />
-                        </Border>
-                        <StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Center">
-                            <TextBlock Classes="cardLabel" Text="REFERENCE" />
-                            <TextBlock Classes="cardName" Text="{Binding LeftFileName}" />
-                        </StackPanel>
-                    </Grid>
-                </Border>
+        <Border Grid.Row="3" Background="#161616" BorderBrush="#2B2B2B" BorderThickness="0,1,0,0" Padding="18,12">
+            <Grid RowDefinitions="Auto,Auto" RowSpacing="10">
+                <StackPanel Orientation="Horizontal"
+                            Spacing="14">
+                    <Border Classes="imageCard"
+                            Width="320"
+                            IsVisible="{Binding HasLeftImage}">
+                        <Grid ColumnDefinitions="72,*" ColumnSpacing="12">
+                            <Border Width="72" Height="48" Background="#111827" CornerRadius="4" ClipToBounds="True">
+                                <Image Source="{Binding LeftImage}"
+                                       Stretch="UniformToFill"
+                                       RenderOptions.BitmapInterpolationMode="None" />
+                            </Border>
+                            <StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Center">
+                                <TextBlock Classes="cardLabel" Text="REFERENCE" />
+                                <TextBlock Classes="cardName" Text="{Binding LeftFileName}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
 
-                <Border Classes="imageCard"
-                        Width="320"
-                        IsVisible="{Binding HasRightImage}">
-                    <Grid ColumnDefinitions="72,*" ColumnSpacing="12">
-                        <Border Width="72" Height="48" Background="#111827" CornerRadius="4" ClipToBounds="True">
-                            <Image Source="{Binding RightImage}"
-                                   Stretch="UniformToFill"
-                                   RenderOptions.BitmapInterpolationMode="None" />
-                        </Border>
-                        <StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Center">
-                            <TextBlock Classes="cardLabel" Text="CANDIDATE" />
-                            <TextBlock Classes="cardName" Text="{Binding RightFileName}" />
-                        </StackPanel>
-                    </Grid>
-                </Border>
-            </StackPanel>
+                    <Border Classes="imageCard"
+                            Width="320"
+                            IsVisible="{Binding HasRightImage}">
+                        <Grid ColumnDefinitions="72,*" ColumnSpacing="12">
+                            <Border Width="72" Height="48" Background="#111827" CornerRadius="4" ClipToBounds="True">
+                                <Image Source="{Binding RightImage}"
+                                       Stretch="UniformToFill"
+                                       RenderOptions.BitmapInterpolationMode="None" />
+                            </Border>
+                            <StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Center">
+                                <TextBlock Classes="cardLabel" Text="CANDIDATE" />
+                                <TextBlock Classes="cardName" Text="{Binding RightFileName}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </StackPanel>
+
+                <TextBlock Grid.Row="1"
+                           Text="{Binding DifferenceStatusText}"
+                           Foreground="#A8AFB8"
+                           FontSize="12"
+                           FontWeight="SemiBold"
+                           TextTrimming="CharacterEllipsis" />
+            </Grid>
         </Border>
     </Grid>
 </UserControl>

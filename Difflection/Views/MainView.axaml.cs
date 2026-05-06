@@ -1,54 +1,38 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Threading;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
-using Avalonia.Platform.Storage;
 using Difflection.ViewModels;
 
 namespace Difflection.Views;
 
 public partial class MainView : UserControl
 {
-    private const double ZoomStepFactor = 1.15;
-    private const double SplitDragSurfaceWidth = 24;
-    private const double SplitRatioMin = 0.0;
-    private const double SplitRatioMax = 1.0;
-
     private MainWindowViewModel? _viewModel;
-    private bool _isDraggingSplit;
-    private double _splitRatio = 0.5;
 
     public MainView()
     {
         InitializeComponent();
 
         DataContextChanged += OnDataContextChanged;
-        PointerMoved += OnWindowPointerMoved;
-        PointerReleased += OnWindowPointerReleased;
+        AttachedToVisualTree += OnAttachedToVisualTree;
         DetachedFromVisualTree += OnDetachedFromVisualTree;
-        SideBySideScrollViewer.AddHandler(PointerWheelChangedEvent, StageScrollViewer_OnPointerWheelChanged, RoutingStrategies.Tunnel);
-        SplitScreenScrollViewer.AddHandler(PointerWheelChangedEvent, StageScrollViewer_OnPointerWheelChanged, RoutingStrategies.Tunnel);
 
-        UpdateSplitVisuals();
         UpdateDropHints();
         UpdateViewControls();
 
-        BrowserInterop.AttachBrowserBridge?.Invoke(this);
     }
 
     private void SideBySideViewTab_OnPointerPressed(object? sender, PointerPressedEventArgs e)
     {
         _viewModel?.SelectSideBySideView();
         UpdateViewControls();
-        FitZoomToStage();
+        ComparisonStage.FitZoomToStage();
         e.Handled = true;
     }
 
@@ -56,275 +40,18 @@ public partial class MainView : UserControl
     {
         _viewModel?.SelectSplitScreenView();
         UpdateViewControls();
-        FitZoomToStage();
+        ComparisonStage.FitZoomToStage();
         e.Handled = true;
     }
 
     private async void AddMediaButton_OnClick(object? sender, RoutedEventArgs e)
     {
-        var storageProvider = TopLevel.GetTopLevel(this)?.StorageProvider;
-        if (storageProvider is null)
-        {
-            return;
-        }
-
-        var files = await storageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
-        {
-            AllowMultiple = true,
-            Title = "Select images to compare",
-            FileTypeFilter =
-            [
-                new FilePickerFileType("Image files")
-                {
-                    Patterns = ["*.png", "*.jpg", "*.jpeg", "*.bmp", "*.gif", "*.webp", "*.tif", "*.tiff"],
-                    MimeTypes = ["image/*"],
-                },
-            ],
-        });
-
-        await LoadDroppedFilesAsync(files);
-    }
-
-    private void SplitDivider_OnPointerPressed(object? sender, PointerPressedEventArgs e)
-    {
-        _isDraggingSplit = true;
-        e.Pointer.Capture(SplitDragSurface);
-        UpdateSplitRatio(e.GetPosition(StageSurface).X);
-        e.Handled = true;
-    }
-
-    private void OnWindowPointerMoved(object? sender, PointerEventArgs e)
-    {
-        if (!_isDraggingSplit)
-        {
-            return;
-        }
-
-        UpdateSplitRatio(e.GetPosition(StageSurface).X);
-    }
-
-    private void OnWindowPointerReleased(object? sender, PointerReleasedEventArgs e)
-    {
-        if (!_isDraggingSplit)
-        {
-            return;
-        }
-
-        _isDraggingSplit = false;
-        e.Pointer.Capture(null);
-        e.Handled = true;
-    }
-
-    private void StageSurface_OnSizeChanged(object? sender, SizeChangedEventArgs e)
-    {
-        UpdateSplitVisuals();
-    }
-
-    private void StageViewport_OnSizeChanged(object? sender, SizeChangedEventArgs e)
-    {
-        ConstrainStageScrollViewers();
-    }
-
-    private void StageSurface_OnDragOver(object? sender, DragEventArgs e)
-    {
-        var hasFiles = e.DataTransfer.Formats.Contains(DataFormat.File);
-        e.DragEffects = hasFiles ? DragDropEffects.Copy : DragDropEffects.None;
-        e.Handled = true;
-    }
-
-    private async void StageSurface_OnDrop(object? sender, DragEventArgs e)
-    {
-        var files = e.DataTransfer.TryGetFiles();
-        if (files is not { Length: > 0 })
-        {
-            return;
-        }
-
-        await LoadDroppedFilesAsync(files);
-        e.Handled = true;
-    }
-
-    private async Task LoadDroppedFilesAsync(IEnumerable<IStorageItem> items)
-    {
-        if (_viewModel is null)
-        {
-            return;
-        }
-
-        var files = items.OfType<IStorageFile>().Take(2).ToArray();
-        if (files.Length == 0)
-        {
-            return;
-        }
-
-        if (files.Length >= 2)
-        {
-            await _viewModel.LoadImageAsync(ImageSlot.Left, files[0]);
-            await _viewModel.LoadImageAsync(ImageSlot.Right, files[1]);
-            FitZoomToStage();
-            return;
-        }
-
-        var slot = ResolveNextSlot();
-        await _viewModel.LoadImageAsync(slot, files[0]);
-        FitZoomToStage();
+        await ComparisonStage.OpenFilePickerAndLoadAsync();
     }
 
     public async Task LoadBrowserDroppedFilesAsync(IReadOnlyList<string> fileNames, IReadOnlyList<byte[]> fileContents)
     {
-        if (_viewModel is null || fileNames.Count != fileContents.Count)
-        {
-            return;
-        }
-
-        var files = fileNames
-            .Zip(fileContents, (name, bytes) => (Name: name, Bytes: bytes))
-            .Take(2)
-            .ToArray();
-
-        if (files.Length == 0)
-        {
-            return;
-        }
-
-        if (files.Length >= 2)
-        {
-            using var leftStream = new MemoryStream(files[0].Bytes, writable: false);
-            await _viewModel.LoadImageAsync(ImageSlot.Left, files[0].Name, leftStream);
-
-            using var rightStream = new MemoryStream(files[1].Bytes, writable: false);
-            await _viewModel.LoadImageAsync(ImageSlot.Right, files[1].Name, rightStream);
-
-            FitZoomToStage();
-            return;
-        }
-
-        var slot = ResolveNextSlot();
-        using var stream = new MemoryStream(files[0].Bytes, writable: false);
-        await _viewModel.LoadImageAsync(slot, files[0].Name, stream);
-        FitZoomToStage();
-    }
-
-    private ImageSlot ResolveNextSlot() =>
-        _viewModel switch
-        {
-            null => ImageSlot.Left,
-            { HasLeftImage: false } => ImageSlot.Left,
-            _ => ImageSlot.Right,
-        };
-
-    private void UpdateSplitRatio(double pointerX)
-    {
-        if (StageSurface.Bounds.Width <= 0)
-        {
-            return;
-        }
-
-        _splitRatio = Math.Clamp(pointerX / StageSurface.Bounds.Width, SplitRatioMin, SplitRatioMax);
-        UpdateSplitVisuals();
-    }
-
-    private void UpdateSplitVisuals()
-    {
-        if (StageSurface.Bounds.Width <= 0)
-        {
-            return;
-        }
-
-        var splitX = StageSurface.Bounds.Width * _splitRatio;
-        var stageWidth = StageSurface.Bounds.Width;
-        var stageHeight = StageSurface.Bounds.Height;
-        var rightWidth = Math.Max(0, stageWidth - splitX);
-
-        LeftImageLayer.Clip = new RectangleGeometry(new Rect(0, 0, Math.Max(0, splitX), stageHeight));
-        RightImageLayer.Clip = new RectangleGeometry(new Rect(splitX, 0, rightWidth, stageHeight));
-
-        SplitDivider.Margin = new Thickness(Math.Max(0, splitX - 1), 0, 0, 0);
-        SplitDragSurface.Margin = new Thickness(Math.Max(0, splitX - (SplitDragSurfaceWidth / 2)), 0, 0, 0);
-
-        if (_viewModel is not null)
-        {
-            var leftPercent = (int)Math.Round(_splitRatio * 100);
-            _viewModel.SplitPercentageText = $"{leftPercent} / {100 - leftPercent}";
-        }
-    }
-
-    private void OnDataContextChanged(object? sender, EventArgs e)
-    {
-        if (_viewModel is not null)
-        {
-            _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
-        }
-
-        _viewModel = DataContext as MainWindowViewModel;
-
-        if (_viewModel is not null)
-        {
-            _viewModel.PropertyChanged += OnViewModelPropertyChanged;
-        }
-
-        UpdateSplitVisuals();
-        UpdateDropHints();
-        UpdateViewControls();
-    }
-
-    private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
-    {
-        if (e.PropertyName is nameof(MainWindowViewModel.LeftImage) or nameof(MainWindowViewModel.RightImage) or nameof(MainWindowViewModel.HasAnyImage))
-        {
-            UpdateDropHints();
-        }
-
-        if (e.PropertyName is nameof(MainWindowViewModel.SelectedViewMode) or nameof(MainWindowViewModel.CanUseSplitScreen))
-        {
-            UpdateViewControls();
-        }
-    }
-
-    private void UpdateDropHints()
-    {
-        DropHintBanner.IsVisible = _viewModel?.HasAnyImage != true;
-    }
-
-    private void ConstrainStageScrollViewers()
-    {
-        var width = Math.Max(0, StageViewport.Bounds.Width);
-        var height = Math.Max(0, StageViewport.Bounds.Height);
-
-        SideBySideScrollViewer.Width = width;
-        SideBySideScrollViewer.Height = height;
-        SplitScreenScrollViewer.Width = width;
-        SplitScreenScrollViewer.Height = height;
-    }
-
-    private void StageScrollViewer_OnPointerWheelChanged(object? sender, PointerWheelEventArgs e)
-    {
-        if (_viewModel is null || !e.KeyModifiers.HasFlag(KeyModifiers.Control))
-        {
-            return;
-        }
-
-        e.Handled = true;
-
-        var scrollViewer = GetActiveScrollViewer();
-        var surface = GetActiveSurface();
-        var stagePoint = e.GetPosition(surface);
-        var pointerInViewer = e.GetPosition(scrollViewer);
-        var oldZoom = _viewModel.ZoomScale;
-
-        if (e.Delta.Y > 0)
-        {
-            _viewModel.SetZoomScale(_viewModel.ZoomScale * ZoomStepFactor);
-        }
-        else if (e.Delta.Y < 0)
-        {
-            _viewModel.SetZoomScale(_viewModel.ZoomScale / ZoomStepFactor);
-        }
-
-        if (!oldZoom.Equals(_viewModel.ZoomScale))
-        {
-            PreservePointerAnchor(surface, scrollViewer, stagePoint, pointerInViewer);
-        }
+        await ComparisonStage.LoadBrowserDroppedFilesAsync(fileNames, fileContents);
     }
 
     private void ZoomTextBox_OnLostFocus(object? sender, RoutedEventArgs e)
@@ -343,54 +70,43 @@ public partial class MainView : UserControl
         e.Handled = true;
     }
 
-    private void FitZoomToStage()
+    private void OnDataContextChanged(object? sender, EventArgs e)
     {
-        if (_viewModel is null)
+        if (_viewModel is not null)
         {
-            return;
+            _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
         }
 
-        Dispatcher.UIThread.Post(() =>
+        _viewModel = DataContext as MainWindowViewModel;
+
+        if (_viewModel is not null)
         {
-            ConstrainStageScrollViewers();
+            _viewModel.PropertyChanged += OnViewModelPropertyChanged;
+        }
 
-            var scrollViewer = GetActiveScrollViewer();
-            if (scrollViewer.Bounds.Width <= 0 || scrollViewer.Bounds.Height <= 0)
-            {
-                return;
-            }
-
-            var targetWidth = _viewModel.IsSideBySideView ? _viewModel.SideBySideStageWidth : _viewModel.StageWidth;
-            var scaleX = scrollViewer.Bounds.Width / Math.Max(1, targetWidth);
-            var scaleY = scrollViewer.Bounds.Height / Math.Max(1, _viewModel.StageHeight);
-            _viewModel.SetZoomScale(Math.Min(scaleX, scaleY));
-        }, DispatcherPriority.Loaded);
+        UpdateDropHints();
+        UpdateViewControls();
     }
 
-    private void PreservePointerAnchor(Control surface, ScrollViewer scrollViewer, Point stagePoint, Point pointerInViewer)
+    private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        Dispatcher.UIThread.Post(() =>
+        if (e.PropertyName is nameof(MainWindowViewModel.LeftImage)
+            or nameof(MainWindowViewModel.RightImage)
+            or nameof(MainWindowViewModel.HasAnyImage))
         {
-            var translated = surface.TranslatePoint(stagePoint, scrollViewer);
-            if (translated is null)
-            {
-                return;
-            }
+            UpdateDropHints();
+        }
 
-            var deltaX = translated.Value.X - pointerInViewer.X;
-            var deltaY = translated.Value.Y - pointerInViewer.Y;
-            var offset = scrollViewer.Offset;
-            scrollViewer.Offset = new Vector(
-                Math.Max(0, offset.X + deltaX),
-                Math.Max(0, offset.Y + deltaY));
-        }, DispatcherPriority.Loaded);
+        if (e.PropertyName is nameof(MainWindowViewModel.SelectedViewMode) or nameof(MainWindowViewModel.CanUseSplitScreen))
+        {
+            UpdateViewControls();
+        }
     }
 
-    private ScrollViewer GetActiveScrollViewer() =>
-        _viewModel?.IsSplitScreenView == true ? SplitScreenScrollViewer : SideBySideScrollViewer;
-
-    private Control GetActiveSurface() =>
-        _viewModel?.IsSplitScreenView == true ? StageSurface : SideBySideSurface;
+    private void UpdateDropHints()
+    {
+        DropHintBanner.IsVisible = _viewModel?.HasAnyImage != true;
+    }
 
     private void UpdateViewControls()
     {
@@ -408,16 +124,16 @@ public partial class MainView : UserControl
 
     private void OnDetachedFromVisualTree(object? sender, VisualTreeAttachmentEventArgs e)
     {
-        SideBySideScrollViewer.RemoveHandler(PointerWheelChangedEvent, StageScrollViewer_OnPointerWheelChanged);
-        SplitScreenScrollViewer.RemoveHandler(PointerWheelChangedEvent, StageScrollViewer_OnPointerWheelChanged);
-
         BrowserInterop.DetachBrowserBridge?.Invoke(this);
 
         if (_viewModel is not null)
         {
             _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
-            _viewModel.DisposeImages();
         }
     }
 
+    private void OnAttachedToVisualTree(object? sender, VisualTreeAttachmentEventArgs e)
+    {
+        BrowserInterop.AttachBrowserBridge?.Invoke(this);
+    }
 }

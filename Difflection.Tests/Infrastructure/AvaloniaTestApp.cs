@@ -1,11 +1,10 @@
 using Avalonia;
 using Avalonia.Headless;
-using Avalonia.Skia;
-using Difflection;
+using Difflection.Tests.Infrastructure;
 
-[assembly: AvaloniaTestApplication(typeof(Difflection.Tests.AvaloniaTestApp))]
+[assembly: AvaloniaTestApplication(typeof(AvaloniaTestApp))]
 
-namespace Difflection.Tests;
+namespace Difflection.Tests.Infrastructure;
 
 public static class AvaloniaTestApp
 {
