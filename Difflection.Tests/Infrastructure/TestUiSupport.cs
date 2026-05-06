@@ -31,6 +31,7 @@ internal static class TestUiSupport
         return window;
     }
 
+    // ReSharper disable once MemberCanBePrivate.Global
     internal static MainView GetMainView(Window window) =>
         window.Content as MainView ?? throw new InvalidOperationException("MainView not found.");
 
@@ -122,7 +123,7 @@ internal static class TestUiSupport
     {
         public string Name { get; set; } = string.Empty;
 
-        public Uri Path { get; set; } = new Uri("file:///tmp/placeholder.png");
+        public Uri Path { get; set; } = new("file:///tmp/placeholder.png");
 
         public string FilePath { get; set; } = string.Empty;
 

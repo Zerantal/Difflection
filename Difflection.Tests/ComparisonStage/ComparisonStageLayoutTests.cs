@@ -29,7 +29,7 @@ public sealed partial class ComparisonStageTests
             await TestUiSupport.WaitForAsync(() => divider.Bounds.Width > 0 && surface.Bounds.Width > 0);
 
             Assert.InRange(
-                Math.Abs(divider.Bounds.X - (surface.Bounds.Width * 0.5)),
+                Math.Abs(divider.Bounds.X - surface.Bounds.Width * 0.5),
                 0,
                 4.0);
         }

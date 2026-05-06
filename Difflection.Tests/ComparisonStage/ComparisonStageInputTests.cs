@@ -107,7 +107,7 @@ public sealed partial class ComparisonStageTests
             var leftPane = TestUiSupport.GetSideBySideLeftPane(stage);
             var scrollViewer = leftPane.ActiveScrollViewer;
 
-            await TestUiSupport.WaitForAsync(() => scrollViewer.Bounds.Width > 0 && scrollViewer.Bounds.Height > 0 && viewModel.ZoomScale > 0);
+            await TestUiSupport.WaitForAsync(() => scrollViewer.Bounds is { Width: > 0, Height: > 0 } && viewModel.ZoomScale > 0);
 
             var leftOnlyZoom = viewModel.ZoomScale;
 

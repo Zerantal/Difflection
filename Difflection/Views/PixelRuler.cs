@@ -173,8 +173,8 @@ public sealed class PixelRuler : Control
         var tickStep = ChooseTickStep(ZoomScale);
         var mediumStep = tickStep * 5;
         var labelStep = tickStep * 10;
-        var segmentScreenStart = ContentOriginX + (segmentStart * ZoomScale);
-        var visibleLocalStart = (-segmentScreenStart) / ZoomScale;
+        var segmentScreenStart = ContentOriginX + segmentStart * ZoomScale;
+        var visibleLocalStart = -segmentScreenStart / ZoomScale;
         var visibleLocalEnd = (bounds.Width - segmentScreenStart) / ZoomScale;
         if (visibleLocalEnd < visibleLocalStart)
         {
@@ -185,7 +185,7 @@ public sealed class PixelRuler : Control
 
         for (var local = firstTick; local <= visibleLocalEnd + 0.001; local += tickStep)
         {
-            var screenX = Math.Round(segmentScreenStart + (local * ZoomScale));
+            var screenX = Math.Round(segmentScreenStart + local * ZoomScale);
             if (screenX < -24 || screenX > bounds.Width + 24)
             {
                 continue;
@@ -232,7 +232,7 @@ public sealed class PixelRuler : Control
         var tickStep = ChooseTickStep(ZoomScale);
         var mediumStep = tickStep * 5;
         var labelStep = tickStep * 10;
-        var segmentScreenStart = ContentOriginY + (segmentStart * ZoomScale);
+        var segmentScreenStart = ContentOriginY + segmentStart * ZoomScale;
         var visibleLocalStart = (-segmentScreenStart) / ZoomScale;
         var visibleLocalEnd = (bounds.Height - segmentScreenStart) / ZoomScale;
         if (visibleLocalEnd < visibleLocalStart)
@@ -278,7 +278,7 @@ public sealed class PixelRuler : Control
 
     private static double ChooseTickStep(double zoomScale)
     {
-        var targetScreenSpacing = 10.0;
+        const double targetScreenSpacing = 10.0;
         var desiredContentSpacing = targetScreenSpacing / Math.Max(zoomScale, 0.0001);
         var exponent = Math.Floor(Math.Log10(desiredContentSpacing));
         var scale = Math.Pow(10, exponent);

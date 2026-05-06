@@ -59,8 +59,8 @@ internal sealed record ImageDifferenceMetric(
 
             for (var x = 0; x < width; x++)
             {
-                var leftIndex = leftRow + (x * BytesPerPixel);
-                var rightIndex = rightRow + (x * BytesPerPixel);
+                var leftIndex = leftRow + x * BytesPerPixel;
+                var rightIndex = rightRow + x * BytesPerPixel;
                 var blueDelta = Math.Abs(leftPixels[leftIndex] - rightPixels[rightIndex]);
                 var greenDelta = Math.Abs(leftPixels[leftIndex + 1] - rightPixels[rightIndex + 1]);
                 var redDelta = Math.Abs(leftPixels[leftIndex + 2] - rightPixels[rightIndex + 2]);
@@ -116,11 +116,9 @@ internal sealed record ImageDifferenceMetric(
 
         public void Dispose()
         {
-            if (_handle.IsAllocated)
-            {
-                _handle.Free();
-                _handle = default;
-            }
+            if (!_handle.IsAllocated) return;
+            _handle.Free();
+            _handle = default;
         }
     }
 }

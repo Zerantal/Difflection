@@ -23,8 +23,7 @@ public partial class MainWindowViewModel : ViewModelBase
     public partial double ZoomScale { get; set; } = 1.0;
 
     [ObservableProperty]
-    private string _zoomText = "100%";
-
+    public partial string ZoomText { get; set; } = "100%";
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(SideBySideStageWidth))]
     public partial double StageWidth { get; set; } = 920;
@@ -62,7 +61,7 @@ public partial class MainWindowViewModel : ViewModelBase
     public partial string RightFileName { get; set; } = "Candidate image";
 
     [ObservableProperty]
-    private string _differenceStatusText = "Load two images to compare";
+    public partial string DifferenceStatusText { get; set; } = "Load two images to compare";
 
     public bool HasLeftImage => LeftImage is not null;
 

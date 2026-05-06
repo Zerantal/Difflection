@@ -20,7 +20,7 @@ public sealed partial class ComparisonStageTests
         try
         {
             var stage = TestUiSupport.GetComparisonStage(window);
-            var surface = ControlExtensions.FindControl<Border>(stage, "SideBySideDropOverlay") ?? throw new InvalidOperationException("SideBySideDropOverlay not found.");
+            var surface = stage.FindControl<Border>("SideBySideDropOverlay") ?? throw new InvalidOperationException("SideBySideDropOverlay not found.");
             var file = TestUiSupport.CreateStorageFile("reference.png");
             var transfer = TestUiSupport.CreateTransfer(file);
 

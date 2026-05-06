@@ -19,7 +19,7 @@ internal static class SnapshotAssert
         Matches(snapshotName, stream.ToArray());
     }
 
-    public static void Matches(string snapshotName, byte[] pngBytes)
+    private static void Matches(string snapshotName, byte[] pngBytes)
     {
         var snapshotDirectory = FindSnapshotDirectory();
         var baselinesDirectory = Path.Combine(snapshotDirectory, "Baselines");
