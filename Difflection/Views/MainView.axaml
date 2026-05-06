@@ -167,40 +167,50 @@
             </Grid>
         </Border>
 
-        <Border Grid.Row="3" Background="#161616" BorderBrush="#2B2B2B" BorderThickness="0,1,0,0" Padding="18,16">
-            <StackPanel Orientation="Horizontal" Spacing="14">
-                <Border Classes="imageCard"
-                        Width="320"
-                        IsVisible="{Binding HasLeftImage}">
-                    <Grid ColumnDefinitions="72,*" ColumnSpacing="12">
-                        <Border Width="72" Height="48" Background="#111827" CornerRadius="4" ClipToBounds="True">
-                            <Image Source="{Binding LeftImage}"
-                                   Stretch="UniformToFill"
-                                   RenderOptions.BitmapInterpolationMode="None" />
-                        </Border>
-                        <StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Center">
-                            <TextBlock Classes="cardLabel" Text="REFERENCE" />
-                            <TextBlock Classes="cardName" Text="{Binding LeftFileName}" />
-                        </StackPanel>
-                    </Grid>
-                </Border>
+        <Border Grid.Row="3" Background="#161616" BorderBrush="#2B2B2B" BorderThickness="0,1,0,0" Padding="18,12">
+            <Grid RowDefinitions="Auto,Auto" RowSpacing="10">
+                <StackPanel Orientation="Horizontal"
+                            Spacing="14">
+                    <Border Classes="imageCard"
+                            Width="320"
+                            IsVisible="{Binding HasLeftImage}">
+                        <Grid ColumnDefinitions="72,*" ColumnSpacing="12">
+                            <Border Width="72" Height="48" Background="#111827" CornerRadius="4" ClipToBounds="True">
+                                <Image Source="{Binding LeftImage}"
+                                       Stretch="UniformToFill"
+                                       RenderOptions.BitmapInterpolationMode="None" />
+                            </Border>
+                            <StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Center">
+                                <TextBlock Classes="cardLabel" Text="REFERENCE" />
+                                <TextBlock Classes="cardName" Text="{Binding LeftFileName}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
 
-                <Border Classes="imageCard"
-                        Width="320"
-                        IsVisible="{Binding HasRightImage}">
-                    <Grid ColumnDefinitions="72,*" ColumnSpacing="12">
-                        <Border Width="72" Height="48" Background="#111827" CornerRadius="4" ClipToBounds="True">
-                            <Image Source="{Binding RightImage}"
-                                   Stretch="UniformToFill"
-                                   RenderOptions.BitmapInterpolationMode="None" />
-                        </Border>
-                        <StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Center">
-                            <TextBlock Classes="cardLabel" Text="CANDIDATE" />
-                            <TextBlock Classes="cardName" Text="{Binding RightFileName}" />
-                        </StackPanel>
-                    </Grid>
-                </Border>
-            </StackPanel>
+                    <Border Classes="imageCard"
+                            Width="320"
+                            IsVisible="{Binding HasRightImage}">
+                        <Grid ColumnDefinitions="72,*" ColumnSpacing="12">
+                            <Border Width="72" Height="48" Background="#111827" CornerRadius="4" ClipToBounds="True">
+                                <Image Source="{Binding RightImage}"
+                                       Stretch="UniformToFill"
+                                       RenderOptions.BitmapInterpolationMode="None" />
+                            </Border>
+                            <StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Center">
+                                <TextBlock Classes="cardLabel" Text="CANDIDATE" />
+                                <TextBlock Classes="cardName" Text="{Binding RightFileName}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </StackPanel>
+
+                <TextBlock Grid.Row="1"
+                           Text="{Binding DifferenceStatusText}"
+                           Foreground="#A8AFB8"
+                           FontSize="12"
+                           FontWeight="SemiBold"
+                           TextTrimming="CharacterEllipsis" />
+            </Grid>
         </Border>
     </Grid>
 </UserControl>

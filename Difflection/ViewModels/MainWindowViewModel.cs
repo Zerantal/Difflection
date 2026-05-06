@@ -61,6 +61,9 @@ public partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty]
     private string _rightFileName = "Candidate image";
 
+    [ObservableProperty]
+    private string _differenceStatusText = "Load two images to compare";
+
     public bool HasLeftImage => LeftImage is not null;
 
     public bool HasRightImage => RightImage is not null;
@@ -236,11 +239,18 @@ public partial class MainWindowViewModel : ViewModelBase
         StageHeight = Math.Max(560, Math.Max(leftHeight, rightHeight));
     }
 
+    private void UpdateDifferenceStatus()
+    {
+        DifferenceStatusText = ImageDifferenceMetric.Compare(LeftImage, RightImage)?.ToStatusText()
+            ?? "Load two images to compare";
+    }
+
     // ReSharper disable once UnusedParameterInPartialMethod
     partial void OnLeftImageChanged(Bitmap? oldValue, Bitmap? newValue)
     {
         oldValue?.Dispose();
         UpdateStageSize();
+        UpdateDifferenceStatus();
 
         if (!CanUseSplitScreen && IsSplitScreenView)
         {
@@ -253,6 +263,7 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         oldValue?.Dispose();
         UpdateStageSize();
+        UpdateDifferenceStatus();
 
         if (!CanUseSplitScreen && IsSplitScreenView)
         {
