@@ -57,7 +57,7 @@ export function setupBrowserDragDrop({ document, getBrowserExports, isSupportedI
                 const exports = await getBrowserExports();
 
                 if (files.length >= 2) {
-                    await exports.Difflection.BrowserDropBridge.AcceptDroppedPair(
+                    await exports.Difflection.Browser.BrowserDropBridge.AcceptDroppedPair(
                         files[0].name,
                         new Uint8Array(await files[0].arrayBuffer()),
                         files[1].name,
@@ -65,7 +65,7 @@ export function setupBrowserDragDrop({ document, getBrowserExports, isSupportedI
                     return;
                 }
 
-                await exports.Difflection.BrowserDropBridge.AcceptDroppedFile(
+                await exports.Difflection.Browser.BrowserDropBridge.AcceptDroppedFile(
                     files[0].name,
                     new Uint8Array(await files[0].arrayBuffer()));
             });

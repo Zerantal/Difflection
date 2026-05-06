@@ -1,12 +1,12 @@
 using Avalonia;
 using Avalonia.Browser;
-using Difflection;
 using System.Threading.Tasks;
 
 namespace Difflection.Browser;
 
-internal sealed partial class Program
+internal static class Program
 {
+    // ReSharper disable once UnusedParameter.Local
     private static Task Main(string[] args)
     {
         BrowserInterop.AttachBrowserBridge = BrowserDropBridge.Attach;
