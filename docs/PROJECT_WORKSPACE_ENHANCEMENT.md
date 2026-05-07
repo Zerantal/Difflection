@@ -162,3 +162,66 @@ The enhancement would introduce:
 ## Main Recommendation
 
 The overall direction is sound. The most important early decision is to keep persistence behind a storage interface, with desktop local file storage as the primary implementation. The web version can later use a DB/blob storage backend without forcing changes into the core project and comparison model.
+
+## UI Polish Assessment
+
+The MVP UI now has the right structural pieces, but it still feels more like a feature scaffold than a persistent workspace. Before refining color or visual styling, the next pass should focus on information architecture, interaction clarity, and making the project/comparison/image relationships obvious.
+
+Recommended UI polish sequence:
+
+1. Make the selected project and comparison visible in the main workspace.
+
+   The sidebar owns the current project and comparison context, but the main stage does not repeat it. Once users have several projects or comparisons, it will be easy to lose orientation. Add a compact header above the stage showing the selected project, selected comparison, save or monitoring state, and possibly the image count.
+
+2. Improve empty states.
+
+   The empty UI should distinguish between:
+
+   - No projects.
+   - Project selected but no comparisons.
+   - Comparison selected but no images.
+   - One image loaded.
+   - Two or more images ready to compare.
+
+   This matters because the app is now project-oriented, not just a drag-two-images comparison surface.
+
+3. Rework the image set area around images as primary objects.
+
+   The image set should be the authoritative place where images are managed. Reference and candidate should be roles assigned to images, not separate fixed slots. Replace the duplicated role summary cards plus table-style image list with a thumbnail strip or grid where each image card shows:
+
+   - Thumbnail.
+   - Label and source name.
+   - Reference and candidate role badges.
+   - Set as Reference action.
+   - Set as Candidate action.
+   - Delete action.
+   - Monitoring status or action, when available.
+
+4. Move destructive project and comparison actions out of tiny minus buttons.
+
+   The current add/delete sidebar controls are functional but too terse for destructive actions. Keep add actions easily available, but move delete and other row-specific actions into contextual menus or explicit row actions with confirmation. This reduces accidental data loss and gives the sidebar more room to breathe.
+
+5. Make sidebar list rows richer.
+
+   Project and comparison rows currently show only names. Add lightweight metadata so the workspace remains navigable with real data:
+
+   - Comparison count per project.
+   - Image count per comparison.
+   - Optional active/empty status.
+   - Optional monitoring indicator.
+
+6. Promote comparison controls into a proper tool row.
+
+   View mode, split ratio, zoom, fit, and reset controls should live together in a consistent comparison toolbar. The current top tabs plus local zoom controls split related controls across separate bands. A single tool row will make comparison actions easier to scan and extend.
+
+7. Clarify comparison stage affordances.
+
+   The comparison stage works visually, but its interactions are mostly implicit. Add subtle pane headers or overlays for Reference and Candidate, especially in side-by-side mode. Improve the drag/drop affordance so the stage clearly communicates where images can be dropped and what will happen.
+
+8. Handle Settings before exposing it.
+
+   The Settings button should either open a real settings surface or be removed/disabled until settings exist. Inert controls make the MVP feel unfinished.
+
+9. Refresh UI snapshots after the structure is settled.
+
+   The current snapshot baselines represent the pre-sidebar shell and no longer match the rendered workspace UI. After the polish pass settles the layout, update the snapshot baselines so future UI regressions are meaningful.
