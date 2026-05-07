@@ -125,6 +125,114 @@ public sealed class MainWindowViewModelTests
         Assert.Contains("project must be selected", exception.Message);
     }
 
+    [Fact]
+    public async Task AddImageAsync_adds_image_to_selected_comparison_and_saves_content()
+    {
+        var storage = new FakeProjectStorage();
+        var viewModel = new MainWindowViewModel(storage);
+        var project = await viewModel.AddProjectAsync("Project", TestContext.Current.CancellationToken);
+        var comparison = await viewModel.AddComparisonAsync("Comparison", TestContext.Current.CancellationToken);
+        storage.SavedProjects.Clear();
+
+        var image = await viewModel.AddImageAsync(
+            "  reference.png  ",
+            new MemoryStream([1, 2, 3]),
+            mediaType: "image/png",
+            label: "  Baseline  ",
+            cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.Equal("Baseline", image.Label);
+        Assert.Equal("reference.png", image.SourceName);
+        Assert.Equal("image/png", image.MediaType);
+        Assert.Equal("stored/reference.png", image.StorageKey);
+        Assert.Same(image, Assert.Single(comparison.Images));
+        Assert.Equal(image.Id, comparison.ReferenceImageId);
+        Assert.Null(comparison.CandidateImageId);
+        Assert.Equal([1, 2, 3], storage.SavedImageContents[image.Id]);
+        Assert.Same(project, Assert.Single(storage.SavedProjects));
+    }
+
+    [Fact]
+    public async Task AddImageAsync_requires_selected_comparison()
+    {
+        var viewModel = new MainWindowViewModel(new FakeProjectStorage());
+        await viewModel.AddProjectAsync("Project", TestContext.Current.CancellationToken);
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => viewModel.AddImageAsync("image.png", new MemoryStream([1]), cancellationToken: TestContext.Current.CancellationToken));
+
+        Assert.Contains("comparison must be selected", exception.Message);
+    }
+
+    [Fact]
+    public async Task DeleteImageAsync_removes_image_repairs_roles_and_deletes_stored_content()
+    {
+        var storage = new FakeProjectStorage();
+        var viewModel = new MainWindowViewModel(storage);
+        var project = await viewModel.AddProjectAsync("Project", TestContext.Current.CancellationToken);
+        var comparison = await viewModel.AddComparisonAsync("Comparison", TestContext.Current.CancellationToken);
+        var reference = await viewModel.AddImageAsync("reference.png", new MemoryStream([1]), cancellationToken: TestContext.Current.CancellationToken);
+        var candidate = await viewModel.AddImageAsync("candidate.png", new MemoryStream([2]), cancellationToken: TestContext.Current.CancellationToken);
+        storage.SavedProjects.Clear();
+
+        var deleted = await viewModel.DeleteImageAsync(reference, TestContext.Current.CancellationToken);
+
+        Assert.True(deleted);
+        Assert.DoesNotContain(reference, comparison.Images);
+        Assert.Equal(candidate.Id, comparison.ReferenceImageId);
+        Assert.Null(comparison.CandidateImageId);
+        Assert.Contains(reference.Id, storage.DeletedImageIds);
+        Assert.Same(project, Assert.Single(storage.SavedProjects));
+    }
+
+    [Fact]
+    public async Task DeleteImageAsync_returns_false_when_image_is_not_in_selected_comparison()
+    {
+        var storage = new FakeProjectStorage();
+        var viewModel = new MainWindowViewModel(storage);
+        await viewModel.AddProjectAsync("Project", TestContext.Current.CancellationToken);
+        await viewModel.AddComparisonAsync("Comparison", TestContext.Current.CancellationToken);
+        storage.SavedProjects.Clear();
+
+        var deleted = await viewModel.DeleteImageAsync(new ImageAsset(), TestContext.Current.CancellationToken);
+
+        Assert.False(deleted);
+        Assert.Empty(storage.SavedProjects);
+        Assert.Empty(storage.DeletedImageIds);
+    }
+
+    [Fact]
+    public async Task LabelImageAsync_updates_display_label_and_saves_project()
+    {
+        var storage = new FakeProjectStorage();
+        var viewModel = new MainWindowViewModel(storage);
+        var project = await viewModel.AddProjectAsync("Project", TestContext.Current.CancellationToken);
+        await viewModel.AddComparisonAsync("Comparison", TestContext.Current.CancellationToken);
+        var image = await viewModel.AddImageAsync("candidate.png", new MemoryStream([1]), cancellationToken: TestContext.Current.CancellationToken);
+        storage.SavedProjects.Clear();
+
+        var labelled = await viewModel.LabelImageAsync(image, "  Current Render  ", TestContext.Current.CancellationToken);
+
+        Assert.True(labelled);
+        Assert.Equal("Current Render", image.Label);
+        Assert.Same(project, Assert.Single(storage.SavedProjects));
+    }
+
+    [Fact]
+    public async Task LabelImageAsync_returns_false_when_image_is_not_in_selected_comparison()
+    {
+        var storage = new FakeProjectStorage();
+        var viewModel = new MainWindowViewModel(storage);
+        await viewModel.AddProjectAsync("Project", TestContext.Current.CancellationToken);
+        await viewModel.AddComparisonAsync("Comparison", TestContext.Current.CancellationToken);
+        storage.SavedProjects.Clear();
+
+        var labelled = await viewModel.LabelImageAsync(new ImageAsset(), "Missing", TestContext.Current.CancellationToken);
+
+        Assert.False(labelled);
+        Assert.Empty(storage.SavedProjects);
+    }
+
     private sealed class FakeProjectStorage(params Project[] projects) : IProjectStorage
     {
         private readonly List<Project> _projects = [..projects];
@@ -132,6 +240,10 @@ public sealed class MainWindowViewModelTests
         public List<Project> SavedProjects { get; } = [];
 
         public List<Guid> DeletedProjectIds { get; } = [];
+
+        public Dictionary<Guid, byte[]> SavedImageContents { get; } = [];
+
+        public List<Guid> DeletedImageIds { get; } = [];
 
         public Task<IReadOnlyList<Project>> LoadProjectsAsync(CancellationToken cancellationToken = default)
         {
@@ -162,24 +274,30 @@ public sealed class MainWindowViewModelTests
             return Task.CompletedTask;
         }
 
-        public Task<string> SaveImageAsync(
+        public async Task<string> SaveImageAsync(
             Guid projectId,
             Guid comparisonSetId,
             ImageAsset image,
             Stream content,
             CancellationToken cancellationToken = default)
         {
-            throw new NotSupportedException();
+            await using var buffer = new MemoryStream();
+            await content.CopyToAsync(buffer, cancellationToken);
+            SavedImageContents[image.Id] = buffer.ToArray();
+            image.StorageKey = $"stored/{image.SourceName}";
+            return image.StorageKey;
         }
 
         public Task<Stream> LoadImageAsync(ImageAsset image, CancellationToken cancellationToken = default)
         {
-            throw new NotSupportedException();
+            return Task.FromResult<Stream>(new MemoryStream(SavedImageContents[image.Id]));
         }
 
         public Task DeleteImageAsync(ImageAsset image, CancellationToken cancellationToken = default)
         {
-            throw new NotSupportedException();
+            DeletedImageIds.Add(image.Id);
+            SavedImageContents.Remove(image.Id);
+            return Task.CompletedTask;
         }
     }
 }

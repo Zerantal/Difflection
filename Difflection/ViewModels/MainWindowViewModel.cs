@@ -23,7 +23,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public MainWindowViewModel(IProjectStorage projectStorage)
     {
-        this._projectStorage = projectStorage;
+        _projectStorage = projectStorage;
     }
 
     public ObservableCollection<Project> Projects { get; } = [];
@@ -44,6 +44,7 @@ public partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasSelectedComparison))]
     [NotifyPropertyChangedFor(nameof(CanDeleteSelectedComparison))]
+    [NotifyPropertyChangedFor(nameof(SelectedComparisonImages))]
     public partial ComparisonSet? SelectedComparison { get; set; }
 
     [ObservableProperty]
@@ -113,6 +114,8 @@ public partial class MainWindowViewModel : ViewModelBase
     public bool CanDeleteSelectedComparison => HasSelectedComparison;
 
     public IReadOnlyList<ComparisonSet> SelectedProjectComparisons => SelectedProject?.Comparisons ?? [];
+
+    public IReadOnlyList<ImageAsset> SelectedComparisonImages => SelectedComparison?.Images ?? [];
 
     public double LeftImageWidth => LeftImage?.PixelSize.Width ?? StageWidth;
 
@@ -273,6 +276,112 @@ public partial class MainWindowViewModel : ViewModelBase
             : DeleteComparisonAsync(SelectedComparison, cancellationToken);
     }
 
+    public async Task<ImageAsset> AddImageAsync(
+        string sourceName,
+        Stream content,
+        string? mediaType = null,
+        string? label = null,
+        ImageSourceMetadata? originalFileMetadata = null,
+        CancellationToken cancellationToken = default)
+    {
+        if (SelectedProject is null)
+        {
+            throw new InvalidOperationException("A project must be selected before adding an image.");
+        }
+
+        if (SelectedComparison is null)
+        {
+            throw new InvalidOperationException("A comparison must be selected before adding an image.");
+        }
+
+        ArgumentNullException.ThrowIfNull(content);
+
+        var normalizedSourceName = NormalizeSourceName(sourceName);
+        var fallbackLabel = NormalizeName(Path.GetFileNameWithoutExtension(normalizedSourceName), normalizedSourceName);
+        var image = new ImageAsset
+        {
+            Label = NormalizeName(label, fallbackLabel),
+            SourceName = normalizedSourceName,
+            MediaType = mediaType,
+            OriginalFileMetadata = originalFileMetadata
+        };
+
+        if (_projectStorage is not null)
+        {
+            await _projectStorage.SaveImageAsync(
+                SelectedProject.Id,
+                SelectedComparison.Id,
+                image,
+                content,
+                cancellationToken);
+        }
+
+        SelectedComparison.AddImage(image);
+        SelectedProject.UpdatedAt = DateTimeOffset.UtcNow;
+        OnPropertyChanged(nameof(SelectedComparisonImages));
+
+        await SaveProjectAsync(SelectedProject, cancellationToken);
+        return image;
+    }
+
+    public async Task<ImageAsset> AddImageAsync(
+        IStorageFile file,
+        string? label = null,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(file);
+
+        await using var stream = await file.OpenReadAsync();
+        return await AddImageAsync(file.Name, stream, label: label, cancellationToken: cancellationToken);
+    }
+
+    public async Task<bool> DeleteImageAsync(ImageAsset image, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(image);
+
+        if (SelectedProject is null || SelectedComparison is null)
+        {
+            return false;
+        }
+
+        var removed = SelectedComparison.RemoveImage(image.Id);
+
+        if (!removed)
+        {
+            return false;
+        }
+
+        SelectedProject.UpdatedAt = DateTimeOffset.UtcNow;
+        OnPropertyChanged(nameof(SelectedComparisonImages));
+
+        await SaveProjectAsync(SelectedProject, cancellationToken);
+
+        if (_projectStorage is not null)
+        {
+            await _projectStorage.DeleteImageAsync(image, cancellationToken);
+        }
+
+        return true;
+    }
+
+    public async Task<bool> LabelImageAsync(ImageAsset image, string? label, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(image);
+
+        if (SelectedProject is null || SelectedComparison is null || !SelectedComparison.Images.Contains(image))
+        {
+            return false;
+        }
+
+        image.Label = NormalizeName(label, image.SourceName);
+        SelectedComparison.UpdatedAt = DateTimeOffset.UtcNow;
+        SelectedProject.UpdatedAt = DateTimeOffset.UtcNow;
+        OnPropertyChanged(nameof(SelectedComparisonImages));
+
+        await SaveProjectAsync(SelectedProject, cancellationToken);
+        return true;
+    }
+
     public void SetZoomScale(double zoomScale)
     {
         ZoomScale = Math.Clamp(zoomScale, 0.05, 64.0);
@@ -396,6 +505,12 @@ public partial class MainWindowViewModel : ViewModelBase
     private static string NormalizeName(string? name, string fallback)
     {
         return string.IsNullOrWhiteSpace(name) ? fallback : name.Trim();
+    }
+
+    private static string NormalizeSourceName(string? sourceName)
+    {
+        var fileName = Path.GetFileName(sourceName?.Trim());
+        return string.IsNullOrWhiteSpace(fileName) ? "image" : fileName;
     }
 
     private Task SaveProjectAsync(Project project, CancellationToken cancellationToken)
