@@ -1,13 +1,16 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
+using Avalonia.Platform.Storage;
 using Avalonia.Threading;
+using Difflection.Models;
 using Difflection.ViewModels;
 
 namespace Difflection.Views;
@@ -48,7 +51,7 @@ public partial class MainView : UserControl
 
     private async void AddMediaButton_OnClick(object? sender, RoutedEventArgs e)
     {
-        await ComparisonStage.OpenFilePickerAndLoadAsync();
+        await OpenFilePickerAndAddImagesAsync();
     }
 
     private async void AddProjectButton_OnClick(object? sender, RoutedEventArgs e)
@@ -83,6 +86,105 @@ public partial class MainView : UserControl
         }
     }
 
+    private async void ProjectNameTextBox_OnLostFocus(object? sender, RoutedEventArgs e)
+    {
+        if (_viewModel is not null)
+        {
+            await _viewModel.RenameSelectedProjectAsync(ProjectNameTextBox.Text);
+        }
+    }
+
+    private async void ProjectNameTextBox_OnKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.Key != Key.Enter || _viewModel is null)
+        {
+            return;
+        }
+
+        await _viewModel.RenameSelectedProjectAsync(ProjectNameTextBox.Text);
+        e.Handled = true;
+    }
+
+    private async void ComparisonNameTextBox_OnLostFocus(object? sender, RoutedEventArgs e)
+    {
+        if (_viewModel is not null)
+        {
+            await _viewModel.RenameSelectedComparisonAsync(ComparisonNameTextBox.Text);
+        }
+    }
+
+    private async void ComparisonNameTextBox_OnKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.Key != Key.Enter || _viewModel is null)
+        {
+            return;
+        }
+
+        await _viewModel.RenameSelectedComparisonAsync(ComparisonNameTextBox.Text);
+        e.Handled = true;
+    }
+
+    private async void ImageLabelTextBox_OnLostFocus(object? sender, RoutedEventArgs e)
+    {
+        if (_viewModel is not null && sender is TextBox { DataContext: ImageAsset image } textBox)
+        {
+            await _viewModel.LabelImageAsync(image, textBox.Text);
+        }
+    }
+
+    private async void ImageLabelTextBox_OnKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.Key != Key.Enter || _viewModel is null || sender is not TextBox { DataContext: ImageAsset image } textBox)
+        {
+            return;
+        }
+
+        await _viewModel.LabelImageAsync(image, textBox.Text);
+        e.Handled = true;
+    }
+
+    private async void SetReferenceImageButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        if (_viewModel is null || sender is not Button { DataContext: ImageAsset image })
+        {
+            return;
+        }
+
+        if (await _viewModel.SetReferenceImageAsync(image))
+        {
+            await _viewModel.RefreshCurrentComparisonImagesAsync();
+            ComparisonStage.FitZoomToStage();
+        }
+    }
+
+    private async void SetCandidateImageButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        if (_viewModel is null || sender is not Button { DataContext: ImageAsset image } || !_viewModel.CanSetCandidateImage(image))
+        {
+            return;
+        }
+
+        if (await _viewModel.SetCandidateImageAsync(image))
+        {
+            await _viewModel.RefreshCurrentComparisonImagesAsync();
+            ComparisonStage.FitZoomToStage();
+        }
+    }
+
+    private async void DeleteImageButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        if (_viewModel is null || sender is not Button { DataContext: ImageAsset image })
+        {
+            return;
+        }
+
+        if (await _viewModel.DeleteImageAsync(image))
+        {
+            await _viewModel.RefreshCurrentComparisonImagesAsync();
+            ComparisonStage.FitZoomToStage();
+        }
+    }
+
     public async Task LoadBrowserDroppedFilesAsync(IReadOnlyList<string> fileNames, IReadOnlyList<byte[]> fileContents)
     {
         await ComparisonStage.LoadBrowserDroppedFilesAsync(fileNames, fileContents);
@@ -102,6 +204,60 @@ public partial class MainView : UserControl
 
         _viewModel?.TrySetZoomText(ZoomTextBox.Text);
         e.Handled = true;
+    }
+
+    private async Task OpenFilePickerAndAddImagesAsync()
+    {
+        if (_viewModel is null)
+        {
+            return;
+        }
+
+        var storageProvider = TopLevel.GetTopLevel(this)?.StorageProvider;
+        if (storageProvider is null)
+        {
+            return;
+        }
+
+        var files = await storageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            AllowMultiple = true,
+            Title = "Add images to comparison",
+            FileTypeFilter =
+            [
+                new FilePickerFileType("Image files")
+                {
+                    Patterns = ["*.png", "*.jpg", "*.jpeg", "*.bmp", "*.gif", "*.webp", "*.tif", "*.tiff"],
+                    MimeTypes = ["image/*"]
+                }
+            ]
+        });
+
+        await AddFilesToCurrentComparisonAsync(files);
+    }
+
+    private async Task AddFilesToCurrentComparisonAsync(IEnumerable<IStorageFile> files)
+    {
+        if (_viewModel is null)
+        {
+            return;
+        }
+
+        var imageFiles = files.ToArray();
+        if (imageFiles.Length == 0)
+        {
+            return;
+        }
+
+        await _viewModel.EnsureProjectAndComparisonAsync();
+
+        foreach (var file in imageFiles)
+        {
+            await _viewModel.AddImageAsync(file);
+        }
+
+        await _viewModel.RefreshCurrentComparisonImagesAsync();
+        ComparisonStage.FitZoomToStage();
     }
 
     private void OnDataContextChanged(object? sender, EventArgs e)

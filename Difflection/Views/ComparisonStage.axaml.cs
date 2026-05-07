@@ -72,21 +72,25 @@ public partial class ComparisonStage : UserControl
             return;
         }
 
-        if (files.Length >= 2)
+        await _viewModel.EnsureProjectAndComparisonAsync();
+
+        for (var index = 0; index < files.Length; index++)
         {
-            using var leftStream = new MemoryStream(files[0].Bytes, writable: false);
-            await _viewModel.LoadImageAsync(ImageSlot.Left, files[0].Name, leftStream);
+            using var addStream = new MemoryStream(files[index].Bytes, writable: false);
+            var image = await _viewModel.AddImageAsync(files[index].Name, addStream);
 
-            using var rightStream = new MemoryStream(files[1].Bytes, writable: false);
-            await _viewModel.LoadImageAsync(ImageSlot.Right, files[1].Name, rightStream);
-
-            FitZoomToStage();
-            return;
+            if (_viewModel.SelectedComparison?.ReferenceImageId == image.Id)
+            {
+                using var displayStream = new MemoryStream(files[index].Bytes, writable: false);
+                await _viewModel.LoadImageAsync(ImageSlot.Left, image.Label, displayStream);
+            }
+            else if (_viewModel.SelectedComparison?.CandidateImageId == image.Id)
+            {
+                using var displayStream = new MemoryStream(files[index].Bytes, writable: false);
+                await _viewModel.LoadImageAsync(ImageSlot.Right, image.Label, displayStream);
+            }
         }
 
-        var slot = ResolveNextSlot();
-        using var stream = new MemoryStream(files[0].Bytes, writable: false);
-        await _viewModel.LoadImageAsync(slot, files[0].Name, stream);
         FitZoomToStage();
     }
 
@@ -102,22 +106,28 @@ public partial class ComparisonStage : UserControl
             return;
         }
 
-        var files = items.OfType<IStorageFile>().Take(2).ToArray();
+        var files = items.OfType<IStorageFile>().ToArray();
         if (files.Length == 0)
         {
             return;
         }
 
-        if (files.Length >= 2)
+        await _viewModel.EnsureProjectAndComparisonAsync();
+
+        foreach (var file in files)
         {
-            await _viewModel.LoadImageAsync(ImageSlot.Left, files[0]);
-            await _viewModel.LoadImageAsync(ImageSlot.Right, files[1]);
-            FitZoomToStage();
-            return;
+            var image = await _viewModel.AddImageAsync(file);
+
+            if (_viewModel.SelectedComparison?.ReferenceImageId == image.Id)
+            {
+                await _viewModel.LoadImageAsync(ImageSlot.Left, file);
+            }
+            else if (_viewModel.SelectedComparison?.CandidateImageId == image.Id)
+            {
+                await _viewModel.LoadImageAsync(ImageSlot.Right, file);
+            }
         }
 
-        var slot = preferredSlot ?? ResolveNextSlot();
-        await _viewModel.LoadImageAsync(slot, files[0]);
         FitZoomToStage();
     }
 
@@ -243,14 +253,6 @@ public partial class ComparisonStage : UserControl
             .Select(item => item.TryGetRaw(DataFormat.File))
             .OfType<IStorageFile>();
     }
-
-    private ImageSlot ResolveNextSlot() =>
-        _viewModel switch
-        {
-            null => ImageSlot.Left,
-            { HasLeftImage: false } => ImageSlot.Left,
-            _ => ImageSlot.Right
-        };
 
     private void OnDataContextChanged(object? sender, EventArgs e)
     {

@@ -39,12 +39,14 @@ public partial class MainWindowViewModel : ViewModelBase
     [NotifyPropertyChangedFor(nameof(SelectedProjectComparisons))]
     [NotifyPropertyChangedFor(nameof(CanDeleteSelectedProject))]
     [NotifyPropertyChangedFor(nameof(CanAddComparison))]
+    [NotifyPropertyChangedFor(nameof(SelectedProjectName))]
     public partial Project? SelectedProject { get; set; }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasSelectedComparison))]
     [NotifyPropertyChangedFor(nameof(CanDeleteSelectedComparison))]
     [NotifyPropertyChangedFor(nameof(SelectedComparisonImages))]
+    [NotifyPropertyChangedFor(nameof(SelectedComparisonName))]
     public partial ComparisonSet? SelectedComparison { get; set; }
 
     [ObservableProperty]
@@ -112,6 +114,37 @@ public partial class MainWindowViewModel : ViewModelBase
     public bool CanAddComparison => HasSelectedProject;
 
     public bool CanDeleteSelectedComparison => HasSelectedComparison;
+
+    public string SelectedProjectName
+    {
+        get => SelectedProject?.Name ?? string.Empty;
+        set
+        {
+            if (SelectedProject is not null)
+            {
+                SelectedProject.Name = NormalizeName(value, "Untitled Project");
+                SelectedProject.UpdatedAt = DateTimeOffset.UtcNow;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(SelectedProjectComparisons));
+            }
+        }
+    }
+
+    public string SelectedComparisonName
+    {
+        get => SelectedComparison?.Name ?? string.Empty;
+        set
+        {
+            if (SelectedProject is not null && SelectedComparison is not null)
+            {
+                SelectedComparison.Name = NormalizeName(value, "Untitled Comparison");
+                SelectedComparison.UpdatedAt = DateTimeOffset.UtcNow;
+                SelectedProject.UpdatedAt = DateTimeOffset.UtcNow;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(SelectedProjectComparisons));
+            }
+        }
+    }
 
     public IReadOnlyList<ComparisonSet> SelectedProjectComparisons => SelectedProject?.Comparisons.ToArray() ?? [];
 
@@ -256,6 +289,41 @@ public partial class MainWindowViewModel : ViewModelBase
         return comparison;
     }
 
+    public async Task EnsureProjectAndComparisonAsync(CancellationToken cancellationToken = default)
+    {
+        if (SelectedProject is null)
+        {
+            await AddProjectAsync(cancellationToken: cancellationToken);
+        }
+
+        if (SelectedComparison is null)
+        {
+            await AddComparisonAsync(cancellationToken: cancellationToken);
+        }
+    }
+
+    public async Task RenameSelectedProjectAsync(string? name, CancellationToken cancellationToken = default)
+    {
+        if (SelectedProject is null)
+        {
+            return;
+        }
+
+        SelectedProjectName = name ?? string.Empty;
+        await SaveProjectAsync(SelectedProject, cancellationToken);
+    }
+
+    public async Task RenameSelectedComparisonAsync(string? name, CancellationToken cancellationToken = default)
+    {
+        if (SelectedProject is null || SelectedComparison is null)
+        {
+            return;
+        }
+
+        SelectedComparisonName = name ?? string.Empty;
+        await SaveProjectAsync(SelectedProject, cancellationToken);
+    }
+
     public async Task<bool> DeleteComparisonAsync(ComparisonSet comparison, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(comparison);
@@ -348,6 +416,59 @@ public partial class MainWindowViewModel : ViewModelBase
 
         await using var stream = await file.OpenReadAsync();
         return await AddImageAsync(file.Name, stream, label: label, cancellationToken: cancellationToken);
+    }
+
+    public async Task<bool> LoadImageAssetAsync(ImageSlot slot, ImageAsset image, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(image);
+
+        if (_projectStorage is null)
+        {
+            return false;
+        }
+
+        await using var stream = await _projectStorage.LoadImageAsync(image, cancellationToken);
+        var bitmap = await CreateBitmapAsync(stream);
+
+        switch (slot)
+        {
+            case ImageSlot.Left:
+                LeftImage = bitmap;
+                LeftFileName = GetDisplayName(image);
+                break;
+            case ImageSlot.Right:
+                RightImage = bitmap;
+                RightFileName = GetDisplayName(image);
+                break;
+            default:
+                bitmap.Dispose();
+                throw new ArgumentOutOfRangeException(nameof(slot), slot, null);
+        }
+
+        return true;
+    }
+
+    public async Task RefreshCurrentComparisonImagesAsync(CancellationToken cancellationToken = default)
+    {
+        if (SelectedComparison?.ReferenceImage is { } reference)
+        {
+            await LoadImageAssetAsync(ImageSlot.Left, reference, cancellationToken);
+        }
+        else
+        {
+            LeftImage = null;
+            LeftFileName = "Reference image";
+        }
+
+        if (SelectedComparison?.CandidateImage is { } candidate)
+        {
+            await LoadImageAssetAsync(ImageSlot.Right, candidate, cancellationToken);
+        }
+        else
+        {
+            RightImage = null;
+            RightFileName = "Candidate image";
+        }
     }
 
     public async Task<bool> DeleteImageAsync(ImageAsset image, CancellationToken cancellationToken = default)
@@ -562,6 +683,11 @@ public partial class MainWindowViewModel : ViewModelBase
         return string.IsNullOrWhiteSpace(fileName) ? "image" : fileName;
     }
 
+    private static string GetDisplayName(ImageAsset image)
+    {
+        return string.IsNullOrWhiteSpace(image.Label) ? image.SourceName : image.Label;
+    }
+
     private Task SaveProjectAsync(Project project, CancellationToken cancellationToken)
     {
         return _projectStorage?.SaveProjectAsync(project, cancellationToken) ?? Task.CompletedTask;
@@ -627,6 +753,9 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             SelectedComparison = value?.Comparisons.FirstOrDefault();
         }
+
+        OnPropertyChanged(nameof(SelectedProjectName));
+        OnPropertyChanged(nameof(SelectedComparisonName));
     }
 
     partial void OnSelectedComparisonChanged(ComparisonSet? value)
@@ -636,6 +765,8 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             SelectedComparison = SelectedProject.Comparisons.FirstOrDefault();
         }
+
+        OnPropertyChanged(nameof(SelectedComparisonName));
     }
 }
 

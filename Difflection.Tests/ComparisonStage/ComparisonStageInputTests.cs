@@ -147,7 +147,7 @@ public sealed partial class ComparisonStageTests
         await viewModel.LoadImageAsync(ImageSlot.Right, TestUiSupport.CreateStorageFile("right.png"));
         viewModel.SelectSplitScreenView();
 
-        var window = TestUiSupport.CreateWindow(viewModel);
+        var window = TestUiSupport.CreateWindow(viewModel, height: 900);
         try
         {
             var pane = TestUiSupport.GetSplitPane(TestUiSupport.GetComparisonStage(window));
@@ -155,7 +155,9 @@ public sealed partial class ComparisonStageTests
             var dragSurface = pane.FindControl<Border>("SplitDragSurface") ?? throw new InvalidOperationException("SplitDragSurface not found.");
             var initialSplitText = viewModel.SplitPercentageText;
 
-            await TestUiSupport.WaitForAsync(() => divider.Bounds.Width > 0 && dragSurface.Bounds.Width > 0);
+            await TestUiSupport.WaitForAsync(() => divider.Bounds.Width > 0
+                && dragSurface.Bounds.Width > 0
+                && dragSurface.Bounds.Height > 0);
 
             var before = divider.Bounds.X;
             var start = dragSurface.TranslatePoint(new Point(dragSurface.Bounds.Width / 2, dragSurface.Bounds.Height / 2), window)

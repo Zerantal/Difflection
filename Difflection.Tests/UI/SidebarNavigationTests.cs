@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Difflection.Models;
 using Difflection.Storage;
@@ -68,6 +69,44 @@ public sealed class SidebarNavigationTests
             Assert.Same(project, viewModel.SelectedProject);
             Assert.Same(project, projectsList.SelectedItem);
             Assert.Same(project, Assert.Single(storage.SavedProjects));
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task Sidebar_name_editors_rename_selected_project_and_comparison()
+    {
+        var storage = new FakeProjectStorage();
+        var viewModel = new MainWindowViewModel(storage);
+
+        var window = TestUiSupport.CreateWindow(viewModel);
+        try
+        {
+            var mainView = TestUiSupport.GetMainView(window);
+
+            Click(GetControl<Button>(mainView, "AddProjectButton"));
+            Click(GetControl<Button>(mainView, "AddComparisonButton"));
+            await TestUiSupport.WaitForAsync(() => viewModel.SelectedComparison is not null);
+            storage.SavedProjects.Clear();
+
+            var projectNameTextBox = GetControl<TextBox>(mainView, "ProjectNameTextBox");
+            projectNameTextBox.Text = "  Client Work  ";
+            LoseFocus(projectNameTextBox);
+
+            await TestUiSupport.WaitForAsync(() => viewModel.SelectedProject?.Name == "Client Work");
+
+            var comparisonNameTextBox = GetControl<TextBox>(mainView, "ComparisonNameTextBox");
+            comparisonNameTextBox.Text = "  Header States  ";
+            LoseFocus(comparisonNameTextBox);
+
+            await TestUiSupport.WaitForAsync(() => viewModel.SelectedComparison?.Name == "Header States");
+
+            Assert.Equal("Client Work", viewModel.SelectedProject?.Name);
+            Assert.Equal("Header States", viewModel.SelectedComparison?.Name);
+            Assert.NotEmpty(storage.SavedProjects);
         }
         finally
         {
@@ -195,6 +234,11 @@ public sealed class SidebarNavigationTests
     private static void Click(Button button)
     {
         button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+    }
+
+    private static void LoseFocus(TextBox textBox)
+    {
+        textBox.RaiseEvent(new RoutedEventArgs(InputElement.LostFocusEvent));
     }
 
     private sealed class FakeProjectStorage(params Project[] projects) : IProjectStorage

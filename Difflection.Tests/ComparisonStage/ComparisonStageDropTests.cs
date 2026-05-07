@@ -37,6 +37,13 @@ public sealed partial class ComparisonStageTests
             Assert.True(viewModel.HasLeftImage);
             Assert.Equal("reference.png", viewModel.LeftFileName);
             Assert.False(viewModel.HasRightImage);
+
+            var project = Assert.Single(viewModel.Projects);
+            var comparison = Assert.Single(project.Comparisons);
+            var image = Assert.Single(comparison.Images);
+            Assert.Equal("reference", image.Label);
+            Assert.Equal(image.Id, comparison.ReferenceImageId);
+            Assert.Null(comparison.CandidateImageId);
         }
         finally
         {
@@ -75,6 +82,12 @@ public sealed partial class ComparisonStageTests
             Assert.Equal("swap-left.png", viewModel.LeftFileName);
             Assert.Equal("swap-right.png", viewModel.RightFileName);
             Assert.True(viewModel.HasBothImages);
+
+            var project = Assert.Single(viewModel.Projects);
+            var comparison = Assert.Single(project.Comparisons);
+            Assert.Equal(2, comparison.Images.Count);
+            Assert.Equal(comparison.Images[0].Id, comparison.ReferenceImageId);
+            Assert.Equal(comparison.Images[1].Id, comparison.CandidateImageId);
         }
         finally
         {
