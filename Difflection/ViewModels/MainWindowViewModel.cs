@@ -45,6 +45,8 @@ public partial class MainWindowViewModel : ViewModelBase
     [NotifyPropertyChangedFor(nameof(CanDeleteSelectedProject))]
     [NotifyPropertyChangedFor(nameof(CanAddComparison))]
     [NotifyPropertyChangedFor(nameof(SelectedProjectName))]
+    [NotifyPropertyChangedFor(nameof(WorkspaceContextTitle))]
+    [NotifyPropertyChangedFor(nameof(WorkspaceContextDetail))]
     public partial Project? SelectedProject { get; set; }
 
     [ObservableProperty]
@@ -52,6 +54,9 @@ public partial class MainWindowViewModel : ViewModelBase
     [NotifyPropertyChangedFor(nameof(CanDeleteSelectedComparison))]
     [NotifyPropertyChangedFor(nameof(SelectedComparisonImages))]
     [NotifyPropertyChangedFor(nameof(SelectedComparisonName))]
+    [NotifyPropertyChangedFor(nameof(SelectedComparisonImageCountText))]
+    [NotifyPropertyChangedFor(nameof(WorkspaceContextTitle))]
+    [NotifyPropertyChangedFor(nameof(WorkspaceContextDetail))]
     public partial ComparisonSet? SelectedComparison { get; set; }
 
     [ObservableProperty]
@@ -131,6 +136,7 @@ public partial class MainWindowViewModel : ViewModelBase
                 SelectedProject.UpdatedAt = DateTimeOffset.UtcNow;
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(SelectedProjectComparisons));
+                OnPropertyChanged(nameof(WorkspaceContextTitle));
             }
         }
     }
@@ -147,6 +153,7 @@ public partial class MainWindowViewModel : ViewModelBase
                 SelectedProject.UpdatedAt = DateTimeOffset.UtcNow;
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(SelectedProjectComparisons));
+                OnPropertyChanged(nameof(WorkspaceContextTitle));
             }
         }
     }
@@ -154,6 +161,48 @@ public partial class MainWindowViewModel : ViewModelBase
     public IReadOnlyList<ComparisonSet> SelectedProjectComparisons => SelectedProject?.Comparisons.ToArray() ?? [];
 
     public IReadOnlyList<ImageAsset> SelectedComparisonImages => SelectedComparison?.Images.ToArray() ?? [];
+
+    public string SelectedComparisonImageCountText
+    {
+        get
+        {
+            var imageCount = SelectedComparison?.Images.Count ?? 0;
+            return imageCount == 1 ? "1 image" : $"{imageCount} images";
+        }
+    }
+
+    public string WorkspaceContextTitle
+    {
+        get
+        {
+            if (SelectedProject is null)
+            {
+                return "No project selected";
+            }
+
+            return SelectedComparison is null
+                ? SelectedProject.Name
+                : $"{SelectedProject.Name} / {SelectedComparison.Name}";
+        }
+    }
+
+    public string WorkspaceContextDetail
+    {
+        get
+        {
+            if (SelectedProject is null)
+            {
+                return "Create or select a project";
+            }
+
+            if (SelectedComparison is null)
+            {
+                return "No comparison selected";
+            }
+
+            return $"{SelectedComparisonImageCountText} in image set";
+        }
+    }
 
     public bool CanSetReferenceImage(ImageAsset? image)
     {
@@ -406,7 +455,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
         SelectedComparison.AddImage(image);
         SelectedProject.UpdatedAt = DateTimeOffset.UtcNow;
-        OnPropertyChanged(nameof(SelectedComparisonImages));
+        NotifySelectedComparisonImagesChanged();
 
         await SaveProjectAsync(SelectedProject, cancellationToken);
         return image;
@@ -451,7 +500,7 @@ public partial class MainWindowViewModel : ViewModelBase
         image.MonitoringRole = monitoringRole;
         SelectedComparison.UpdatedAt = DateTimeOffset.UtcNow;
         SelectedProject.UpdatedAt = DateTimeOffset.UtcNow;
-        OnPropertyChanged(nameof(SelectedComparisonImages));
+        NotifySelectedComparisonImagesChanged();
 
         await SaveProjectAsync(SelectedProject, cancellationToken);
         return true;
@@ -472,7 +521,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
         if (version is not null && ReferenceEquals(project, SelectedProject) && ReferenceEquals(comparison, SelectedComparison))
         {
-            OnPropertyChanged(nameof(SelectedComparisonImages));
+            NotifySelectedComparisonImagesChanged();
             await RefreshCurrentComparisonImagesAsync(cancellationToken);
         }
 
@@ -549,7 +598,7 @@ public partial class MainWindowViewModel : ViewModelBase
         }
 
         SelectedProject.UpdatedAt = DateTimeOffset.UtcNow;
-        OnPropertyChanged(nameof(SelectedComparisonImages));
+        NotifySelectedComparisonImagesChanged();
 
         await SaveProjectAsync(SelectedProject, cancellationToken);
 
@@ -573,7 +622,7 @@ public partial class MainWindowViewModel : ViewModelBase
         image.Label = NormalizeName(label, image.SourceName);
         SelectedComparison.UpdatedAt = DateTimeOffset.UtcNow;
         SelectedProject.UpdatedAt = DateTimeOffset.UtcNow;
-        OnPropertyChanged(nameof(SelectedComparisonImages));
+        NotifySelectedComparisonImagesChanged();
 
         await SaveProjectAsync(SelectedProject, cancellationToken);
         return true;
@@ -590,7 +639,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
         SelectedComparison.SetReferenceImage(image.Id);
         SelectedProject.UpdatedAt = DateTimeOffset.UtcNow;
-        OnPropertyChanged(nameof(SelectedComparisonImages));
+        NotifySelectedComparisonImagesChanged();
 
         await SaveProjectAsync(SelectedProject, cancellationToken);
         return true;
@@ -607,7 +656,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
         SelectedComparison.SetCandidateImage(image.Id);
         SelectedProject.UpdatedAt = DateTimeOffset.UtcNow;
-        OnPropertyChanged(nameof(SelectedComparisonImages));
+        NotifySelectedComparisonImagesChanged();
 
         await SaveProjectAsync(SelectedProject, cancellationToken);
         return true;
@@ -752,6 +801,13 @@ public partial class MainWindowViewModel : ViewModelBase
     private Task SaveProjectAsync(Project project, CancellationToken cancellationToken)
     {
         return _projectStorage?.SaveProjectAsync(project, cancellationToken) ?? Task.CompletedTask;
+    }
+
+    private void NotifySelectedComparisonImagesChanged()
+    {
+        OnPropertyChanged(nameof(SelectedComparisonImages));
+        OnPropertyChanged(nameof(SelectedComparisonImageCountText));
+        OnPropertyChanged(nameof(WorkspaceContextDetail));
     }
 
     private void UpdateStageSize()

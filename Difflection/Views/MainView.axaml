@@ -130,6 +130,18 @@
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="TextTrimming" Value="CharacterEllipsis" />
         </Style>
+        <Style Selector="TextBlock.workspaceContextTitle">
+            <Setter Property="Foreground" Value="#F3F4F6" />
+            <Setter Property="FontSize" Value="18" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        </Style>
+        <Style Selector="TextBlock.workspaceContextDetail">
+            <Setter Property="Foreground" Value="#9AA1AB" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        </Style>
     </UserControl.Styles>
 
     <Grid RowDefinitions="34,60,*,Auto" ColumnDefinitions="260,*" Background="#181818">
@@ -297,12 +309,19 @@
         <Border Grid.Row="2" Grid.Column="1" Background="#101010" Padding="24">
             <Grid RowDefinitions="Auto,*" RowSpacing="12">
                 <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="12">
-                    <TextBlock x:Name="DropHintBanner"
-                               Text="Drop images below to begin."
-                               Foreground="#9AA1AB"
-                               FontSize="22"
-                               TextTrimming="CharacterEllipsis"
-                               VerticalAlignment="Center" />
+                    <StackPanel Spacing="4"
+                                VerticalAlignment="Center">
+                        <TextBlock Classes="workspaceContextTitle"
+                                   Text="{Binding WorkspaceContextTitle}" />
+                        <StackPanel Orientation="Horizontal"
+                                    Spacing="12">
+                            <TextBlock Classes="workspaceContextDetail"
+                                       Text="{Binding WorkspaceContextDetail}" />
+                            <TextBlock x:Name="DropHintBanner"
+                                       Classes="workspaceContextDetail"
+                                       Text="Drop images below to begin." />
+                        </StackPanel>
+                    </StackPanel>
                     <TextBlock Grid.Column="1"
                                Text="{Binding SplitPercentageText}"
                                IsVisible="{Binding IsSplitScreenView}"

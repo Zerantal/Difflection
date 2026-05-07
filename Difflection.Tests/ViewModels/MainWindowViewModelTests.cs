@@ -154,6 +154,36 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
+    public async Task Workspace_context_summarizes_selected_project_comparison_and_image_count()
+    {
+        var storage = new FakeProjectStorage();
+        var viewModel = new MainWindowViewModel(storage);
+
+        Assert.Equal("No project selected", viewModel.WorkspaceContextTitle);
+        Assert.Equal("Create or select a project", viewModel.WorkspaceContextDetail);
+
+        await viewModel.AddProjectAsync("Project A", TestContext.Current.CancellationToken);
+
+        Assert.Equal("Project A", viewModel.WorkspaceContextTitle);
+        Assert.Equal("No comparison selected", viewModel.WorkspaceContextDetail);
+
+        await viewModel.AddComparisonAsync("Header States", TestContext.Current.CancellationToken);
+
+        Assert.Equal("Project A / Header States", viewModel.WorkspaceContextTitle);
+        Assert.Equal("0 images in image set", viewModel.WorkspaceContextDetail);
+
+        await viewModel.AddImageAsync("reference.png", new MemoryStream([1]), cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.Equal("1 image", viewModel.SelectedComparisonImageCountText);
+        Assert.Equal("1 image in image set", viewModel.WorkspaceContextDetail);
+
+        await viewModel.RenameSelectedProjectAsync("Project B", TestContext.Current.CancellationToken);
+        await viewModel.RenameSelectedComparisonAsync("Footer States", TestContext.Current.CancellationToken);
+
+        Assert.Equal("Project B / Footer States", viewModel.WorkspaceContextTitle);
+    }
+
+    [Fact]
     public async Task AddImageAsync_requires_selected_comparison()
     {
         var viewModel = new MainWindowViewModel(new FakeProjectStorage());
