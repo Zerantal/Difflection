@@ -233,6 +233,132 @@ public sealed class MainWindowViewModelTests
         Assert.Empty(storage.SavedProjects);
     }
 
+    [Fact]
+    public async Task SetReferenceImageAsync_sets_reference_and_saves_project()
+    {
+        var storage = new FakeProjectStorage();
+        var viewModel = new MainWindowViewModel(storage);
+        var project = await viewModel.AddProjectAsync("Project", TestContext.Current.CancellationToken);
+        var comparison = await viewModel.AddComparisonAsync("Comparison", TestContext.Current.CancellationToken);
+        var reference = await viewModel.AddImageAsync("reference.png", new MemoryStream([1]), cancellationToken: TestContext.Current.CancellationToken);
+        var candidate = await viewModel.AddImageAsync("candidate.png", new MemoryStream([2]), cancellationToken: TestContext.Current.CancellationToken);
+        var alternate = await viewModel.AddImageAsync("alternate.png", new MemoryStream([3]), cancellationToken: TestContext.Current.CancellationToken);
+        storage.SavedProjects.Clear();
+
+        var changed = await viewModel.SetReferenceImageAsync(alternate, TestContext.Current.CancellationToken);
+
+        Assert.True(changed);
+        Assert.Equal(alternate.Id, comparison.ReferenceImageId);
+        Assert.Equal(candidate.Id, comparison.CandidateImageId);
+        Assert.NotEqual(reference.Id, comparison.ReferenceImageId);
+        Assert.Same(project, Assert.Single(storage.SavedProjects));
+    }
+
+    [Fact]
+    public async Task SetCandidateImageAsync_sets_candidate_and_saves_project()
+    {
+        var storage = new FakeProjectStorage();
+        var viewModel = new MainWindowViewModel(storage);
+        var project = await viewModel.AddProjectAsync("Project", TestContext.Current.CancellationToken);
+        var comparison = await viewModel.AddComparisonAsync("Comparison", TestContext.Current.CancellationToken);
+        var reference = await viewModel.AddImageAsync("reference.png", new MemoryStream([1]), cancellationToken: TestContext.Current.CancellationToken);
+        var candidate = await viewModel.AddImageAsync("candidate.png", new MemoryStream([2]), cancellationToken: TestContext.Current.CancellationToken);
+        var alternate = await viewModel.AddImageAsync("alternate.png", new MemoryStream([3]), cancellationToken: TestContext.Current.CancellationToken);
+        storage.SavedProjects.Clear();
+
+        var changed = await viewModel.SetCandidateImageAsync(alternate, TestContext.Current.CancellationToken);
+
+        Assert.True(changed);
+        Assert.Equal(reference.Id, comparison.ReferenceImageId);
+        Assert.Equal(alternate.Id, comparison.CandidateImageId);
+        Assert.NotEqual(candidate.Id, comparison.CandidateImageId);
+        Assert.Same(project, Assert.Single(storage.SavedProjects));
+    }
+
+    [Fact]
+    public async Task SetReferenceImageAsync_swaps_roles_when_image_is_current_candidate()
+    {
+        var storage = new FakeProjectStorage();
+        var viewModel = new MainWindowViewModel(storage);
+        await viewModel.AddProjectAsync("Project", TestContext.Current.CancellationToken);
+        var comparison = await viewModel.AddComparisonAsync("Comparison", TestContext.Current.CancellationToken);
+        var reference = await viewModel.AddImageAsync("reference.png", new MemoryStream([1]), cancellationToken: TestContext.Current.CancellationToken);
+        var candidate = await viewModel.AddImageAsync("candidate.png", new MemoryStream([2]), cancellationToken: TestContext.Current.CancellationToken);
+
+        var changed = await viewModel.SetReferenceImageAsync(candidate, TestContext.Current.CancellationToken);
+
+        Assert.True(changed);
+        Assert.Equal(candidate.Id, comparison.ReferenceImageId);
+        Assert.Equal(reference.Id, comparison.CandidateImageId);
+    }
+
+    [Fact]
+    public async Task SetCandidateImageAsync_swaps_roles_when_image_is_current_reference()
+    {
+        var storage = new FakeProjectStorage();
+        var viewModel = new MainWindowViewModel(storage);
+        await viewModel.AddProjectAsync("Project", TestContext.Current.CancellationToken);
+        var comparison = await viewModel.AddComparisonAsync("Comparison", TestContext.Current.CancellationToken);
+        var reference = await viewModel.AddImageAsync("reference.png", new MemoryStream([1]), cancellationToken: TestContext.Current.CancellationToken);
+        var candidate = await viewModel.AddImageAsync("candidate.png", new MemoryStream([2]), cancellationToken: TestContext.Current.CancellationToken);
+
+        var changed = await viewModel.SetCandidateImageAsync(reference, TestContext.Current.CancellationToken);
+
+        Assert.True(changed);
+        Assert.Equal(candidate.Id, comparison.ReferenceImageId);
+        Assert.Equal(reference.Id, comparison.CandidateImageId);
+    }
+
+    [Fact]
+    public async Task SetCandidateImageAsync_requires_at_least_two_images()
+    {
+        var viewModel = new MainWindowViewModel(new FakeProjectStorage());
+        await viewModel.AddProjectAsync("Project", TestContext.Current.CancellationToken);
+        await viewModel.AddComparisonAsync("Comparison", TestContext.Current.CancellationToken);
+        var image = await viewModel.AddImageAsync("reference.png", new MemoryStream([1]), cancellationToken: TestContext.Current.CancellationToken);
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => viewModel.SetCandidateImageAsync(image, TestContext.Current.CancellationToken));
+
+        Assert.Contains("at least two images", exception.Message);
+    }
+
+    [Fact]
+    public async Task Role_reassignment_returns_false_when_image_is_not_in_selected_comparison()
+    {
+        var storage = new FakeProjectStorage();
+        var viewModel = new MainWindowViewModel(storage);
+        await viewModel.AddProjectAsync("Project", TestContext.Current.CancellationToken);
+        await viewModel.AddComparisonAsync("Comparison", TestContext.Current.CancellationToken);
+        var missing = new ImageAsset();
+        storage.SavedProjects.Clear();
+
+        var referenceChanged = await viewModel.SetReferenceImageAsync(missing, TestContext.Current.CancellationToken);
+        var candidateChanged = await viewModel.SetCandidateImageAsync(missing, TestContext.Current.CancellationToken);
+
+        Assert.False(referenceChanged);
+        Assert.False(candidateChanged);
+        Assert.Empty(storage.SavedProjects);
+    }
+
+    [Fact]
+    public async Task Role_reassignment_guard_methods_reflect_selected_comparison_state()
+    {
+        var viewModel = new MainWindowViewModel(new FakeProjectStorage());
+        await viewModel.AddProjectAsync("Project", TestContext.Current.CancellationToken);
+        await viewModel.AddComparisonAsync("Comparison", TestContext.Current.CancellationToken);
+        var reference = await viewModel.AddImageAsync("reference.png", new MemoryStream([1]), cancellationToken: TestContext.Current.CancellationToken);
+        var candidate = await viewModel.AddImageAsync("candidate.png", new MemoryStream([2]), cancellationToken: TestContext.Current.CancellationToken);
+        var missing = new ImageAsset();
+
+        Assert.True(viewModel.CanSetReferenceImage(reference));
+        Assert.True(viewModel.CanSetCandidateImage(candidate));
+        Assert.False(viewModel.CanSetReferenceImage(missing));
+        Assert.False(viewModel.CanSetCandidateImage(missing));
+        Assert.False(viewModel.CanSetReferenceImage(null));
+        Assert.False(viewModel.CanSetCandidateImage(null));
+    }
+
     private sealed class FakeProjectStorage(params Project[] projects) : IProjectStorage
     {
         private readonly List<Project> _projects = [..projects];

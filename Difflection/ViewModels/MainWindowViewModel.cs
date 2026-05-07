@@ -117,6 +117,21 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public IReadOnlyList<ImageAsset> SelectedComparisonImages => SelectedComparison?.Images ?? [];
 
+    public bool CanSetReferenceImage(ImageAsset? image)
+    {
+        return SelectedComparison is not null
+            && image is not null
+            && SelectedComparison.Images.Contains(image);
+    }
+
+    public bool CanSetCandidateImage(ImageAsset? image)
+    {
+        return SelectedComparison is not null
+            && image is not null
+            && SelectedComparison.Images.Count >= 2
+            && SelectedComparison.Images.Contains(image);
+    }
+
     public double LeftImageWidth => LeftImage?.PixelSize.Width ?? StageWidth;
 
     public double LeftImageHeight => LeftImage?.PixelSize.Height ?? StageHeight;
@@ -375,6 +390,40 @@ public partial class MainWindowViewModel : ViewModelBase
 
         image.Label = NormalizeName(label, image.SourceName);
         SelectedComparison.UpdatedAt = DateTimeOffset.UtcNow;
+        SelectedProject.UpdatedAt = DateTimeOffset.UtcNow;
+        OnPropertyChanged(nameof(SelectedComparisonImages));
+
+        await SaveProjectAsync(SelectedProject, cancellationToken);
+        return true;
+    }
+
+    public async Task<bool> SetReferenceImageAsync(ImageAsset image, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(image);
+
+        if (SelectedProject is null || SelectedComparison is null || !SelectedComparison.Images.Contains(image))
+        {
+            return false;
+        }
+
+        SelectedComparison.SetReferenceImage(image.Id);
+        SelectedProject.UpdatedAt = DateTimeOffset.UtcNow;
+        OnPropertyChanged(nameof(SelectedComparisonImages));
+
+        await SaveProjectAsync(SelectedProject, cancellationToken);
+        return true;
+    }
+
+    public async Task<bool> SetCandidateImageAsync(ImageAsset image, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(image);
+
+        if (SelectedProject is null || SelectedComparison is null || !SelectedComparison.Images.Contains(image))
+        {
+            return false;
+        }
+
+        SelectedComparison.SetCandidateImage(image.Id);
         SelectedProject.UpdatedAt = DateTimeOffset.UtcNow;
         OnPropertyChanged(nameof(SelectedComparisonImages));
 
