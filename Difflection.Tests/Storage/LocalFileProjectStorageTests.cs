@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Text.Json.Nodes;
@@ -59,12 +60,52 @@ public sealed class LocalFileProjectStorageTests : IDisposable
     }
 
     [Fact]
+    public async Task LoadProjectsAsync_skips_corrupt_project_file_and_reports_issue()
+    {
+        var valid = new Project { Name = "Valid Project" };
+        await _storage.SaveProjectAsync(valid, CancellationToken);
+        var corruptProjectId = Guid.NewGuid();
+        var corruptProjectFilePath = GetProjectFilePath(corruptProjectId);
+        Directory.CreateDirectory(Path.GetDirectoryName(corruptProjectFilePath)!);
+        await File.WriteAllTextAsync(corruptProjectFilePath, "{", CancellationToken);
+        var issues = new List<ProjectStorageLoadIssueEventArgs>();
+        _storage.ProjectLoadIssue += (_, issue) => issues.Add(issue);
+
+        var projects = await _storage.LoadProjectsAsync(CancellationToken);
+
+        var project = Assert.Single(projects);
+        Assert.Equal(valid.Id, project.Id);
+        var issue = Assert.Single(issues);
+        Assert.Equal(corruptProjectFilePath, issue.ProjectFilePath);
+        Assert.False(issue.RecoveredFromBackup);
+    }
+
+    [Fact]
+    public async Task LoadProjectAsync_recovers_from_backup_when_primary_project_file_is_corrupt()
+    {
+        var project = new Project { Name = "Original" };
+        await _storage.SaveProjectAsync(project, CancellationToken);
+        project.Name = "Updated";
+        await _storage.SaveProjectAsync(project, CancellationToken);
+        await File.WriteAllTextAsync(GetProjectFilePath(project.Id), "{", CancellationToken);
+        var issues = new List<ProjectStorageLoadIssueEventArgs>();
+        _storage.ProjectLoadIssue += (_, issue) => issues.Add(issue);
+
+        var loaded = await _storage.LoadProjectAsync(project.Id, CancellationToken);
+
+        Assert.NotNull(loaded);
+        Assert.Equal("Original", loaded.Name);
+        var issue = Assert.Single(issues);
+        Assert.True(issue.RecoveredFromBackup);
+    }
+
+    [Fact]
     public async Task SaveImageAsync_persists_image_content_and_updates_storage_key()
     {
         var project = new Project();
         var comparison = new ComparisonSet();
         var image = CreateImage("reference.png");
-        var content = Encoding.UTF8.GetBytes("image bytes");
+        var content = "image bytes"u8.ToArray();
 
         await _storage.SaveImageAsync(project.Id, comparison.Id, image, new MemoryStream(content), CancellationToken);
 

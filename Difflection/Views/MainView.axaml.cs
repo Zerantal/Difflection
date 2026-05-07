@@ -10,9 +10,10 @@ using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
+using Difflection.Infrastructure;
 using Difflection.Models;
 using Difflection.Monitoring;
-using Difflection.Storage;
 using Difflection.ViewModels;
 
 namespace Difflection.Views;
@@ -61,7 +62,9 @@ public partial class MainView : UserControl
     {
         if (_viewModel is not null)
         {
-            await _viewModel.AddProjectAsync();
+            var project = await _viewModel.AddProjectAsync();
+            await RefreshStageForSelectedComparisonAsync();
+            BeginEditProjectName(project);
         }
     }
 
@@ -77,7 +80,9 @@ public partial class MainView : UserControl
     {
         if (_viewModel is not null)
         {
-            await _viewModel.AddComparisonAsync();
+            var comparison = await _viewModel.AddComparisonAsync();
+            await RefreshStageForSelectedComparisonAsync();
+            BeginEditComparisonName(comparison);
         }
     }
 
@@ -89,42 +94,80 @@ public partial class MainView : UserControl
         }
     }
 
-    private async void ProjectNameTextBox_OnLostFocus(object? sender, RoutedEventArgs e)
+    private async void ProjectListNameTextBox_OnLostFocus(object? sender, RoutedEventArgs e)
     {
-        if (_viewModel is not null)
+        if (_viewModel is not null && sender is TextBox { DataContext: Project project } textBox && !textBox.IsReadOnly)
         {
-            await _viewModel.RenameSelectedProjectAsync(ProjectNameTextBox.Text);
+            await _viewModel.RenameProjectAsync(project, textBox.Text);
+            EndInlineRename(textBox);
         }
     }
 
-    private async void ProjectNameTextBox_OnKeyDown(object? sender, KeyEventArgs e)
+    private async void ProjectListNameTextBox_OnKeyDown(object? sender, KeyEventArgs e)
     {
-        if (e.Key != Key.Enter || _viewModel is null)
+        if (sender is not TextBox { DataContext: Project project } textBox || textBox.IsReadOnly)
         {
             return;
         }
 
-        await _viewModel.RenameSelectedProjectAsync(ProjectNameTextBox.Text);
-        e.Handled = true;
-    }
-
-    private async void ComparisonNameTextBox_OnLostFocus(object? sender, RoutedEventArgs e)
-    {
-        if (_viewModel is not null)
+        if (e.Key == Key.Enter && _viewModel is not null)
         {
-            await _viewModel.RenameSelectedComparisonAsync(ComparisonNameTextBox.Text);
+            await _viewModel.RenameProjectAsync(project, textBox.Text);
+            EndInlineRename(textBox);
+            e.Handled = true;
+        }
+        else if (e.Key == Key.Escape)
+        {
+            textBox.Text = project.Name;
+            EndInlineRename(textBox);
+            e.Handled = true;
         }
     }
 
-    private async void ComparisonNameTextBox_OnKeyDown(object? sender, KeyEventArgs e)
+    private async void ComparisonListNameTextBox_OnLostFocus(object? sender, RoutedEventArgs e)
     {
-        if (e.Key != Key.Enter || _viewModel is null)
+        if (_viewModel is not null && sender is TextBox { DataContext: ComparisonSet comparison } textBox && !textBox.IsReadOnly)
+        {
+            await _viewModel.RenameComparisonAsync(comparison, textBox.Text);
+            EndInlineRename(textBox);
+        }
+    }
+
+    private async void ComparisonListNameTextBox_OnKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (sender is not TextBox { DataContext: ComparisonSet comparison } textBox || textBox.IsReadOnly)
         {
             return;
         }
 
-        await _viewModel.RenameSelectedComparisonAsync(ComparisonNameTextBox.Text);
-        e.Handled = true;
+        if (e.Key == Key.Enter && _viewModel is not null)
+        {
+            await _viewModel.RenameComparisonAsync(comparison, textBox.Text);
+            EndInlineRename(textBox);
+            e.Handled = true;
+        }
+        else if (e.Key == Key.Escape)
+        {
+            textBox.Text = comparison.Name;
+            EndInlineRename(textBox);
+            e.Handled = true;
+        }
+    }
+
+    private void ProjectRenameMenuItem_OnClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is MenuItem { DataContext: Project project })
+        {
+            BeginEditProjectName(project);
+        }
+    }
+
+    private void ComparisonRenameMenuItem_OnClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is MenuItem { DataContext: ComparisonSet comparison })
+        {
+            BeginEditComparisonName(comparison);
+        }
     }
 
     private async void ImageLabelTextBox_OnLostFocus(object? sender, RoutedEventArgs e)
@@ -307,6 +350,12 @@ public partial class MainView : UserControl
             Dispatcher.UIThread.Post(SyncSidebarSelection);
         }
 
+        if (e.PropertyName is nameof(MainWindowViewModel.SelectedProject)
+            or nameof(MainWindowViewModel.SelectedComparison))
+        {
+            _ = RefreshStageForSelectedComparisonAsync();
+        }
+
         if (e.PropertyName is nameof(MainWindowViewModel.SelectedProjectComparisons)
             or nameof(MainWindowViewModel.SelectedComparisonImages))
         {
@@ -359,6 +408,72 @@ public partial class MainView : UserControl
         }
     }
 
+    private void BeginEditProjectName(Project project)
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            SyncSidebarSelection();
+            if (FindInlineNameTextBox(ProjectsList, project) is { } textBox)
+            {
+                BeginInlineRename(textBox);
+            }
+        });
+    }
+
+    private void BeginEditComparisonName(ComparisonSet comparison)
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            SyncSidebarSelection();
+            if (FindInlineNameTextBox(ComparisonsList, comparison) is { } textBox)
+            {
+                BeginInlineRename(textBox);
+            }
+        });
+    }
+
+    private static TextBox? FindInlineNameTextBox(ItemsControl list, object item)
+    {
+        if (list.ContainerFromItem(item) is not { } container)
+        {
+            return null;
+        }
+
+        return container.GetVisualDescendants().OfType<TextBox>().FirstOrDefault();
+    }
+
+    private static void BeginInlineRename(TextBox textBox)
+    {
+        textBox.IsReadOnly = false;
+        textBox.Focusable = true;
+        textBox.IsHitTestVisible = true;
+        textBox.Classes.Add("editing");
+        textBox.Focus();
+        textBox.SelectAll();
+    }
+
+    private static void EndInlineRename(TextBox textBox)
+    {
+        textBox.IsReadOnly = true;
+        textBox.Focusable = false;
+        textBox.IsHitTestVisible = false;
+        textBox.Classes.Remove("editing");
+        textBox.SelectionStart = 0;
+        textBox.SelectionEnd = 0;
+    }
+
+    private async Task RefreshStageForSelectedComparisonAsync()
+    {
+        if (_viewModel is null)
+        {
+            return;
+        }
+
+        await _viewModel.RefreshCurrentComparisonImagesAsync();
+        UpdateViewControls();
+        ComparisonStage.FitZoomToStage();
+    }
+
     private void OnDetachedFromVisualTree(object? sender, VisualTreeAttachmentEventArgs e)
     {
         BrowserInterop.DetachBrowserBridge?.Invoke(this);
@@ -377,11 +492,18 @@ public partial class MainView : UserControl
 
         if (_viewModel is not null && !_projectsLoaded)
         {
-            _projectsLoaded = true;
-            await _viewModel.LoadProjectsAsync();
-            SyncSidebarSelection();
-            Dispatcher.UIThread.Post(SyncSidebarSelection);
-            RestartImageChangeMonitor();
+            try
+            {
+                _projectsLoaded = true;
+                await _viewModel.LoadProjectsAsync();
+                SyncSidebarSelection();
+                Dispatcher.UIThread.Post(SyncSidebarSelection);
+                RestartImageChangeMonitor();
+            }
+            catch (Exception exception)
+            {
+                ApplicationErrorReporter.Report(exception, "Difflection could not load saved projects.");
+            }
         }
     }
 
@@ -395,7 +517,7 @@ public partial class MainView : UserControl
 
     private ProjectImageChangeMonitor? CreateImageChangeMonitor(MainWindowViewModel? viewModel)
     {
-        if (viewModel?.ProjectStorage is not IProjectStorage projectStorage || OperatingSystem.IsBrowser())
+        if (viewModel?.ProjectStorage is not { } projectStorage || OperatingSystem.IsBrowser())
         {
             return null;
         }

@@ -15,12 +15,12 @@ namespace Difflection.Tests.Monitoring;
 
 public sealed class ProjectImageChangeMonitorTests : IDisposable
 {
-    private readonly string storageRootPath = Path.Combine(Path.GetTempPath(), "Difflection.Tests", Guid.NewGuid().ToString("N"));
+    private readonly string _storageRootPath = Path.Combine(Path.GetTempPath(), "Difflection.Tests", Guid.NewGuid().ToString("N"));
 
     [AvaloniaFact]
     public async Task CapturePathChangeAsync_captures_changed_monitored_image()
     {
-        var storage = new LocalFileProjectStorage(storageRootPath);
+        var storage = new LocalFileProjectStorage(_storageRootPath);
         var viewModel = new MainWindowViewModel(storage);
         var project = await viewModel.AddProjectAsync("Project", TestContext.Current.CancellationToken);
         var comparison = await viewModel.AddComparisonAsync("Comparison", TestContext.Current.CancellationToken);
@@ -57,15 +57,15 @@ public sealed class ProjectImageChangeMonitorTests : IDisposable
 
         await TestUiSupport.WaitForAsync(() => captured is not null);
         Assert.Equal(3, comparison.Images.Count);
-        Assert.Equal(firstVersion!.Id, comparison.ReferenceImage?.PreviousVersionImageId);
+        Assert.Equal(firstVersion.Id, comparison.ReferenceImage?.PreviousVersionImageId);
         Assert.Same(firstVersion, captured!.PreviousVersion);
     }
 
     public void Dispose()
     {
-        if (Directory.Exists(storageRootPath))
+        if (Directory.Exists(_storageRootPath))
         {
-            Directory.Delete(storageRootPath, recursive: true);
+            Directory.Delete(_storageRootPath, recursive: true);
         }
     }
 
@@ -82,23 +82,23 @@ public sealed class ProjectImageChangeMonitorTests : IDisposable
 
     private sealed class FakeImageSourceChangeWatcher : IImageSourceChangeWatcher
     {
-        private readonly HashSet<string> sourceIds = [];
+        private readonly HashSet<string> _sourceIds = [];
 
         public event EventHandler<ImageSourceChangedEventArgs>? SourceChanged;
 
         public void Watch(IEnumerable<ImageSourceWatch> sources)
         {
-            sourceIds.Clear();
+            _sourceIds.Clear();
 
             foreach (var source in sources)
             {
-                sourceIds.Add(source.SourceId);
+                _sourceIds.Add(source.SourceId);
             }
         }
 
         public void Stop()
         {
-            sourceIds.Clear();
+            _sourceIds.Clear();
         }
 
         public void Dispose()
@@ -108,7 +108,7 @@ public sealed class ProjectImageChangeMonitorTests : IDisposable
 
         public void RaiseChanged(string sourceId)
         {
-            if (sourceIds.Contains(sourceId))
+            if (_sourceIds.Contains(sourceId))
             {
                 SourceChanged?.Invoke(this, new ImageSourceChangedEventArgs(sourceId));
             }

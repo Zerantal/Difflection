@@ -154,6 +154,39 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
+    public async Task AddImageAsync_renames_default_comparison_from_first_image_label()
+    {
+        var viewModel = new MainWindowViewModel(new FakeProjectStorage());
+        await viewModel.AddProjectAsync("Project", TestContext.Current.CancellationToken);
+        var comparison = await viewModel.AddComparisonAsync(cancellationToken: TestContext.Current.CancellationToken);
+
+        await viewModel.AddImageAsync(
+            "first-reference.png",
+            new MemoryStream([1]),
+            label: "  Homepage Reference  ",
+            cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.Equal("Homepage Reference", comparison.Name);
+        Assert.Equal("Project / Homepage Reference", viewModel.WorkspaceContextTitle);
+    }
+
+    [Fact]
+    public async Task AddImageAsync_keeps_user_named_comparison_name()
+    {
+        var viewModel = new MainWindowViewModel(new FakeProjectStorage());
+        await viewModel.AddProjectAsync("Project", TestContext.Current.CancellationToken);
+        var comparison = await viewModel.AddComparisonAsync("Header States", TestContext.Current.CancellationToken);
+
+        await viewModel.AddImageAsync(
+            "first-reference.png",
+            new MemoryStream([1]),
+            label: "Homepage Reference",
+            cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.Equal("Header States", comparison.Name);
+    }
+
+    [Fact]
     public async Task Workspace_context_summarizes_selected_project_comparison_and_image_count()
     {
         var storage = new FakeProjectStorage();

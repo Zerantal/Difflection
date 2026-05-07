@@ -8,6 +8,7 @@ using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.VisualTree;
 using Difflection.Models;
 using Difflection.Storage;
 using Difflection.Tests.Infrastructure;
@@ -77,7 +78,7 @@ public sealed class SidebarNavigationTests
     }
 
     [AvaloniaFact]
-    public async Task Sidebar_name_editors_rename_selected_project_and_comparison()
+    public async Task Inline_sidebar_name_editors_rename_created_project_and_comparison()
     {
         var storage = new FakeProjectStorage();
         var viewModel = new MainWindowViewModel(storage);
@@ -88,17 +89,21 @@ public sealed class SidebarNavigationTests
             var mainView = TestUiSupport.GetMainView(window);
 
             Click(GetControl<Button>(mainView, "AddProjectButton"));
-            Click(GetControl<Button>(mainView, "AddComparisonButton"));
-            await TestUiSupport.WaitForAsync(() => viewModel.SelectedComparison is not null);
-            storage.SavedProjects.Clear();
-
-            var projectNameTextBox = GetControl<TextBox>(mainView, "ProjectNameTextBox");
+            var projectsList = GetControl<ListBox>(mainView, "ProjectsList");
+            var projectNameTextBox = await WaitForInlineNameTextBoxAsync(projectsList, viewModel.SelectedProject!);
+            await TestUiSupport.WaitForAsync(() => !projectNameTextBox.IsReadOnly);
             projectNameTextBox.Text = "  Client Work  ";
             LoseFocus(projectNameTextBox);
 
             await TestUiSupport.WaitForAsync(() => viewModel.SelectedProject?.Name == "Client Work");
 
-            var comparisonNameTextBox = GetControl<TextBox>(mainView, "ComparisonNameTextBox");
+            Click(GetControl<Button>(mainView, "AddComparisonButton"));
+            await TestUiSupport.WaitForAsync(() => viewModel.SelectedComparison is not null);
+            storage.SavedProjects.Clear();
+
+            var comparisonsList = GetControl<ListBox>(mainView, "ComparisonsList");
+            var comparisonNameTextBox = await WaitForInlineNameTextBoxAsync(comparisonsList, viewModel.SelectedComparison!);
+            await TestUiSupport.WaitForAsync(() => !comparisonNameTextBox.IsReadOnly);
             comparisonNameTextBox.Text = "  Header States  ";
             LoseFocus(comparisonNameTextBox);
 
@@ -106,7 +111,117 @@ public sealed class SidebarNavigationTests
 
             Assert.Equal("Client Work", viewModel.SelectedProject?.Name);
             Assert.Equal("Header States", viewModel.SelectedComparison?.Name);
+            Assert.True(projectNameTextBox.IsReadOnly);
+            Assert.True(comparisonNameTextBox.IsReadOnly);
+            Assert.False(projectNameTextBox.IsHitTestVisible);
+            Assert.False(comparisonNameTextBox.IsHitTestVisible);
             Assert.NotEmpty(storage.SavedProjects);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task Remove_image_button_removes_image_and_refreshes_current_display()
+    {
+        var storage = new FakeProjectStorage();
+        var viewModel = new MainWindowViewModel(storage);
+        await viewModel.AddProjectAsync("Project", TestContext.Current.CancellationToken);
+        await viewModel.AddComparisonAsync("Comparison", TestContext.Current.CancellationToken);
+        var reference = await viewModel.AddImageAsync(TestUiSupport.CreateStorageFile("left-reference.png"), cancellationToken: TestContext.Current.CancellationToken);
+        var candidate = await viewModel.AddImageAsync(TestUiSupport.CreateStorageFile("candidate.png"), cancellationToken: TestContext.Current.CancellationToken);
+        await viewModel.RefreshCurrentComparisonImagesAsync(TestContext.Current.CancellationToken);
+        storage.SavedProjects.Clear();
+
+        var window = TestUiSupport.CreateWindow(viewModel);
+        try
+        {
+            var mainView = TestUiSupport.GetMainView(window);
+            var imagesList = GetControl<ListBox>(mainView, "ComparisonImagesList");
+
+            await TestUiSupport.WaitForAsync(() => imagesList.ItemCount == 2);
+
+            Click(GetImageActionButton(imagesList, reference, "Remove"));
+
+            await TestUiSupport.WaitForAsync(() => imagesList.ItemCount == 1 && viewModel.LeftFileName == candidate.Label);
+
+            Assert.DoesNotContain(reference, viewModel.SelectedComparison!.Images);
+            Assert.Equal(candidate.Id, viewModel.SelectedComparison.ReferenceImageId);
+            Assert.Null(viewModel.SelectedComparison.CandidateImageId);
+            Assert.Contains(reference.Id, storage.DeletedImageIds);
+            Assert.Same(viewModel.SelectedProject, Assert.Single(storage.SavedProjects));
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task Selecting_comparison_refreshes_main_display_images()
+    {
+        var storage = new FakeProjectStorage();
+        var viewModel = new MainWindowViewModel(storage);
+        await viewModel.AddProjectAsync("Project", TestContext.Current.CancellationToken);
+        var first = await viewModel.AddComparisonAsync("First", TestContext.Current.CancellationToken);
+        var firstImage = await viewModel.AddImageAsync(TestUiSupport.CreateStorageFile("first-left-reference.png"), label: "First Reference", cancellationToken: TestContext.Current.CancellationToken);
+        var second = await viewModel.AddComparisonAsync("Second", TestContext.Current.CancellationToken);
+        var secondImage = await viewModel.AddImageAsync(TestUiSupport.CreateStorageFile("second-left-reference.png"), label: "Second Reference", cancellationToken: TestContext.Current.CancellationToken);
+        viewModel.SelectedComparison = first;
+        await viewModel.RefreshCurrentComparisonImagesAsync(TestContext.Current.CancellationToken);
+
+        var window = TestUiSupport.CreateWindow(viewModel);
+        try
+        {
+            var mainView = TestUiSupport.GetMainView(window);
+            var comparisonsList = GetControl<ListBox>(mainView, "ComparisonsList");
+
+            await TestUiSupport.WaitForAsync(() => viewModel.LeftFileName == firstImage.Label);
+
+            comparisonsList.SelectedItem = second;
+
+            await TestUiSupport.WaitForAsync(() => viewModel.LeftFileName == secondImage.Label);
+
+            Assert.Same(second, viewModel.SelectedComparison);
+            Assert.Null(viewModel.RightImage);
+            Assert.Equal("Candidate image", viewModel.RightFileName);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task Add_comparison_selects_new_empty_comparison_and_clears_display()
+    {
+        var storage = new FakeProjectStorage();
+        var viewModel = new MainWindowViewModel(storage);
+        await viewModel.AddProjectAsync("Project", TestContext.Current.CancellationToken);
+        await viewModel.AddComparisonAsync("First", TestContext.Current.CancellationToken);
+        await viewModel.AddImageAsync(TestUiSupport.CreateStorageFile("first-left-reference.png"), label: "First Reference", cancellationToken: TestContext.Current.CancellationToken);
+        await viewModel.RefreshCurrentComparisonImagesAsync(TestContext.Current.CancellationToken);
+
+        var window = TestUiSupport.CreateWindow(viewModel);
+        try
+        {
+            var mainView = TestUiSupport.GetMainView(window);
+            var comparisonsList = GetControl<ListBox>(mainView, "ComparisonsList");
+
+            await TestUiSupport.WaitForAsync(() => viewModel.LeftFileName == "First Reference");
+
+            Click(GetControl<Button>(mainView, "AddComparisonButton"));
+
+            await TestUiSupport.WaitForAsync(() => comparisonsList.ItemCount == 2
+                && viewModel.SelectedComparison?.Images.Count == 0
+                && viewModel.LeftImage is null
+                && viewModel.RightImage is null);
+
+            Assert.Same(viewModel.SelectedComparison, comparisonsList.SelectedItem);
+            Assert.Equal("Reference image", viewModel.LeftFileName);
+            Assert.Equal("Candidate image", viewModel.RightFileName);
         }
         finally
         {
@@ -241,31 +356,64 @@ public sealed class SidebarNavigationTests
         textBox.RaiseEvent(new RoutedEventArgs(InputElement.LostFocusEvent));
     }
 
+    private static async Task<TextBox> WaitForInlineNameTextBoxAsync(ItemsControl list, object item)
+    {
+        TextBox? textBox = null;
+        await TestUiSupport.WaitForAsync(() =>
+        {
+            textBox = FindInlineNameTextBox(list, item);
+            return textBox is not null;
+        });
+
+        return textBox!;
+    }
+
+    private static TextBox? FindInlineNameTextBox(ItemsControl list, object item)
+    {
+        return list.ContainerFromItem(item)
+            ?.GetVisualDescendants()
+            .OfType<TextBox>()
+            .FirstOrDefault();
+    }
+
+    private static Button GetImageActionButton(ItemsControl list, ImageAsset image, string content)
+    {
+        return list.ContainerFromItem(image)
+            ?.GetVisualDescendants()
+            .OfType<Button>()
+            .FirstOrDefault(button => string.Equals(button.Content?.ToString(), content, StringComparison.Ordinal))
+            ?? throw new InvalidOperationException($"Image action button '{content}' not found.");
+    }
+
     private sealed class FakeProjectStorage(params Project[] projects) : IProjectStorage
     {
-        private readonly List<Project> projects = [..projects];
+        private readonly List<Project> _projects = [..projects];
 
         public List<Project> SavedProjects { get; } = [];
 
         public List<Guid> DeletedProjectIds { get; } = [];
 
+        public Dictionary<Guid, byte[]> SavedImageContents { get; } = [];
+
+        public List<Guid> DeletedImageIds { get; } = [];
+
         public Task<IReadOnlyList<Project>> LoadProjectsAsync(CancellationToken cancellationToken = default)
         {
-            return Task.FromResult<IReadOnlyList<Project>>(projects.ToArray());
+            return Task.FromResult<IReadOnlyList<Project>>(_projects.ToArray());
         }
 
         public Task<Project?> LoadProjectAsync(Guid projectId, CancellationToken cancellationToken = default)
         {
-            return Task.FromResult(projects.FirstOrDefault(project => project.Id == projectId));
+            return Task.FromResult(_projects.FirstOrDefault(project => project.Id == projectId));
         }
 
         public Task SaveProjectAsync(Project project, CancellationToken cancellationToken = default)
         {
             SavedProjects.Add(project);
 
-            if (!projects.Contains(project))
+            if (!_projects.Contains(project))
             {
-                projects.Add(project);
+                _projects.Add(project);
             }
 
             return Task.CompletedTask;
@@ -274,28 +422,34 @@ public sealed class SidebarNavigationTests
         public Task DeleteProjectAsync(Guid projectId, CancellationToken cancellationToken = default)
         {
             DeletedProjectIds.Add(projectId);
-            projects.RemoveAll(project => project.Id == projectId);
+            _projects.RemoveAll(project => project.Id == projectId);
             return Task.CompletedTask;
         }
 
-        public Task<string> SaveImageAsync(
+        public async Task<string> SaveImageAsync(
             Guid projectId,
             Guid comparisonSetId,
             ImageAsset image,
             Stream content,
             CancellationToken cancellationToken = default)
         {
-            throw new NotSupportedException();
+            await using var buffer = new MemoryStream();
+            await content.CopyToAsync(buffer, cancellationToken);
+            SavedImageContents[image.Id] = buffer.ToArray();
+            image.StorageKey = $"stored/{image.Id:N}";
+            return image.StorageKey;
         }
 
         public Task<Stream> LoadImageAsync(ImageAsset image, CancellationToken cancellationToken = default)
         {
-            throw new NotSupportedException();
+            return Task.FromResult<Stream>(new MemoryStream(SavedImageContents[image.Id]));
         }
 
         public Task DeleteImageAsync(ImageAsset image, CancellationToken cancellationToken = default)
         {
-            throw new NotSupportedException();
+            DeletedImageIds.Add(image.Id);
+            SavedImageContents.Remove(image.Id);
+            return Task.CompletedTask;
         }
     }
 }

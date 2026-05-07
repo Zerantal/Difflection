@@ -14,6 +14,7 @@ public sealed class LocalFileProjectStorage(string rootPath) : IProjectStorage
     private const string ProjectsDirectoryName = "projects";
     private const string ComparisonsDirectoryName = "comparisons";
     private const string ProjectFileName = "project.json";
+    private const string ProjectBackupFileName = "project.json.bak";
     private const string ImagesDirectoryName = "images";
 
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.General)
@@ -24,6 +25,8 @@ public sealed class LocalFileProjectStorage(string rootPath) : IProjectStorage
     private readonly string _rootPath = string.IsNullOrWhiteSpace(rootPath)
         ? throw new ArgumentException("A storage root path is required.", nameof(rootPath))
         : rootPath;
+
+    public event EventHandler<ProjectStorageLoadIssueEventArgs>? ProjectLoadIssue;
 
     public async Task<IReadOnlyList<Project>> LoadProjectsAsync(CancellationToken cancellationToken = default)
     {
@@ -39,7 +42,7 @@ public sealed class LocalFileProjectStorage(string rootPath) : IProjectStorage
         foreach (var projectFilePath in Directory.EnumerateFiles(projectsPath, ProjectFileName, SearchOption.AllDirectories))
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var project = await LoadProjectFileAsync(projectFilePath, cancellationToken);
+            var project = await LoadProjectFileWithRecoveryAsync(projectFilePath, cancellationToken);
 
             if (project is not null)
             {
@@ -57,7 +60,7 @@ public sealed class LocalFileProjectStorage(string rootPath) : IProjectStorage
     public async Task<Project?> LoadProjectAsync(Guid projectId, CancellationToken cancellationToken = default)
     {
         var projectFilePath = GetProjectFilePath(projectId);
-        var project = await LoadProjectFileAsync(projectFilePath, cancellationToken);
+        var project = await LoadProjectFileWithRecoveryAsync(projectFilePath, cancellationToken);
 
         if (project is not null)
         {
@@ -72,10 +75,44 @@ public sealed class LocalFileProjectStorage(string rootPath) : IProjectStorage
         ArgumentNullException.ThrowIfNull(project);
 
         RepairProject(project);
-        Directory.CreateDirectory(GetProjectPath(project.Id));
+        var projectPath = GetProjectPath(project.Id);
+        Directory.CreateDirectory(projectPath);
 
-        await using var stream = File.Create(GetProjectFilePath(project.Id));
-        await JsonSerializer.SerializeAsync(stream, project, JsonOptions, cancellationToken);
+        var projectFilePath = GetProjectFilePath(project.Id);
+        var temporaryFilePath = Path.Combine(projectPath, $"{ProjectFileName}.{Guid.NewGuid():N}.tmp");
+        var backupFilePath = Path.Combine(projectPath, ProjectBackupFileName);
+
+        try
+        {
+            await using (var stream = new FileStream(
+                temporaryFilePath,
+                FileMode.CreateNew,
+                FileAccess.Write,
+                FileShare.None,
+                bufferSize: 16 * 1024,
+                FileOptions.WriteThrough))
+            {
+                await JsonSerializer.SerializeAsync(stream, project, JsonOptions, cancellationToken);
+                await stream.FlushAsync(cancellationToken);
+                stream.Flush(flushToDisk: true);
+            }
+
+            if (File.Exists(projectFilePath))
+            {
+                File.Replace(temporaryFilePath, projectFilePath, backupFilePath, ignoreMetadataErrors: true);
+            }
+            else
+            {
+                File.Move(temporaryFilePath, projectFilePath);
+            }
+        }
+        finally
+        {
+            if (File.Exists(temporaryFilePath))
+            {
+                File.Delete(temporaryFilePath);
+            }
+        }
     }
 
     public Task DeleteProjectAsync(Guid projectId, CancellationToken cancellationToken = default)
@@ -187,15 +224,58 @@ public sealed class LocalFileProjectStorage(string rootPath) : IProjectStorage
         };
     }
 
-    private async Task<Project?> LoadProjectFileAsync(string projectFilePath, CancellationToken cancellationToken)
+    private async Task<Project?> LoadProjectFileWithRecoveryAsync(string projectFilePath, CancellationToken cancellationToken)
     {
         if (!File.Exists(projectFilePath))
         {
             return null;
         }
 
+        try
+        {
+            return await LoadProjectFileAsync(projectFilePath, cancellationToken);
+        }
+        catch (Exception exception) when (IsRecoverableProjectLoadException(exception))
+        {
+            var backupFilePath = Path.Combine(Path.GetDirectoryName(projectFilePath)!, ProjectBackupFileName);
+            if (File.Exists(backupFilePath))
+            {
+                try
+                {
+                    var recoveredProject = await LoadProjectFileAsync(backupFilePath, cancellationToken);
+                    ProjectLoadIssue?.Invoke(this, new ProjectStorageLoadIssueEventArgs(
+                        projectFilePath,
+                        exception,
+                        recoveredFromBackup: recoveredProject is not null));
+                    return recoveredProject;
+                }
+                catch (Exception backupException) when (IsRecoverableProjectLoadException(backupException))
+                {
+                    ProjectLoadIssue?.Invoke(this, new ProjectStorageLoadIssueEventArgs(
+                        projectFilePath,
+                        new AggregateException(exception, backupException),
+                        recoveredFromBackup: false));
+                    return null;
+                }
+            }
+
+            ProjectLoadIssue?.Invoke(this, new ProjectStorageLoadIssueEventArgs(
+                projectFilePath,
+                exception,
+                recoveredFromBackup: false));
+            return null;
+        }
+    }
+
+    private static async Task<Project?> LoadProjectFileAsync(string projectFilePath, CancellationToken cancellationToken)
+    {
         await using var stream = File.OpenRead(projectFilePath);
         return await JsonSerializer.DeserializeAsync<Project>(stream, JsonOptions, cancellationToken);
+    }
+
+    private static bool IsRecoverableProjectLoadException(Exception exception)
+    {
+        return exception is JsonException or IOException or UnauthorizedAccessException or InvalidOperationException;
     }
 
     private string GetProjectsPath()

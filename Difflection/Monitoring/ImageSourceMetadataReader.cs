@@ -15,7 +15,7 @@ public static class ImageSourceMetadataReader
         Stream stream,
         CancellationToken cancellationToken = default)
     {
-        var path = file.Path?.IsFile == true ? file.Path.LocalPath : null;
+        var path = file.Path.IsFile ? file.Path.LocalPath : null;
         var metadata = string.IsNullOrWhiteSpace(path)
             ? new ImageSourceMetadata { FileName = file.Name }
             : await ReadAsync(path, cancellationToken);

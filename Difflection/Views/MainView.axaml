@@ -67,6 +67,8 @@
             <Setter Property="Padding" Value="8,7" />
             <Setter Property="Margin" Value="0,1" />
             <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
         </Style>
         <Style Selector="ListBoxItem:pointerover /template/ ContentPresenter">
             <Setter Property="Background" Value="#2A2A2A" />
@@ -87,6 +89,32 @@
             <Setter Property="CornerRadius" Value="4" />
             <Setter Property="Padding" Value="8,5" />
             <Setter Property="FontSize" Value="13" />
+        </Style>
+        <Style Selector="TextBox.sidebarInlineName">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="#E5E7EB" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="MinHeight" Value="20" />
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="IsHitTestVisible" Value="False" />
+        </Style>
+        <Style Selector="TextBox.sidebarInlineName:pointerover">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="Padding" Value="0" />
+        </Style>
+        <Style Selector="TextBox.sidebarInlineName.editing">
+            <Setter Property="Background" Value="#101010" />
+            <Setter Property="BorderBrush" Value="#525252" />
+            <Setter Property="Padding" Value="6,3" />
+            <Setter Property="Focusable" Value="True" />
+            <Setter Property="IsHitTestVisible" Value="True" />
         </Style>
         <Style Selector="TextBox.inlineImageLabel">
             <Setter Property="Background" Value="#101010" />
@@ -161,7 +189,7 @@
             </Grid>
         </Border>
 
-        <Border Grid.Row="1" Grid.ColumnSpan="2" Background="#2B2B2B" BorderBrush="#363636" BorderThickness="0,0,0,1">
+        <Border Grid.Row="1" Grid.ColumnSpan="2" Grid.Column="0" Background="#2B2B2B" BorderBrush="#363636" BorderThickness="0,0,0,1">
             <Grid ColumnDefinitions="Auto,*" Margin="20,0">
                 <StackPanel Orientation="Horizontal"
                             VerticalAlignment="Bottom"
@@ -218,7 +246,7 @@
                 BorderBrush="#303030"
                 BorderThickness="0,0,1,0"
                 Padding="12">
-            <Grid RowDefinitions="Auto,Auto,*,16,Auto,Auto,*" RowSpacing="8">
+            <Grid RowDefinitions="Auto,*,16,Auto,*" RowSpacing="8">
                 <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="6">
                     <TextBlock Classes="sidebarHeading"
                                Text="PROJECTS"
@@ -238,31 +266,35 @@
                             Click="DeleteProjectButton_OnClick" />
                 </Grid>
 
-                <TextBox x:Name="ProjectNameTextBox"
-                         Grid.Row="1"
-                         Classes="nameEditor"
-                         PlaceholderText="Project name"
-                         IsEnabled="{Binding HasSelectedProject}"
-                         Text="{Binding SelectedProjectName, Mode=TwoWay}"
-                         LostFocus="ProjectNameTextBox_OnLostFocus"
-                         KeyDown="ProjectNameTextBox_OnKeyDown" />
-
                 <ListBox x:Name="ProjectsList"
-                         Grid.Row="2"
+                         Grid.Row="1"
                          Classes="sidebarList"
                          ItemsSource="{Binding Projects}"
                          SelectedItem="{Binding SelectedProject, Mode=TwoWay}">
                     <ListBox.ItemTemplate>
                         <DataTemplate x:DataType="models:Project">
-                            <TextBlock Classes="sidebarItemText"
-                                       Text="{Binding Name}" />
+                            <Border Background="Transparent">
+                                <Border.ContextMenu>
+                                    <ContextMenu>
+                                        <MenuItem Header="Rename"
+                                                  Click="ProjectRenameMenuItem_OnClick" />
+                                    </ContextMenu>
+                                </Border.ContextMenu>
+                                <TextBox Classes="sidebarInlineName"
+                                         Text="{Binding Name}"
+                                         IsReadOnly="True"
+                                         Focusable="False"
+                                         IsHitTestVisible="False"
+                                         LostFocus="ProjectListNameTextBox_OnLostFocus"
+                                         KeyDown="ProjectListNameTextBox_OnKeyDown" />
+                            </Border>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
 
-                <Border Grid.Row="3" Height="1" Background="#303030" VerticalAlignment="Center" />
+                <Border Grid.Row="2" Height="1" Background="#303030" VerticalAlignment="Center" />
 
-                <Grid Grid.Row="4" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="6">
+                <Grid Grid.Row="3" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="6">
                     <TextBlock Classes="sidebarHeading"
                                Text="COMPARISONS"
                                VerticalAlignment="Center" />
@@ -282,24 +314,28 @@
                             Click="DeleteComparisonButton_OnClick" />
                 </Grid>
 
-                <TextBox x:Name="ComparisonNameTextBox"
-                         Grid.Row="5"
-                         Classes="nameEditor"
-                         PlaceholderText="Comparison name"
-                         IsEnabled="{Binding HasSelectedComparison}"
-                         Text="{Binding SelectedComparisonName, Mode=TwoWay}"
-                         LostFocus="ComparisonNameTextBox_OnLostFocus"
-                         KeyDown="ComparisonNameTextBox_OnKeyDown" />
-
                 <ListBox x:Name="ComparisonsList"
-                         Grid.Row="6"
+                         Grid.Row="4"
                          Classes="sidebarList"
                          ItemsSource="{Binding SelectedProjectComparisons}"
                          SelectedItem="{Binding SelectedComparison, Mode=TwoWay}">
                     <ListBox.ItemTemplate>
                         <DataTemplate x:DataType="models:ComparisonSet">
-                            <TextBlock Classes="sidebarItemText"
-                                       Text="{Binding Name}" />
+                            <Border Background="Transparent">
+                                <Border.ContextMenu>
+                                    <ContextMenu>
+                                        <MenuItem Header="Rename"
+                                                  Click="ComparisonRenameMenuItem_OnClick" />
+                                    </ContextMenu>
+                                </Border.ContextMenu>
+                                <TextBox Classes="sidebarInlineName"
+                                         Text="{Binding Name}"
+                                         IsReadOnly="True"
+                                         Focusable="False"
+                                         IsHitTestVisible="False"
+                                         LostFocus="ComparisonListNameTextBox_OnLostFocus"
+                                         KeyDown="ComparisonListNameTextBox_OnKeyDown" />
+                            </Border>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
