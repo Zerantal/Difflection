@@ -113,9 +113,9 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public bool CanDeleteSelectedComparison => HasSelectedComparison;
 
-    public IReadOnlyList<ComparisonSet> SelectedProjectComparisons => SelectedProject?.Comparisons ?? [];
+    public IReadOnlyList<ComparisonSet> SelectedProjectComparisons => SelectedProject?.Comparisons.ToArray() ?? [];
 
-    public IReadOnlyList<ImageAsset> SelectedComparisonImages => SelectedComparison?.Images ?? [];
+    public IReadOnlyList<ImageAsset> SelectedComparisonImages => SelectedComparison?.Images.ToArray() ?? [];
 
     public bool CanSetReferenceImage(ImageAsset? image)
     {
@@ -617,9 +617,24 @@ public partial class MainWindowViewModel : ViewModelBase
 
     partial void OnSelectedProjectChanged(Project? value)
     {
+        if ((value is null || !Projects.Contains(value)) && Projects.Count > 0)
+        {
+            SelectedProject = Projects.FirstOrDefault();
+            return;
+        }
+
         if (value is null || SelectedComparison is null || !value.Comparisons.Contains(SelectedComparison))
         {
             SelectedComparison = value?.Comparisons.FirstOrDefault();
+        }
+    }
+
+    partial void OnSelectedComparisonChanged(ComparisonSet? value)
+    {
+        if (SelectedProject is not null
+            && (value is null || !SelectedProject.Comparisons.Contains(value)))
+        {
+            SelectedComparison = SelectedProject.Comparisons.FirstOrDefault();
         }
     }
 }

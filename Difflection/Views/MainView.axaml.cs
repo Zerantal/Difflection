@@ -7,6 +7,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
+using Avalonia.Threading;
 using Difflection.ViewModels;
 
 namespace Difflection.Views;
@@ -120,6 +121,7 @@ public partial class MainView : UserControl
 
         UpdateDropHints();
         UpdateViewControls();
+        SyncSidebarSelection();
     }
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -134,6 +136,14 @@ public partial class MainView : UserControl
         if (e.PropertyName is nameof(MainWindowViewModel.SelectedViewMode) or nameof(MainWindowViewModel.CanUseSplitScreen))
         {
             UpdateViewControls();
+        }
+
+        if (e.PropertyName is nameof(MainWindowViewModel.SelectedProject)
+            or nameof(MainWindowViewModel.SelectedComparison)
+            or nameof(MainWindowViewModel.SelectedProjectComparisons))
+        {
+            SyncSidebarSelection();
+            Dispatcher.UIThread.Post(SyncSidebarSelection);
         }
     }
 
@@ -156,6 +166,32 @@ public partial class MainView : UserControl
         SplitScreenViewTabUnderline.IsVisible = _viewModel.IsSplitScreenView;
     }
 
+    private void SyncSidebarSelection()
+    {
+        if (_viewModel is null)
+        {
+            return;
+        }
+
+        var projectIndex = _viewModel.SelectedProject is null
+            ? -1
+            : _viewModel.Projects.IndexOf(_viewModel.SelectedProject);
+
+        if (ProjectsList.SelectedIndex != projectIndex)
+        {
+            ProjectsList.SelectedIndex = projectIndex;
+        }
+
+        var comparisonIndex = _viewModel.SelectedProject is null || _viewModel.SelectedComparison is null
+            ? -1
+            : _viewModel.SelectedProject.Comparisons.IndexOf(_viewModel.SelectedComparison);
+
+        if (ComparisonsList.SelectedIndex != comparisonIndex)
+        {
+            ComparisonsList.SelectedIndex = comparisonIndex;
+        }
+    }
+
     private void OnDetachedFromVisualTree(object? sender, VisualTreeAttachmentEventArgs e)
     {
         BrowserInterop.DetachBrowserBridge?.Invoke(this);
@@ -174,6 +210,8 @@ public partial class MainView : UserControl
         {
             _projectsLoaded = true;
             await _viewModel.LoadProjectsAsync();
+            SyncSidebarSelection();
+            Dispatcher.UIThread.Post(SyncSidebarSelection);
         }
     }
 }

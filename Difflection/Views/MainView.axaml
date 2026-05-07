@@ -184,12 +184,14 @@
                     <TextBlock Classes="sidebarHeading"
                                Text="PROJECTS"
                                VerticalAlignment="Center" />
-                    <Button Grid.Column="1"
+                    <Button x:Name="AddProjectButton"
+                            Grid.Column="1"
                             Classes="sidebarIconButton"
                             Content="+"
                             ToolTip.Tip="Add project"
                             Click="AddProjectButton_OnClick" />
-                    <Button Grid.Column="2"
+                    <Button x:Name="DeleteProjectButton"
+                            Grid.Column="2"
                             Classes="sidebarIconButton"
                             Content="-"
                             ToolTip.Tip="Delete selected project"
@@ -197,10 +199,11 @@
                             Click="DeleteProjectButton_OnClick" />
                 </Grid>
 
-                <ListBox Grid.Row="1"
+                <ListBox x:Name="ProjectsList"
+                         Grid.Row="1"
                          Classes="sidebarList"
                          ItemsSource="{Binding Projects}"
-                        SelectedItem="{Binding SelectedProject, Mode=TwoWay}">
+                         SelectedItem="{Binding SelectedProject, Mode=TwoWay}">
                     <ListBox.ItemTemplate>
                         <DataTemplate x:DataType="models:Project">
                             <TextBlock Classes="sidebarItemText"
@@ -215,13 +218,15 @@
                     <TextBlock Classes="sidebarHeading"
                                Text="COMPARISONS"
                                VerticalAlignment="Center" />
-                    <Button Grid.Column="1"
+                    <Button x:Name="AddComparisonButton"
+                            Grid.Column="1"
                             Classes="sidebarIconButton"
                             Content="+"
                             ToolTip.Tip="Add comparison"
                             IsEnabled="{Binding CanAddComparison}"
                             Click="AddComparisonButton_OnClick" />
-                    <Button Grid.Column="2"
+                    <Button x:Name="DeleteComparisonButton"
+                            Grid.Column="2"
                             Classes="sidebarIconButton"
                             Content="-"
                             ToolTip.Tip="Delete selected comparison"
@@ -229,10 +234,11 @@
                             Click="DeleteComparisonButton_OnClick" />
                 </Grid>
 
-                <ListBox Grid.Row="4"
+                <ListBox x:Name="ComparisonsList"
+                         Grid.Row="4"
                          Classes="sidebarList"
                          ItemsSource="{Binding SelectedProjectComparisons}"
-                        SelectedItem="{Binding SelectedComparison, Mode=TwoWay}">
+                         SelectedItem="{Binding SelectedComparison, Mode=TwoWay}">
                     <ListBox.ItemTemplate>
                         <DataTemplate x:DataType="models:ComparisonSet">
                             <TextBlock Classes="sidebarItemText"
