@@ -11,6 +11,8 @@ using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using Difflection.Models;
+using Difflection.Monitoring;
+using Difflection.Storage;
 using Difflection.ViewModels;
 
 namespace Difflection.Views;
@@ -18,6 +20,7 @@ namespace Difflection.Views;
 public partial class MainView : UserControl
 {
     private MainWindowViewModel? _viewModel;
+    private ProjectImageChangeMonitor? _imageChangeMonitor;
     private bool _projectsLoaded;
 
     public MainView()
@@ -268,6 +271,8 @@ public partial class MainView : UserControl
         }
 
         _viewModel = DataContext as MainWindowViewModel;
+        DisposeImageChangeMonitor();
+        _imageChangeMonitor = CreateImageChangeMonitor(_viewModel);
         _projectsLoaded = false;
 
         if (_viewModel is not null)
@@ -300,6 +305,12 @@ public partial class MainView : UserControl
         {
             SyncSidebarSelection();
             Dispatcher.UIThread.Post(SyncSidebarSelection);
+        }
+
+        if (e.PropertyName is nameof(MainWindowViewModel.SelectedProjectComparisons)
+            or nameof(MainWindowViewModel.SelectedComparisonImages))
+        {
+            RestartImageChangeMonitor();
         }
     }
 
@@ -356,6 +367,8 @@ public partial class MainView : UserControl
         {
             _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
         }
+
+        DisposeImageChangeMonitor();
     }
 
     private async void OnAttachedToVisualTree(object? sender, VisualTreeAttachmentEventArgs e)
@@ -368,6 +381,54 @@ public partial class MainView : UserControl
             await _viewModel.LoadProjectsAsync();
             SyncSidebarSelection();
             Dispatcher.UIThread.Post(SyncSidebarSelection);
+            RestartImageChangeMonitor();
+        }
+    }
+
+    private void RestartImageChangeMonitor()
+    {
+        if (_viewModel is not null)
+        {
+            _imageChangeMonitor?.Start(_viewModel.Projects);
+        }
+    }
+
+    private ProjectImageChangeMonitor? CreateImageChangeMonitor(MainWindowViewModel? viewModel)
+    {
+        if (viewModel?.ProjectStorage is not IProjectStorage projectStorage || OperatingSystem.IsBrowser())
+        {
+            return null;
+        }
+
+        var monitor = new ProjectImageChangeMonitor(
+            new DesktopImageSourceChangeWatcher(),
+            new MonitoredImageVersionCapture(projectStorage));
+
+        monitor.VersionCaptured += ImageChangeMonitor_OnVersionCaptured;
+        return monitor;
+    }
+
+    private void DisposeImageChangeMonitor()
+    {
+        if (_imageChangeMonitor is not null)
+        {
+            _imageChangeMonitor.VersionCaptured -= ImageChangeMonitor_OnVersionCaptured;
+            _imageChangeMonitor.Dispose();
+            _imageChangeMonitor = null;
+        }
+    }
+
+    private async void ImageChangeMonitor_OnVersionCaptured(object? sender, MonitoredImageVersionCapturedEventArgs e)
+    {
+        if (_viewModel is null)
+        {
+            return;
+        }
+
+        if (ReferenceEquals(e.Project, _viewModel.SelectedProject)
+            && ReferenceEquals(e.Comparison, _viewModel.SelectedComparison))
+        {
+            await _viewModel.RefreshCurrentComparisonImagesAsync();
         }
     }
 }

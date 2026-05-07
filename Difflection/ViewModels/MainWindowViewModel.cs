@@ -9,6 +9,7 @@ using Avalonia.Media.Imaging;
 using Avalonia.Platform.Storage;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Difflection.Models;
+using Difflection.Monitoring;
 using Difflection.Storage;
 
 namespace Difflection.ViewModels;
@@ -16,6 +17,7 @@ namespace Difflection.ViewModels;
 public partial class MainWindowViewModel : ViewModelBase
 {
     private readonly IProjectStorage? _projectStorage;
+    private readonly MonitoredImageVersionCapture? _monitoredImageVersionCapture;
 
     public MainWindowViewModel()
     {
@@ -24,9 +26,12 @@ public partial class MainWindowViewModel : ViewModelBase
     public MainWindowViewModel(IProjectStorage projectStorage)
     {
         _projectStorage = projectStorage;
+        _monitoredImageVersionCapture = new MonitoredImageVersionCapture(projectStorage);
     }
 
     public ObservableCollection<Project> Projects { get; } = [];
+
+    public IProjectStorage? ProjectStorage => _projectStorage;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsSideBySideView))]
@@ -415,7 +420,63 @@ public partial class MainWindowViewModel : ViewModelBase
         ArgumentNullException.ThrowIfNull(file);
 
         await using var stream = await file.OpenReadAsync();
-        return await AddImageAsync(file.Name, stream, label: label, cancellationToken: cancellationToken);
+        var metadata = await ImageSourceMetadataReader.ReadAsync(file, stream, cancellationToken);
+        return await AddImageAsync(file.Name, stream, label: label, originalFileMetadata: metadata, cancellationToken: cancellationToken);
+    }
+
+    public async Task<bool> SetImageMonitoringAsync(
+        ImageAsset image,
+        ImageMonitoringRole monitoringRole,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(image);
+
+        if (SelectedProject is null || SelectedComparison is null || !SelectedComparison.Images.Contains(image))
+        {
+            return false;
+        }
+
+        if (monitoringRole != ImageMonitoringRole.None)
+        {
+            var sourcePath = image.OriginalFileMetadata?.Path;
+
+            if (string.IsNullOrWhiteSpace(sourcePath) || !File.Exists(sourcePath))
+            {
+                throw new InvalidOperationException("Image monitoring requires an existing local source file path.");
+            }
+
+            image.OriginalFileMetadata = await ImageSourceMetadataReader.ReadAsync(sourcePath, cancellationToken);
+        }
+
+        image.MonitoringRole = monitoringRole;
+        SelectedComparison.UpdatedAt = DateTimeOffset.UtcNow;
+        SelectedProject.UpdatedAt = DateTimeOffset.UtcNow;
+        OnPropertyChanged(nameof(SelectedComparisonImages));
+
+        await SaveProjectAsync(SelectedProject, cancellationToken);
+        return true;
+    }
+
+    public async Task<ImageAsset?> CaptureMonitoredImageChangeAsync(
+        Project project,
+        ComparisonSet comparison,
+        ImageAsset changedImage,
+        CancellationToken cancellationToken = default)
+    {
+        if (_monitoredImageVersionCapture is null)
+        {
+            return null;
+        }
+
+        var version = await _monitoredImageVersionCapture.CaptureAsync(project, comparison, changedImage, cancellationToken);
+
+        if (version is not null && ReferenceEquals(project, SelectedProject) && ReferenceEquals(comparison, SelectedComparison))
+        {
+            OnPropertyChanged(nameof(SelectedComparisonImages));
+            await RefreshCurrentComparisonImagesAsync(cancellationToken);
+        }
+
+        return version;
     }
 
     public async Task<bool> LoadImageAssetAsync(ImageSlot slot, ImageAsset image, CancellationToken cancellationToken = default)

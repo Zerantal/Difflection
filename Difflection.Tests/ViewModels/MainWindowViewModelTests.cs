@@ -9,6 +9,7 @@ using Difflection.Models;
 using Difflection.Storage;
 using Difflection.Tests.Infrastructure;
 using Difflection.ViewModels;
+using SkiaSharp;
 using Xunit;
 
 namespace Difflection.Tests.ViewModels;
@@ -359,6 +360,75 @@ public sealed class MainWindowViewModelTests
         Assert.False(viewModel.CanSetCandidateImage(null));
     }
 
+    [AvaloniaFact]
+    public async Task CaptureMonitoredImageChangeAsync_adds_new_reference_version()
+    {
+        var storage = new FakeProjectStorage();
+        var viewModel = new MainWindowViewModel(storage);
+        var project = await viewModel.AddProjectAsync("Project", TestContext.Current.CancellationToken);
+        var comparison = await viewModel.AddComparisonAsync("Comparison", TestContext.Current.CancellationToken);
+        var file = TestUiSupport.CreateStorageFile("monitored-reference.png");
+        var image = await viewModel.AddImageAsync(file, cancellationToken: TestContext.Current.CancellationToken);
+        await viewModel.SetImageMonitoringAsync(image, ImageMonitoringRole.Reference, TestContext.Current.CancellationToken);
+        storage.SavedProjects.Clear();
+
+        WriteFixtureImage(file.Path.LocalPath, SKColors.DarkGreen);
+
+        var version = await viewModel.CaptureMonitoredImageChangeAsync(project, comparison, image, TestContext.Current.CancellationToken);
+
+        Assert.NotNull(version);
+        Assert.Equal(image.Id, version.PreviousVersionImageId);
+        Assert.Equal(ImageMonitoringRole.None, image.MonitoringRole);
+        Assert.Equal(ImageMonitoringRole.Reference, version.MonitoringRole);
+        Assert.Equal(version.Id, comparison.ReferenceImageId);
+        Assert.Equal(2, comparison.Images.Count);
+        Assert.Same(project, Assert.Single(storage.SavedProjects));
+    }
+
+    [AvaloniaFact]
+    public async Task CaptureMonitoredImageChangeAsync_adds_new_candidate_version()
+    {
+        var storage = new FakeProjectStorage();
+        var viewModel = new MainWindowViewModel(storage);
+        var project = await viewModel.AddProjectAsync("Project", TestContext.Current.CancellationToken);
+        var comparison = await viewModel.AddComparisonAsync("Comparison", TestContext.Current.CancellationToken);
+        var reference = await viewModel.AddImageAsync(TestUiSupport.CreateStorageFile("reference-source.png"), cancellationToken: TestContext.Current.CancellationToken);
+        var candidateFile = TestUiSupport.CreateStorageFile("candidate-source.png");
+        var candidate = await viewModel.AddImageAsync(candidateFile, cancellationToken: TestContext.Current.CancellationToken);
+        await viewModel.SetImageMonitoringAsync(candidate, ImageMonitoringRole.Candidate, TestContext.Current.CancellationToken);
+        storage.SavedProjects.Clear();
+
+        WriteFixtureImage(candidateFile.Path.LocalPath, SKColors.Purple);
+
+        var version = await viewModel.CaptureMonitoredImageChangeAsync(project, comparison, candidate, TestContext.Current.CancellationToken);
+
+        Assert.NotNull(version);
+        Assert.Equal(reference.Id, comparison.ReferenceImageId);
+        Assert.Equal(version.Id, comparison.CandidateImageId);
+        Assert.Equal(candidate.Id, version.PreviousVersionImageId);
+        Assert.Equal(ImageMonitoringRole.None, candidate.MonitoringRole);
+        Assert.Equal(ImageMonitoringRole.Candidate, version.MonitoringRole);
+        Assert.Equal(3, comparison.Images.Count);
+    }
+
+    [Fact]
+    public async Task CaptureMonitoredImageChangeAsync_ignores_unchanged_hash()
+    {
+        var storage = new FakeProjectStorage();
+        var viewModel = new MainWindowViewModel(storage);
+        var project = await viewModel.AddProjectAsync("Project", TestContext.Current.CancellationToken);
+        var comparison = await viewModel.AddComparisonAsync("Comparison", TestContext.Current.CancellationToken);
+        var image = await viewModel.AddImageAsync(TestUiSupport.CreateStorageFile("unchanged-source.png"), cancellationToken: TestContext.Current.CancellationToken);
+        await viewModel.SetImageMonitoringAsync(image, ImageMonitoringRole.Reference, TestContext.Current.CancellationToken);
+        storage.SavedProjects.Clear();
+
+        var version = await viewModel.CaptureMonitoredImageChangeAsync(project, comparison, image, TestContext.Current.CancellationToken);
+
+        Assert.Null(version);
+        Assert.Single(comparison.Images);
+        Assert.Empty(storage.SavedProjects);
+    }
+
     private sealed class FakeProjectStorage(params Project[] projects) : IProjectStorage
     {
         private readonly List<Project> _projects = [..projects];
@@ -425,5 +495,16 @@ public sealed class MainWindowViewModelTests
             SavedImageContents.Remove(image.Id);
             return Task.CompletedTask;
         }
+    }
+
+    private static void WriteFixtureImage(string path, SKColor color)
+    {
+        using var bitmap = new SKBitmap(32, 32);
+        using var canvas = new SKCanvas(bitmap);
+        canvas.Clear(color);
+
+        using var image = SKImage.FromBitmap(bitmap);
+        using var data = image.Encode(SKEncodedImageFormat.Png, 100);
+        File.WriteAllBytes(path, data.ToArray());
     }
 }
