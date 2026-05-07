@@ -1,19 +1,50 @@
 using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform.Storage;
 using CommunityToolkit.Mvvm.ComponentModel;
+using Difflection.Models;
+using Difflection.Storage;
 
 namespace Difflection.ViewModels;
 
 public partial class MainWindowViewModel : ViewModelBase
 {
+    private readonly IProjectStorage? _projectStorage;
+
+    public MainWindowViewModel()
+    {
+    }
+
+    public MainWindowViewModel(IProjectStorage projectStorage)
+    {
+        this._projectStorage = projectStorage;
+    }
+
+    public ObservableCollection<Project> Projects { get; } = [];
+
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsSideBySideView))]
     [NotifyPropertyChangedFor(nameof(IsSplitScreenView))]
     [NotifyPropertyChangedFor(nameof(CurrentViewTitle))]
     public partial ComparisonViewMode SelectedViewMode { get; set; } = ComparisonViewMode.SideBySide;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasSelectedProject))]
+    [NotifyPropertyChangedFor(nameof(SelectedProjectComparisons))]
+    [NotifyPropertyChangedFor(nameof(CanDeleteSelectedProject))]
+    [NotifyPropertyChangedFor(nameof(CanAddComparison))]
+    public partial Project? SelectedProject { get; set; }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasSelectedComparison))]
+    [NotifyPropertyChangedFor(nameof(CanDeleteSelectedComparison))]
+    public partial ComparisonSet? SelectedComparison { get; set; }
 
     [ObservableProperty]
     public partial string SplitPercentageText { get; set; } = "50 / 50";
@@ -71,6 +102,18 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public bool HasBothImages => HasLeftImage && HasRightImage;
 
+    public bool HasSelectedProject => SelectedProject is not null;
+
+    public bool HasSelectedComparison => SelectedComparison is not null;
+
+    public bool CanDeleteSelectedProject => HasSelectedProject;
+
+    public bool CanAddComparison => HasSelectedProject;
+
+    public bool CanDeleteSelectedComparison => HasSelectedComparison;
+
+    public IReadOnlyList<ComparisonSet> SelectedProjectComparisons => SelectedProject?.Comparisons ?? [];
+
     public double LeftImageWidth => LeftImage?.PixelSize.Width ?? StageWidth;
 
     public double LeftImageHeight => LeftImage?.PixelSize.Height ?? StageHeight;
@@ -106,6 +149,129 @@ public partial class MainWindowViewModel : ViewModelBase
             : HasRightImage
                 ? RightImageHeight
                 : StageHeight;
+
+    public async Task LoadProjectsAsync(CancellationToken cancellationToken = default)
+    {
+        if (_projectStorage is null)
+        {
+            return;
+        }
+
+        var projects = await _projectStorage.LoadProjectsAsync(cancellationToken);
+
+        Projects.Clear();
+
+        foreach (var project in projects)
+        {
+            Projects.Add(project);
+        }
+
+        SelectedProject = Projects.FirstOrDefault();
+        SelectedComparison = SelectedProject?.Comparisons.FirstOrDefault();
+    }
+
+    public async Task<Project> AddProjectAsync(string? name = null, CancellationToken cancellationToken = default)
+    {
+        var project = new Project
+        {
+            Name = NormalizeName(name, "Untitled Project")
+        };
+
+        Projects.Add(project);
+        SelectedProject = project;
+        SelectedComparison = null;
+
+        await SaveProjectAsync(project, cancellationToken);
+        return project;
+    }
+
+    public async Task<bool> DeleteProjectAsync(Project project, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(project);
+
+        var removed = Projects.Remove(project);
+
+        if (!removed)
+        {
+            return false;
+        }
+
+        if (SelectedProject == project)
+        {
+            SelectedProject = Projects.FirstOrDefault();
+            SelectedComparison = SelectedProject?.Comparisons.FirstOrDefault();
+        }
+
+        if (_projectStorage is not null)
+        {
+            await _projectStorage.DeleteProjectAsync(project.Id, cancellationToken);
+        }
+
+        return true;
+    }
+
+    public Task<bool> DeleteSelectedProjectAsync(CancellationToken cancellationToken = default)
+    {
+        return SelectedProject is null
+            ? Task.FromResult(false)
+            : DeleteProjectAsync(SelectedProject, cancellationToken);
+    }
+
+    public async Task<ComparisonSet> AddComparisonAsync(string? name = null, CancellationToken cancellationToken = default)
+    {
+        if (SelectedProject is null)
+        {
+            throw new InvalidOperationException("A project must be selected before adding a comparison.");
+        }
+
+        var comparison = new ComparisonSet
+        {
+            Name = NormalizeName(name, "Untitled Comparison")
+        };
+
+        SelectedProject.Comparisons.Add(comparison);
+        SelectedProject.UpdatedAt = DateTimeOffset.UtcNow;
+        SelectedComparison = comparison;
+        OnPropertyChanged(nameof(SelectedProjectComparisons));
+
+        await SaveProjectAsync(SelectedProject, cancellationToken);
+        return comparison;
+    }
+
+    public async Task<bool> DeleteComparisonAsync(ComparisonSet comparison, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(comparison);
+
+        if (SelectedProject is null)
+        {
+            return false;
+        }
+
+        var removed = SelectedProject.Comparisons.Remove(comparison);
+
+        if (!removed)
+        {
+            return false;
+        }
+
+        SelectedProject.UpdatedAt = DateTimeOffset.UtcNow;
+
+        if (SelectedComparison == comparison)
+        {
+            SelectedComparison = SelectedProject.Comparisons.FirstOrDefault();
+        }
+
+        OnPropertyChanged(nameof(SelectedProjectComparisons));
+        await SaveProjectAsync(SelectedProject, cancellationToken);
+        return true;
+    }
+
+    public Task<bool> DeleteSelectedComparisonAsync(CancellationToken cancellationToken = default)
+    {
+        return SelectedComparison is null
+            ? Task.FromResult(false)
+            : DeleteComparisonAsync(SelectedComparison, cancellationToken);
+    }
 
     public void SetZoomScale(double zoomScale)
     {
@@ -227,6 +393,16 @@ public partial class MainWindowViewModel : ViewModelBase
         return new Bitmap(stream);
     }
 
+    private static string NormalizeName(string? name, string fallback)
+    {
+        return string.IsNullOrWhiteSpace(name) ? fallback : name.Trim();
+    }
+
+    private Task SaveProjectAsync(Project project, CancellationToken cancellationToken)
+    {
+        return _projectStorage?.SaveProjectAsync(project, cancellationToken) ?? Task.CompletedTask;
+    }
+
     private void UpdateStageSize()
     {
         var leftWidth = LeftImage?.PixelSize.Width ?? 0;
@@ -273,6 +449,14 @@ public partial class MainWindowViewModel : ViewModelBase
     partial void OnZoomScaleChanged(double value)
     {
         ZoomText = $"{Math.Round(value * 100):0}%";
+    }
+
+    partial void OnSelectedProjectChanged(Project? value)
+    {
+        if (value is null || SelectedComparison is null || !value.Comparisons.Contains(SelectedComparison))
+        {
+            SelectedComparison = value?.Comparisons.FirstOrDefault();
+        }
     }
 }
 
