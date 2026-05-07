@@ -14,6 +14,7 @@ namespace Difflection.Views;
 public partial class MainView : UserControl
 {
     private MainWindowViewModel? _viewModel;
+    private bool _projectsLoaded;
 
     public MainView()
     {
@@ -49,6 +50,38 @@ public partial class MainView : UserControl
         await ComparisonStage.OpenFilePickerAndLoadAsync();
     }
 
+    private async void AddProjectButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        if (_viewModel is not null)
+        {
+            await _viewModel.AddProjectAsync();
+        }
+    }
+
+    private async void DeleteProjectButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        if (_viewModel is not null)
+        {
+            await _viewModel.DeleteSelectedProjectAsync();
+        }
+    }
+
+    private async void AddComparisonButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        if (_viewModel is not null)
+        {
+            await _viewModel.AddComparisonAsync();
+        }
+    }
+
+    private async void DeleteComparisonButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        if (_viewModel is not null)
+        {
+            await _viewModel.DeleteSelectedComparisonAsync();
+        }
+    }
+
     public async Task LoadBrowserDroppedFilesAsync(IReadOnlyList<string> fileNames, IReadOnlyList<byte[]> fileContents)
     {
         await ComparisonStage.LoadBrowserDroppedFilesAsync(fileNames, fileContents);
@@ -78,6 +111,7 @@ public partial class MainView : UserControl
         }
 
         _viewModel = DataContext as MainWindowViewModel;
+        _projectsLoaded = false;
 
         if (_viewModel is not null)
         {
@@ -132,8 +166,14 @@ public partial class MainView : UserControl
         }
     }
 
-    private void OnAttachedToVisualTree(object? sender, VisualTreeAttachmentEventArgs e)
+    private async void OnAttachedToVisualTree(object? sender, VisualTreeAttachmentEventArgs e)
     {
         BrowserInterop.AttachBrowserBridge?.Invoke(this);
+
+        if (_viewModel is not null && !_projectsLoaded)
+        {
+            _projectsLoaded = true;
+            await _viewModel.LoadProjectsAsync();
+        }
     }
 }

@@ -1,5 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:models="using:Difflection.Models"
              xmlns:vm="using:Difflection.ViewModels"
              xmlns:views="using:Difflection.Views"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -32,9 +33,51 @@
             <Setter Property="CornerRadius" Value="4" />
             <Setter Property="FontWeight" Value="SemiBold" />
         </Style>
+        <Style Selector="Button.sidebarIconButton">
+            <Setter Property="Background" Value="#262626" />
+            <Setter Property="Foreground" Value="#E5E7EB" />
+            <Setter Property="BorderBrush" Value="#444444" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="Width" Value="28" />
+            <Setter Property="Height" Value="28" />
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+        <Style Selector="Button.sidebarIconButton:disabled">
+            <Setter Property="Opacity" Value="0.45" />
+        </Style>
         <Style Selector="Border.viewTab">
             <Setter Property="Padding" Value="0,0,0,7" />
             <Setter Property="Cursor" Value="Hand" />
+        </Style>
+        <Style Selector="TextBlock.sidebarHeading">
+            <Setter Property="Foreground" Value="#9AA1AB" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="LetterSpacing" Value="0.5" />
+        </Style>
+        <Style Selector="ListBox.sidebarList">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="0" />
+        </Style>
+        <Style Selector="ListBoxItem">
+            <Setter Property="Padding" Value="8,7" />
+            <Setter Property="Margin" Value="0,1" />
+            <Setter Property="CornerRadius" Value="4" />
+        </Style>
+        <Style Selector="ListBoxItem:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#2A2A2A" />
+        </Style>
+        <Style Selector="ListBoxItem:selected /template/ ContentPresenter">
+            <Setter Property="Background" Value="#3A2A1F" />
+        </Style>
+        <Style Selector="TextBlock.sidebarItemText">
+            <Setter Property="Foreground" Value="#E5E7EB" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
         </Style>
         <Style Selector="TextBlock.viewTabText">
             <Setter Property="Foreground" Value="#A8AFB8" />
@@ -62,8 +105,8 @@
         </Style>
     </UserControl.Styles>
 
-    <Grid RowDefinitions="34,60,*,Auto" Background="#181818">
-        <Border Grid.Row="0" Background="#222222" BorderBrush="#353535" BorderThickness="0,0,0,1">
+    <Grid RowDefinitions="34,60,*,Auto" ColumnDefinitions="260,*" Background="#181818">
+        <Border Grid.Row="0" Grid.ColumnSpan="2" Background="#222222" BorderBrush="#353535" BorderThickness="0,0,0,1">
             <Grid ColumnDefinitions="Auto,*" Margin="14,0">
                 <TextBlock Text="Difflection"
                            FontSize="14"
@@ -79,7 +122,7 @@
             </Grid>
         </Border>
 
-        <Border Grid.Row="1" Background="#2B2B2B" BorderBrush="#363636" BorderThickness="0,0,0,1">
+        <Border Grid.Row="1" Grid.ColumnSpan="2" Background="#2B2B2B" BorderBrush="#363636" BorderThickness="0,0,0,1">
             <Grid ColumnDefinitions="Auto,*" Margin="20,0">
                 <StackPanel Orientation="Horizontal"
                             VerticalAlignment="Bottom"
@@ -129,7 +172,78 @@
             </Grid>
         </Border>
 
-        <Border Grid.Row="2" Background="#101010" Padding="24">
+        <Border Grid.Row="2"
+                Grid.RowSpan="2"
+                Grid.Column="0"
+                Background="#171717"
+                BorderBrush="#303030"
+                BorderThickness="0,0,1,0"
+                Padding="12">
+            <Grid RowDefinitions="Auto,*,16,Auto,*" RowSpacing="8">
+                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="6">
+                    <TextBlock Classes="sidebarHeading"
+                               Text="PROJECTS"
+                               VerticalAlignment="Center" />
+                    <Button Grid.Column="1"
+                            Classes="sidebarIconButton"
+                            Content="+"
+                            ToolTip.Tip="Add project"
+                            Click="AddProjectButton_OnClick" />
+                    <Button Grid.Column="2"
+                            Classes="sidebarIconButton"
+                            Content="-"
+                            ToolTip.Tip="Delete selected project"
+                            IsEnabled="{Binding CanDeleteSelectedProject}"
+                            Click="DeleteProjectButton_OnClick" />
+                </Grid>
+
+                <ListBox Grid.Row="1"
+                         Classes="sidebarList"
+                         ItemsSource="{Binding Projects}"
+                        SelectedItem="{Binding SelectedProject, Mode=TwoWay}">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate x:DataType="models:Project">
+                            <TextBlock Classes="sidebarItemText"
+                                       Text="{Binding Name}" />
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+
+                <Border Grid.Row="2" Height="1" Background="#303030" VerticalAlignment="Center" />
+
+                <Grid Grid.Row="3" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="6">
+                    <TextBlock Classes="sidebarHeading"
+                               Text="COMPARISONS"
+                               VerticalAlignment="Center" />
+                    <Button Grid.Column="1"
+                            Classes="sidebarIconButton"
+                            Content="+"
+                            ToolTip.Tip="Add comparison"
+                            IsEnabled="{Binding CanAddComparison}"
+                            Click="AddComparisonButton_OnClick" />
+                    <Button Grid.Column="2"
+                            Classes="sidebarIconButton"
+                            Content="-"
+                            ToolTip.Tip="Delete selected comparison"
+                            IsEnabled="{Binding CanDeleteSelectedComparison}"
+                            Click="DeleteComparisonButton_OnClick" />
+                </Grid>
+
+                <ListBox Grid.Row="4"
+                         Classes="sidebarList"
+                         ItemsSource="{Binding SelectedProjectComparisons}"
+                        SelectedItem="{Binding SelectedComparison, Mode=TwoWay}">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate x:DataType="models:ComparisonSet">
+                            <TextBlock Classes="sidebarItemText"
+                                       Text="{Binding Name}" />
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </Grid>
+        </Border>
+
+        <Border Grid.Row="2" Grid.Column="1" Background="#101010" Padding="24">
             <Grid RowDefinitions="Auto,*" RowSpacing="12">
                 <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="12">
                     <TextBlock x:Name="DropHintBanner"
@@ -167,7 +281,7 @@
             </Grid>
         </Border>
 
-        <Border Grid.Row="3" Background="#161616" BorderBrush="#2B2B2B" BorderThickness="0,1,0,0" Padding="18,12">
+        <Border Grid.Row="3" Grid.Column="1" Background="#161616" BorderBrush="#2B2B2B" BorderThickness="0,1,0,0" Padding="18,12">
             <Grid RowDefinitions="Auto,Auto" RowSpacing="10">
                 <StackPanel Orientation="Horizontal"
                             Spacing="14">

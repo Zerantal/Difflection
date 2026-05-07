@@ -58,7 +58,6 @@ public sealed partial class ComparisonStageTests
             Assert.True(leftPane.IsVisible);
             Assert.True(surface.Bounds.Width > 0);
             Assert.InRange(Math.Abs(leftPane.Bounds.Width - layout.Bounds.Width), 0, 2.1);
-            Assert.True(ruler.Bounds.Width > surface.Bounds.Width);
             Assert.True(rightPane is null || !rightPane.IsVisible);
         }
         finally

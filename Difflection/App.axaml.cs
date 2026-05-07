@@ -1,6 +1,9 @@
+using System;
+using System.IO;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using Difflection.Storage;
 using Difflection.ViewModels;
 using Difflection.Views;
 
@@ -19,7 +22,7 @@ public class App : Application
         {
             desktop.MainWindow = new MainWindow
             {
-                DataContext = new MainWindowViewModel()
+                DataContext = new MainWindowViewModel(CreateDesktopProjectStorage())
             };
         }
         else if (ApplicationLifetime is ISingleViewApplicationLifetime singleView)
@@ -31,5 +34,14 @@ public class App : Application
         }
 
         base.OnFrameworkInitializationCompleted();
+    }
+
+    private static LocalFileProjectStorage CreateDesktopProjectStorage()
+    {
+        var rootPath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "Difflection");
+
+        return new LocalFileProjectStorage(rootPath);
     }
 }
