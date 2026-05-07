@@ -59,25 +59,26 @@ A storage abstraction keeps the project model independent from the backing store
 ```text
 IProjectStorage
   LoadProjectsAsync()
+  LoadProjectAsync(projectId)
   SaveProjectAsync(project)
   DeleteProjectAsync(projectId)
-  SaveImageAsync(projectId, comparisonId, image)
-  LoadImageAsync(imageId)
-  DeleteImageAsync(imageId)
+  SaveImageAsync(projectId, comparisonSetId, image, content)
+  LoadImageAsync(image)
+  DeleteImageAsync(image)
 ```
 
 The desktop implementation can store project metadata and copied images on disk. For example:
 
 ```text
 Difflection Projects/
-  projects.json
-  project-{id}/
+  projects/
+  {project-id}/
     project.json
     comparisons/
-      comparison-{id}.json
-    images/
-      image-{id}.png
-      image-{id}.jpg
+      {comparison-set-id}/
+        images/
+          {image-id}.png
+          {image-id}.jpg
 ```
 
 The exact file layout can evolve, but the important point is that image data should live as files rather than being embedded directly into one large JSON document. The JSON should reference stored image files by stable IDs or relative paths.

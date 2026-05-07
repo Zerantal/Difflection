@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json.Serialization;
 
 namespace Difflection.Models;
 
@@ -14,16 +15,20 @@ public sealed class ComparisonSet
 
     public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;
 
+    [JsonInclude]
     public Guid? ReferenceImageId { get; private set; }
 
+    [JsonInclude]
     public Guid? CandidateImageId { get; private set; }
 
     public List<ImageAsset> Images { get; init; } = [];
 
+    [JsonIgnore]
     public ImageAsset? ReferenceImage => ReferenceImageId is null
         ? null
         : Images.FirstOrDefault(image => image.Id == ReferenceImageId);
 
+    [JsonIgnore]
     public ImageAsset? CandidateImage => CandidateImageId is null
         ? null
         : Images.FirstOrDefault(image => image.Id == CandidateImageId);
@@ -84,7 +89,7 @@ public sealed class ComparisonSet
         RepairRoleAssignments();
     }
 
-    private void RepairRoleAssignments()
+    public void RepairRoleAssignments(bool updateTimestamp = true)
     {
         ReferenceImageId = Images.Any(image => image.Id == ReferenceImageId)
             ? ReferenceImageId
@@ -110,7 +115,10 @@ public sealed class ComparisonSet
             CandidateImageId = null;
         }
 
-        UpdatedAt = DateTimeOffset.UtcNow;
+        if (updateTimestamp)
+        {
+            UpdatedAt = DateTimeOffset.UtcNow;
+        }
     }
 
     private void ThrowIfImageIsMissing(Guid imageId)
