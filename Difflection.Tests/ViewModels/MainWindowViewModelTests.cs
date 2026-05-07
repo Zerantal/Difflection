@@ -194,21 +194,32 @@ public sealed class MainWindowViewModelTests
 
         Assert.Equal("No project selected", viewModel.WorkspaceContextTitle);
         Assert.Equal("Create or select a project", viewModel.WorkspaceContextDetail);
+        Assert.True(viewModel.ShowProjectsEmptyState);
+        Assert.True(viewModel.ShowMainEmptyState);
+        Assert.Equal("No projects", viewModel.MainEmptyStateTitle);
 
         await viewModel.AddProjectAsync("Project A", TestContext.Current.CancellationToken);
 
         Assert.Equal("Project A", viewModel.WorkspaceContextTitle);
         Assert.Equal("No comparison selected", viewModel.WorkspaceContextDetail);
+        Assert.False(viewModel.ShowProjectsEmptyState);
+        Assert.True(viewModel.ShowComparisonsEmptyState);
+        Assert.Equal("No comparison selected", viewModel.MainEmptyStateTitle);
 
         await viewModel.AddComparisonAsync("Header States", TestContext.Current.CancellationToken);
 
         Assert.Equal("Project A / Header States", viewModel.WorkspaceContextTitle);
         Assert.Equal("0 images in image set", viewModel.WorkspaceContextDetail);
+        Assert.True(viewModel.ShowMainEmptyState);
+        Assert.Equal("No images in this comparison", viewModel.MainEmptyStateTitle);
+        Assert.Equal("Add or drop a reference image.", viewModel.WorkspaceActionHint);
 
         await viewModel.AddImageAsync("reference.png", new MemoryStream([1]), cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.Equal("1 image", viewModel.SelectedComparisonImageCountText);
         Assert.Equal("1 image in image set", viewModel.WorkspaceContextDetail);
+        Assert.False(viewModel.ShowMainEmptyState);
+        Assert.Equal("Add or drop a candidate image.", viewModel.WorkspaceActionHint);
 
         await viewModel.RenameSelectedProjectAsync("Project B", TestContext.Current.CancellationToken);
         await viewModel.RenameSelectedComparisonAsync("Footer States", TestContext.Current.CancellationToken);

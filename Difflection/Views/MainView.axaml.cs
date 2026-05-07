@@ -32,7 +32,6 @@ public partial class MainView : UserControl
         AttachedToVisualTree += OnAttachedToVisualTree;
         DetachedFromVisualTree += OnDetachedFromVisualTree;
 
-        UpdateDropHints();
         UpdateViewControls();
 
     }
@@ -236,6 +235,31 @@ public partial class MainView : UserControl
         await ComparisonStage.LoadBrowserDroppedFilesAsync(fileNames, fileContents);
     }
 
+    private void MainEmptyStateOverlay_OnDragOver(object? sender, DragEventArgs e)
+    {
+        var hasFiles = GetDroppedFiles(e.DataTransfer).Any();
+        e.DragEffects = hasFiles ? DragDropEffects.Copy : DragDropEffects.None;
+        e.Handled = true;
+    }
+
+    private void MainEmptyStateOverlay_OnDrop(object? sender, DragEventArgs e)
+    {
+        e.Handled = true;
+        _ = MainEmptyStateOverlay_OnDropAsync(e);
+    }
+
+    private async Task MainEmptyStateOverlay_OnDropAsync(DragEventArgs e)
+    {
+        var files = GetDroppedFiles(e.DataTransfer).Take(2).ToArray();
+        if (files.Length == 0)
+        {
+            return;
+        }
+
+        await ComparisonStage.LoadDroppedFilesAsync(null, files);
+        await RefreshStageForSelectedComparisonAsync();
+    }
+
     private void ZoomTextBox_OnLostFocus(object? sender, RoutedEventArgs e)
     {
         _viewModel?.TrySetZoomText(ZoomTextBox.Text);
@@ -323,20 +347,12 @@ public partial class MainView : UserControl
             _viewModel.PropertyChanged += OnViewModelPropertyChanged;
         }
 
-        UpdateDropHints();
         UpdateViewControls();
         SyncSidebarSelection();
     }
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName is nameof(MainWindowViewModel.LeftImage)
-            or nameof(MainWindowViewModel.RightImage)
-            or nameof(MainWindowViewModel.HasAnyImage))
-        {
-            UpdateDropHints();
-        }
-
         if (e.PropertyName is nameof(MainWindowViewModel.SelectedViewMode) or nameof(MainWindowViewModel.CanUseSplitScreen))
         {
             UpdateViewControls();
@@ -361,11 +377,6 @@ public partial class MainView : UserControl
         {
             RestartImageChangeMonitor();
         }
-    }
-
-    private void UpdateDropHints()
-    {
-        DropHintBanner.IsVisible = _viewModel?.HasAnyImage != true;
     }
 
     private void UpdateViewControls()
@@ -460,6 +471,13 @@ public partial class MainView : UserControl
         textBox.Classes.Remove("editing");
         textBox.SelectionStart = 0;
         textBox.SelectionEnd = 0;
+    }
+
+    private static IEnumerable<IStorageFile> GetDroppedFiles(IDataTransfer dataTransfer)
+    {
+        return dataTransfer.Items
+            .Select(item => item.TryGetRaw(DataFormat.File))
+            .OfType<IStorageFile>();
     }
 
     private async Task RefreshStageForSelectedComparisonAsync()

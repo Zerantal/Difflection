@@ -72,6 +72,25 @@ public sealed class MainWindowSnapshotTests
     }
 
     [AvaloniaFact]
+    public async Task Workspace_with_project_and_no_comparisons_matches_snapshot()
+    {
+        var project = new Project { Name = "Client Redesign" };
+        var viewModel = new MainWindowViewModel(new SnapshotProjectStorage(project));
+
+        var window = TestUiSupport.CreateWindow(viewModel);
+        try
+        {
+            await TestUiSupport.WaitForAsync(() => viewModel.SelectedProject is not null);
+
+            AssertSnapshot(window, "main-window-workspace-no-comparisons");
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
     public async Task Workspace_with_project_and_empty_comparison_matches_snapshot()
     {
         var project = new Project { Name = "Client Redesign" };
@@ -85,6 +104,27 @@ public sealed class MainWindowSnapshotTests
             await TestUiSupport.WaitForAsync(() => viewModel.SelectedComparison is not null);
 
             AssertSnapshot(window, "main-window-workspace-empty-comparison");
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task Workspace_with_one_image_matches_snapshot()
+    {
+        var storage = new SnapshotProjectStorage();
+        var viewModel = new MainWindowViewModel(storage);
+        await viewModel.AddProjectAsync("Client Redesign");
+        await viewModel.AddComparisonAsync("Homepage Header");
+        await AddFixtureImageAsync(viewModel, "reference.png", "Approved Header", new SKColor(34, 89, 165), new SKColor(249, 115, 22));
+        await viewModel.RefreshCurrentComparisonImagesAsync();
+
+        var window = TestUiSupport.CreateWindow(viewModel);
+        try
+        {
+            AssertSnapshot(window, "main-window-workspace-one-image");
         }
         finally
         {

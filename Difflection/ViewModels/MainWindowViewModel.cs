@@ -49,6 +49,12 @@ public partial class MainWindowViewModel : ViewModelBase
     [NotifyPropertyChangedFor(nameof(SelectedProjectName))]
     [NotifyPropertyChangedFor(nameof(WorkspaceContextTitle))]
     [NotifyPropertyChangedFor(nameof(WorkspaceContextDetail))]
+    [NotifyPropertyChangedFor(nameof(WorkspaceActionHint))]
+    [NotifyPropertyChangedFor(nameof(ShowWorkspaceActionHint))]
+    [NotifyPropertyChangedFor(nameof(ShowMainEmptyState))]
+    [NotifyPropertyChangedFor(nameof(MainEmptyStateTitle))]
+    [NotifyPropertyChangedFor(nameof(MainEmptyStateMessage))]
+    [NotifyPropertyChangedFor(nameof(ShowComparisonsEmptyState))]
     public partial Project? SelectedProject { get; set; }
 
     [ObservableProperty]
@@ -59,6 +65,12 @@ public partial class MainWindowViewModel : ViewModelBase
     [NotifyPropertyChangedFor(nameof(SelectedComparisonImageCountText))]
     [NotifyPropertyChangedFor(nameof(WorkspaceContextTitle))]
     [NotifyPropertyChangedFor(nameof(WorkspaceContextDetail))]
+    [NotifyPropertyChangedFor(nameof(WorkspaceActionHint))]
+    [NotifyPropertyChangedFor(nameof(ShowWorkspaceActionHint))]
+    [NotifyPropertyChangedFor(nameof(ShowMainEmptyState))]
+    [NotifyPropertyChangedFor(nameof(MainEmptyStateTitle))]
+    [NotifyPropertyChangedFor(nameof(MainEmptyStateMessage))]
+    [NotifyPropertyChangedFor(nameof(ShowComparisonsEmptyState))]
     public partial ComparisonSet? SelectedComparison { get; set; }
 
     [ObservableProperty]
@@ -87,6 +99,7 @@ public partial class MainWindowViewModel : ViewModelBase
     [NotifyPropertyChangedFor(nameof(LeftImageHeight))]
     [NotifyPropertyChangedFor(nameof(SideBySideStageWidth))]
     [NotifyPropertyChangedFor(nameof(SideBySideStageHeight))]
+    [NotifyPropertyChangedFor(nameof(ShowMainEmptyState))]
     public partial Bitmap? LeftImage { get; set; }
 
     [ObservableProperty]
@@ -98,6 +111,7 @@ public partial class MainWindowViewModel : ViewModelBase
     [NotifyPropertyChangedFor(nameof(RightImageHeight))]
     [NotifyPropertyChangedFor(nameof(SideBySideStageWidth))]
     [NotifyPropertyChangedFor(nameof(SideBySideStageHeight))]
+    [NotifyPropertyChangedFor(nameof(ShowMainEmptyState))]
     public partial Bitmap? RightImage { get; set; }
 
     [ObservableProperty]
@@ -120,6 +134,12 @@ public partial class MainWindowViewModel : ViewModelBase
     public bool HasSelectedProject => SelectedProject is not null;
 
     public bool HasSelectedComparison => SelectedComparison is not null;
+
+    public bool HasProjects => Projects.Count > 0;
+
+    public bool ShowProjectsEmptyState => !HasProjects;
+
+    public bool ShowComparisonsEmptyState => HasSelectedProject && SelectedProjectComparisons.Count == 0;
 
     public bool CanDeleteSelectedProject => HasSelectedProject;
 
@@ -202,6 +222,84 @@ public partial class MainWindowViewModel : ViewModelBase
         }
     }
 
+    public string WorkspaceActionHint
+    {
+        get
+        {
+            if (!HasProjects)
+            {
+                return "Create a project to start a workspace.";
+            }
+
+            if (SelectedProject is null)
+            {
+                return "Select a project to continue.";
+            }
+
+            if (SelectedComparison is null)
+            {
+                return "Create a comparison for this project.";
+            }
+
+            return SelectedComparison.Images.Count switch
+            {
+                0 => "Add or drop a reference image.",
+                1 => "Add or drop a candidate image.",
+                _ => string.Empty
+            };
+        }
+    }
+
+    public bool ShowWorkspaceActionHint => !string.IsNullOrWhiteSpace(WorkspaceActionHint);
+
+    public bool ShowMainEmptyState => !HasAnyImage && SelectedComparison?.Images.Count is null or 0;
+
+    public string MainEmptyStateTitle
+    {
+        get
+        {
+            if (!HasProjects)
+            {
+                return "No projects";
+            }
+
+            if (SelectedProject is null)
+            {
+                return "No project selected";
+            }
+
+            if (SelectedComparison is null)
+            {
+                return "No comparison selected";
+            }
+
+            return "No images in this comparison";
+        }
+    }
+
+    public string MainEmptyStateMessage
+    {
+        get
+        {
+            if (!HasProjects)
+            {
+                return "Create a project, or drop images to create one automatically.";
+            }
+
+            if (SelectedProject is null)
+            {
+                return "Select a project from the sidebar.";
+            }
+
+            if (SelectedComparison is null)
+            {
+                return "Create a comparison, or drop images to create one automatically.";
+            }
+
+            return "Add or drop a reference image to begin.";
+        }
+    }
+
     public bool CanSetReferenceImage(ImageAsset? image)
     {
         return SelectedComparison is not null
@@ -271,6 +369,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
         SelectedProject = Projects.FirstOrDefault();
         SelectedComparison = SelectedProject?.Comparisons.FirstOrDefault();
+        NotifyWorkspaceStateChanged();
     }
 
     public async Task<Project> AddProjectAsync(string? name = null, CancellationToken cancellationToken = default)
@@ -283,6 +382,7 @@ public partial class MainWindowViewModel : ViewModelBase
         Projects.Add(project);
         SelectedProject = project;
         SelectedComparison = null;
+        NotifyWorkspaceStateChanged();
 
         await SaveProjectAsync(project, cancellationToken);
         return project;
@@ -304,6 +404,8 @@ public partial class MainWindowViewModel : ViewModelBase
             SelectedProject = Projects.FirstOrDefault();
             SelectedComparison = SelectedProject?.Comparisons.FirstOrDefault();
         }
+
+        NotifyWorkspaceStateChanged();
 
         if (ProjectStorage is not null)
         {
@@ -336,6 +438,7 @@ public partial class MainWindowViewModel : ViewModelBase
         SelectedProject.UpdatedAt = DateTimeOffset.UtcNow;
         OnPropertyChanged(nameof(SelectedProjectComparisons));
         SelectedComparison = comparison;
+        NotifyWorkspaceStateChanged();
 
         await SaveProjectAsync(SelectedProject, cancellationToken);
         return comparison;
@@ -432,6 +535,7 @@ public partial class MainWindowViewModel : ViewModelBase
         }
 
         OnPropertyChanged(nameof(SelectedProjectComparisons));
+        NotifyWorkspaceStateChanged();
         await SaveProjectAsync(SelectedProject, cancellationToken);
         return true;
     }
@@ -838,6 +942,23 @@ public partial class MainWindowViewModel : ViewModelBase
         OnPropertyChanged(nameof(SelectedComparisonImages));
         OnPropertyChanged(nameof(SelectedComparisonImageCountText));
         OnPropertyChanged(nameof(WorkspaceContextDetail));
+        OnPropertyChanged(nameof(WorkspaceActionHint));
+        OnPropertyChanged(nameof(ShowWorkspaceActionHint));
+        OnPropertyChanged(nameof(ShowMainEmptyState));
+        OnPropertyChanged(nameof(MainEmptyStateTitle));
+        OnPropertyChanged(nameof(MainEmptyStateMessage));
+    }
+
+    private void NotifyWorkspaceStateChanged()
+    {
+        OnPropertyChanged(nameof(HasProjects));
+        OnPropertyChanged(nameof(ShowProjectsEmptyState));
+        OnPropertyChanged(nameof(ShowComparisonsEmptyState));
+        OnPropertyChanged(nameof(WorkspaceActionHint));
+        OnPropertyChanged(nameof(ShowWorkspaceActionHint));
+        OnPropertyChanged(nameof(ShowMainEmptyState));
+        OnPropertyChanged(nameof(MainEmptyStateTitle));
+        OnPropertyChanged(nameof(MainEmptyStateMessage));
     }
 
     private void RenameDefaultComparisonFromFirstImage(ComparisonSet comparison, string imageLabel)
@@ -916,6 +1037,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
         OnPropertyChanged(nameof(SelectedProjectName));
         OnPropertyChanged(nameof(SelectedComparisonName));
+        NotifyWorkspaceStateChanged();
 
         if (SelectedComparison is null)
         {
@@ -932,6 +1054,7 @@ public partial class MainWindowViewModel : ViewModelBase
         }
 
         OnPropertyChanged(nameof(SelectedComparisonName));
+        NotifyWorkspaceStateChanged();
 
         if (value?.ReferenceImage is null)
         {

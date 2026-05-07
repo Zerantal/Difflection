@@ -94,4 +94,46 @@ public sealed partial class ComparisonStageTests
             window.Close();
         }
     }
+
+    [AvaloniaFact]
+    public async Task Empty_state_overlay_drop_raises_drag_over_and_loads_images()
+    {
+        var viewModel = new MainWindowViewModel();
+        var window = TestUiSupport.CreateWindow(viewModel);
+        try
+        {
+            var mainView = TestUiSupport.GetMainView(window);
+            var overlay = mainView.FindControl<Border>("MainEmptyStateOverlay")
+                ?? throw new InvalidOperationException("MainEmptyStateOverlay not found.");
+            await TestUiSupport.WaitForAsync(() => overlay.IsVisible);
+
+            var transfer = TestUiSupport.CreateTransfer(
+                TestUiSupport.CreateStorageFile("empty-reference.png"),
+                TestUiSupport.CreateStorageFile("empty-candidate.png"));
+
+            var dragOver = new DragEventArgs(DragDrop.DragOverEvent, transfer, overlay, new Point(10, 10), KeyModifiers.None);
+            overlay.RaiseEvent(dragOver);
+
+            Assert.Equal(DragDropEffects.Copy, dragOver.DragEffects);
+
+            var drop = new DragEventArgs(DragDrop.DropEvent, transfer, overlay, new Point(10, 10), KeyModifiers.None);
+            overlay.RaiseEvent(drop);
+
+            await TestUiSupport.WaitForAsync(() => viewModel.HasBothImages && !overlay.IsVisible);
+
+            Assert.Equal("empty-reference.png", viewModel.LeftFileName);
+            Assert.Equal("empty-candidate.png", viewModel.RightFileName);
+            Assert.False(viewModel.ShowMainEmptyState);
+
+            var project = Assert.Single(viewModel.Projects);
+            var comparison = Assert.Single(project.Comparisons);
+            Assert.Equal(2, comparison.Images.Count);
+            Assert.Equal(comparison.Images[0].Id, comparison.ReferenceImageId);
+            Assert.Equal(comparison.Images[1].Id, comparison.CandidateImageId);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
 }

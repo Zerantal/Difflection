@@ -170,6 +170,24 @@
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="TextTrimming" Value="CharacterEllipsis" />
         </Style>
+        <Style Selector="TextBlock.emptyStateTitle">
+            <Setter Property="Foreground" Value="#E5E7EB" />
+            <Setter Property="FontSize" Value="18" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="TextAlignment" Value="Center" />
+        </Style>
+        <Style Selector="TextBlock.emptyStateMessage">
+            <Setter Property="Foreground" Value="#9AA1AB" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="TextAlignment" Value="Center" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+        <Style Selector="TextBlock.sidebarEmptyText">
+            <Setter Property="Foreground" Value="#737B86" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="Margin" Value="8,8,8,0" />
+        </Style>
     </UserControl.Styles>
 
     <Grid RowDefinitions="34,60,*,Auto" ColumnDefinitions="260,*" Background="#181818">
@@ -291,6 +309,10 @@
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
+                <TextBlock Grid.Row="1"
+                           Classes="sidebarEmptyText"
+                           Text="No projects yet."
+                           IsVisible="{Binding ShowProjectsEmptyState}" />
 
                 <Border Grid.Row="2" Height="1" Background="#303030" VerticalAlignment="Center" />
 
@@ -339,6 +361,10 @@
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
+                <TextBlock Grid.Row="4"
+                           Classes="sidebarEmptyText"
+                           Text="No comparisons in this project."
+                           IsVisible="{Binding ShowComparisonsEmptyState}" />
             </Grid>
         </Border>
 
@@ -353,9 +379,9 @@
                                     Spacing="12">
                             <TextBlock Classes="workspaceContextDetail"
                                        Text="{Binding WorkspaceContextDetail}" />
-                            <TextBlock x:Name="DropHintBanner"
-                                       Classes="workspaceContextDetail"
-                                       Text="Drop images below to begin." />
+                            <TextBlock Classes="workspaceContextDetail"
+                                       Text="{Binding WorkspaceActionHint}"
+                                       IsVisible="{Binding ShowWorkspaceActionHint}" />
                         </StackPanel>
                     </StackPanel>
                     <TextBlock Grid.Column="1"
@@ -382,8 +408,31 @@
                              KeyDown="ZoomTextBox_OnKeyDown" />
                 </Grid>
 
-                <views:ComparisonStage x:Name="ComparisonStage"
-                                       Grid.Row="1" />
+                <Grid Grid.Row="1">
+                    <views:ComparisonStage x:Name="ComparisonStage" />
+
+                    <Border x:Name="MainEmptyStateOverlay"
+                            IsVisible="{Binding ShowMainEmptyState}"
+                            Background="#D0101010"
+                            BorderBrush="#262626"
+                            BorderThickness="1"
+                            Padding="28"
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Stretch"
+                            DragDrop.AllowDrop="True"
+                            DragDrop.DragOver="MainEmptyStateOverlay_OnDragOver"
+                            DragDrop.Drop="MainEmptyStateOverlay_OnDrop">
+                        <StackPanel MaxWidth="420"
+                                    Spacing="8"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center">
+                            <TextBlock Classes="emptyStateTitle"
+                                       Text="{Binding MainEmptyStateTitle}" />
+                            <TextBlock Classes="emptyStateMessage"
+                                       Text="{Binding MainEmptyStateMessage}" />
+                        </StackPanel>
+                    </Border>
+                </Grid>
             </Grid>
         </Border>
 
