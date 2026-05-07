@@ -23,11 +23,10 @@ public sealed class ProjectModelTests
         var candidate = new ImageAsset { Label = "Candidate", SourceName = "candidate.png", StorageKey = "images/candidate.png" };
         var comparison = new ComparisonSet
         {
-            Name = "Landing Page",
-            ReferenceImageId = reference.Id,
-            CandidateImageId = candidate.Id,
-            Images = { reference, candidate }
+            Name = "Landing Page"
         };
+        comparison.AddImage(reference);
+        comparison.AddImage(candidate);
 
         Assert.Equal("Landing Page", comparison.Name);
         Assert.Equal(reference.Id, comparison.ReferenceImageId);

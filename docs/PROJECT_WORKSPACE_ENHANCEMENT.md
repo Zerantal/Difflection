@@ -10,16 +10,16 @@ A useful data model would be:
 Project
   id
   name
-  comparisons: ImageComparison[]
+  comparisons: ComparisonSet[]
 
-ImageComparison
+ComparisonSet
   id
   name
-  images: ComparisonImage[]
+  images: ImageAsset[]
   referenceImageId?: string
   candidateImageId?: string
 
-ComparisonImage
+ImageAsset
   id
   label
   sourceName
