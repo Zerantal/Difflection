@@ -150,14 +150,14 @@ The enhancement would introduce:
 
 ## Suggested Implementation Order
 
-1. Add the project, comparison, and image data model.
-2. Centralize reference/candidate state transition rules.
-3. Add the storage interface and desktop local file storage implementation.
-4. Add project and comparison CRUD.
-5. Add image CRUD and labeling.
-6. Add reference/candidate reassignment behavior.
-7. Add sidebar navigation for projects and comparisons.
-8. Add file monitoring and version capture.
+1. ~~Add the project, comparison, and image data model.~~
+2. ~~Centralize reference/candidate state transition rules.~~
+3. ~~Add the storage interface and desktop local file storage implementation.~~
+4. ~~Add project and comparison CRUD.~~
+5. ~~Add image CRUD and labeling.~~
+6. ~~Add reference/candidate reassignment behavior.~~
+7. ~~Add sidebar navigation for projects and comparisons.~~
+8. ~~Add file monitoring and version capture.~~
 
 ## Main Recommendation
 
@@ -232,21 +232,21 @@ The next architectural cleanup should make `MainView` less dependent on the rend
 
 Suggested improvements:
 
-1. Replace visual-tree based inline rename with explicit row edit state.
+1. ~~Replace visual-tree based inline rename with explicit row edit state.~~
 
-   Project and comparison rename mode should be represented by sidebar row state, not by searching for a `TextBox` and toggling its properties. The view should render normal text or an editor based on row state, and commit/cancel through view-model commands or methods.
+   ~~Project and comparison rename mode should be represented by sidebar row state, not by searching for a `TextBox` and toggling its properties. The view should render normal text or an editor based on row state, and commit/cancel through view-model commands or methods.~~
 
-2. Split sidebar item presentation from persisted domain models.
+2. ~~Split sidebar item presentation from persisted domain models.~~
 
-   `Project` and `ComparisonSet` should remain storage/domain objects. Sidebar-specific concerns such as selected row, draft rename text, editing state, counts, and row actions should live in lightweight row view models.
+   ~~`Project` and `ComparisonSet` should remain storage/domain objects. Sidebar-specific concerns such as selected row, draft rename text, editing state, counts, and row actions should live in lightweight row view models.~~
 
-3. Remove manual sidebar selection synchronization from `MainView`.
+3. ~~Remove manual sidebar selection synchronization from `MainView`.~~
 
-   Selection should flow through bindable `SelectedProjectRow` and `SelectedComparisonRow` state. Code-behind should not need to set list indices after property changes.
+   ~~Selection should flow through bindable `SelectedProjectRow` and `SelectedComparisonRow` state. Code-behind should not need to set list indices after property changes.~~
 
-4. Move drop/file-add orchestration out of event handlers.
+4. ~~Move drop/file-add orchestration out of event handlers.~~
 
-   `MainView` can still adapt Avalonia events and storage files, but the workflow decisions should sit behind view-model methods so empty-state drops, toolbar adds, and future image-set drops follow the same path.
+   ~~`MainView` can still adapt Avalonia events and storage files, but the workflow decisions should sit behind view-model methods so empty-state drops, toolbar adds, and future image-set drops follow the same path.~~
 
 5. Keep code-behind focused on view adapters.
 

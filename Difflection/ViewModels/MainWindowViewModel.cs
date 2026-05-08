@@ -507,6 +507,13 @@ public partial class MainWindowViewModel : ViewModelBase
         return project;
     }
 
+    public async Task<Project> AddProjectForInlineRenameAsync(CancellationToken cancellationToken = default)
+    {
+        var project = await AddProjectAsync(cancellationToken: cancellationToken);
+        BeginRenameProject(project);
+        return project;
+    }
+
     public async Task<bool> DeleteProjectAsync(Project project, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(project);
@@ -563,6 +570,13 @@ public partial class MainWindowViewModel : ViewModelBase
         NotifyWorkspaceStateChanged();
 
         await SaveProjectAsync(SelectedProject, cancellationToken);
+        return comparison;
+    }
+
+    public async Task<ComparisonSet> AddComparisonForInlineRenameAsync(CancellationToken cancellationToken = default)
+    {
+        var comparison = await AddComparisonAsync(cancellationToken: cancellationToken);
+        BeginRenameComparison(comparison);
         return comparison;
     }
 
@@ -771,6 +785,15 @@ public partial class MainWindowViewModel : ViewModelBase
         return addedImages;
     }
 
+    public async Task<IReadOnlyList<ImageAsset>> AddFilesToCurrentComparisonAfterCommittingRenamesAsync(
+        IEnumerable<IStorageFile> files,
+        int? maxFiles = null,
+        CancellationToken cancellationToken = default)
+    {
+        await CommitActiveInlineRenamesAsync(cancellationToken);
+        return await AddFilesToCurrentComparisonAsync(files, maxFiles, cancellationToken);
+    }
+
     public async Task<IReadOnlyList<ImageAsset>> AddBrowserFilesToCurrentComparisonAsync(
         IReadOnlyList<string> fileNames,
         IReadOnlyList<byte[]> fileContents,
@@ -955,6 +978,17 @@ public partial class MainWindowViewModel : ViewModelBase
         return true;
     }
 
+    public async Task<bool> DeleteImageAndRefreshAsync(ImageAsset image, CancellationToken cancellationToken = default)
+    {
+        if (!await DeleteImageAsync(image, cancellationToken))
+        {
+            return false;
+        }
+
+        await RefreshCurrentComparisonImagesAsync(cancellationToken);
+        return true;
+    }
+
     public async Task<bool> LabelImageAsync(ImageAsset image, string? label, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(image);
@@ -990,6 +1024,17 @@ public partial class MainWindowViewModel : ViewModelBase
         return true;
     }
 
+    public async Task<bool> SetReferenceImageAndRefreshAsync(ImageAsset image, CancellationToken cancellationToken = default)
+    {
+        if (!await SetReferenceImageAsync(image, cancellationToken))
+        {
+            return false;
+        }
+
+        await RefreshCurrentComparisonImagesAsync(cancellationToken);
+        return true;
+    }
+
     public async Task<bool> SetCandidateImageAsync(ImageAsset image, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(image);
@@ -999,11 +1044,27 @@ public partial class MainWindowViewModel : ViewModelBase
             return false;
         }
 
+        if (SelectedComparison.Images.Count < 2)
+        {
+            throw new InvalidOperationException("Setting a candidate image requires at least two images in the comparison.");
+        }
+
         SelectedComparison.SetCandidateImage(image.Id);
         SelectedProject.UpdatedAt = DateTimeOffset.UtcNow;
         NotifySelectedComparisonImagesChanged();
 
         await SaveProjectAsync(SelectedProject, cancellationToken);
+        return true;
+    }
+
+    public async Task<bool> SetCandidateImageAndRefreshAsync(ImageAsset image, CancellationToken cancellationToken = default)
+    {
+        if (!await SetCandidateImageAsync(image, cancellationToken))
+        {
+            return false;
+        }
+
+        await RefreshCurrentComparisonImagesAsync(cancellationToken);
         return true;
     }
 

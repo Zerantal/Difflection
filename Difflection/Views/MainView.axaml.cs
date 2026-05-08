@@ -61,9 +61,8 @@ public partial class MainView : UserControl
     {
         if (_viewModel is not null)
         {
-            var project = await _viewModel.AddProjectAsync();
-            await RefreshStageForSelectedComparisonAsync();
-            _viewModel.BeginRenameProject(project);
+            await _viewModel.AddProjectForInlineRenameAsync();
+            FitStageToCurrentComparison();
         }
     }
 
@@ -79,9 +78,8 @@ public partial class MainView : UserControl
     {
         if (_viewModel is not null)
         {
-            var comparison = await _viewModel.AddComparisonAsync();
-            await RefreshStageForSelectedComparisonAsync();
-            _viewModel.BeginRenameComparison(comparison);
+            await _viewModel.AddComparisonForInlineRenameAsync();
+            FitStageToCurrentComparison();
         }
     }
 
@@ -222,23 +220,21 @@ public partial class MainView : UserControl
             return;
         }
 
-        if (await _viewModel.SetReferenceImageAsync(image))
+        if (await _viewModel.SetReferenceImageAndRefreshAsync(image))
         {
-            await _viewModel.RefreshCurrentComparisonImagesAsync();
             ComparisonStage.FitZoomToStage();
         }
     }
 
     private async void SetCandidateImageButton_OnClick(object? sender, RoutedEventArgs e)
     {
-        if (_viewModel is null || sender is not Button { DataContext: ImageAsset image } || !_viewModel.CanSetCandidateImage(image))
+        if (_viewModel is null || sender is not Button { DataContext: ImageAsset image })
         {
             return;
         }
 
-        if (await _viewModel.SetCandidateImageAsync(image))
+        if (await _viewModel.SetCandidateImageAndRefreshAsync(image))
         {
-            await _viewModel.RefreshCurrentComparisonImagesAsync();
             ComparisonStage.FitZoomToStage();
         }
     }
@@ -250,9 +246,8 @@ public partial class MainView : UserControl
             return;
         }
 
-        if (await _viewModel.DeleteImageAsync(image))
+        if (await _viewModel.DeleteImageAndRefreshAsync(image))
         {
-            await _viewModel.RefreshCurrentComparisonImagesAsync();
             ComparisonStage.FitZoomToStage();
         }
     }
@@ -294,8 +289,7 @@ public partial class MainView : UserControl
             return;
         }
 
-        await _viewModel.CommitActiveInlineRenamesAsync();
-        await _viewModel.AddFilesToCurrentComparisonAsync(files, maxFiles: 2);
+        await _viewModel.AddFilesToCurrentComparisonAfterCommittingRenamesAsync(files, maxFiles: 2);
         ComparisonStage.FitZoomToStage();
     }
 
@@ -381,7 +375,7 @@ public partial class MainView : UserControl
         if (e.PropertyName is nameof(MainWindowViewModel.SelectedProject)
             or nameof(MainWindowViewModel.SelectedComparison))
         {
-            _ = RefreshStageForSelectedComparisonAsync();
+            _ = RefreshCurrentComparisonAndFitStageAsync();
         }
 
         if (e.PropertyName is nameof(MainWindowViewModel.SelectedProjectComparisons)
@@ -412,7 +406,7 @@ public partial class MainView : UserControl
             .OfType<IStorageFile>();
     }
 
-    private async Task RefreshStageForSelectedComparisonAsync()
+    private async Task RefreshCurrentComparisonAndFitStageAsync()
     {
         if (_viewModel is null)
         {
@@ -420,6 +414,12 @@ public partial class MainView : UserControl
         }
 
         await _viewModel.RefreshCurrentComparisonImagesAsync();
+        UpdateViewControls();
+        ComparisonStage.FitZoomToStage();
+    }
+
+    private void FitStageToCurrentComparison()
+    {
         UpdateViewControls();
         ComparisonStage.FitZoomToStage();
     }
@@ -498,7 +498,7 @@ public partial class MainView : UserControl
         if (ReferenceEquals(e.Project, _viewModel.SelectedProject)
             && ReferenceEquals(e.Comparison, _viewModel.SelectedComparison))
         {
-            await _viewModel.RefreshCurrentComparisonImagesAsync();
+            await RefreshCurrentComparisonAndFitStageAsync();
         }
     }
 }
