@@ -91,8 +91,7 @@ public partial class WorkspaceNavigatorViewModel : ViewModelBase
             SelectedProject.Name = NormalizeName(value, DefaultProjectName);
             SelectedProject.UpdatedAt = DateTimeOffset.UtcNow;
             FindProjectRow(SelectedProject)?.Refresh();
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(SelectedProjectComparisons));
+            NotifySelectedStateChanged();
         }
     }
 
@@ -106,8 +105,7 @@ public partial class WorkspaceNavigatorViewModel : ViewModelBase
             SelectedComparison.UpdatedAt = DateTimeOffset.UtcNow;
             SelectedProject.UpdatedAt = DateTimeOffset.UtcNow;
             FindComparisonRow(SelectedComparison)?.Refresh();
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(SelectedProjectComparisons));
+            NotifySelectedStateChanged();
         }
     }
 
@@ -138,18 +136,9 @@ public partial class WorkspaceNavigatorViewModel : ViewModelBase
     {
         ArgumentNullException.ThrowIfNull(projectRow);
 
-        foreach (var row in ProjectRows)
-        {
-            if (ReferenceEquals(row, projectRow))
-            {
-                SelectedProjectRow = row;
-                row.BeginEdit();
-            }
-            else
-            {
-                row.CancelEdit();
-            }
-        }
+        SelectedProjectRow?.CancelEdit();
+        SelectedProjectRow = projectRow;
+        projectRow.BeginEdit();
     }
 
     public void BeginRenameComparison(ComparisonSet comparison)
@@ -166,18 +155,9 @@ public partial class WorkspaceNavigatorViewModel : ViewModelBase
     {
         ArgumentNullException.ThrowIfNull(comparisonRow);
 
-        foreach (var row in SelectedProjectComparisonRows)
-        {
-            if (ReferenceEquals(row, comparisonRow))
-            {
-                SelectedComparisonRow = row;
-                row.BeginEdit();
-            }
-            else
-            {
-                row.CancelEdit();
-            }
-        }
+        SelectedComparisonRow?.CancelEdit();
+        SelectedComparisonRow = comparisonRow;
+        comparisonRow.BeginEdit();
     }
 
     public async Task CommitProjectRenameAsync(ProjectListItemViewModel row, CancellationToken cancellationToken = default)
@@ -262,7 +242,6 @@ public partial class WorkspaceNavigatorViewModel : ViewModelBase
         Projects.Add(project);
         RefreshProjectRows();
         SelectedProject = project;
-        NotifyWorkspaceStateChanged();
 
         await SaveProjectAsync(project, cancellationToken);
         return project;
@@ -294,8 +273,6 @@ public partial class WorkspaceNavigatorViewModel : ViewModelBase
         {
             SelectedProject = Projects.FirstOrDefault();
         }
-
-        NotifyWorkspaceStateChanged();
 
         if (ProjectStorage is not null)
         {
@@ -329,9 +306,8 @@ public partial class WorkspaceNavigatorViewModel : ViewModelBase
         SelectedProject.UpdatedAt = DateTimeOffset.UtcNow;
         RefreshComparisonRows();
         FindProjectRow(SelectedProject)?.Refresh();
-        OnPropertyChanged(nameof(SelectedProjectComparisons));
+        NotifySelectedStateChanged();
         SelectedComparison = comparison;
-        NotifyWorkspaceStateChanged();
 
         await SaveProjectAsync(SelectedProject, cancellationToken);
         return comparison;
@@ -390,8 +366,7 @@ public partial class WorkspaceNavigatorViewModel : ViewModelBase
         project.Name = NormalizeName(name, DefaultProjectName);
         project.UpdatedAt = DateTimeOffset.UtcNow;
         FindProjectRow(project)?.Refresh();
-        OnPropertyChanged(nameof(SelectedProjectName));
-        OnPropertyChanged(nameof(SelectedProjectComparisons));
+        NotifySelectedStateChanged();
         await SaveProjectAsync(project, cancellationToken);
     }
 
@@ -408,8 +383,7 @@ public partial class WorkspaceNavigatorViewModel : ViewModelBase
         comparison.UpdatedAt = DateTimeOffset.UtcNow;
         await SaveProjectAsync(SelectedProject, cancellationToken);
         FindComparisonRow(comparison)?.Refresh();
-        OnPropertyChanged(nameof(SelectedComparisonName));
-        OnPropertyChanged(nameof(SelectedProjectComparisons));
+        NotifySelectedStateChanged();
     }
 
     public async Task<bool> DeleteComparisonAsync(ComparisonSet comparison, CancellationToken cancellationToken = default)
@@ -432,8 +406,7 @@ public partial class WorkspaceNavigatorViewModel : ViewModelBase
         RefreshComparisonRows();
         FindProjectRow(SelectedProject)?.Refresh();
 
-        OnPropertyChanged(nameof(SelectedProjectComparisons));
-        NotifyWorkspaceStateChanged();
+        NotifySelectedStateChanged();
         await SaveProjectAsync(SelectedProject, cancellationToken);
         return true;
     }
@@ -471,8 +444,7 @@ public partial class WorkspaceNavigatorViewModel : ViewModelBase
 
         comparison.Name = NormalizeName(imageLabel, DefaultComparisonName);
         RefreshComparison(comparison);
-        OnPropertyChanged(nameof(SelectedComparisonName));
-        OnPropertyChanged(nameof(SelectedProjectComparisons));
+        NotifySelectedStateChanged();
     }
 
     private static string NormalizeName(string? name, string fallback)
@@ -490,6 +462,23 @@ public partial class WorkspaceNavigatorViewModel : ViewModelBase
         OnPropertyChanged(nameof(HasProjects));
         OnPropertyChanged(nameof(ShowProjectsEmptyState));
         OnPropertyChanged(nameof(ShowComparisonsEmptyState));
+    }
+
+    private void NotifySelectedStateChanged()
+    {
+        OnPropertyChanged(nameof(SelectedProject));
+        OnPropertyChanged(nameof(HasSelectedProject));
+        OnPropertyChanged(nameof(SelectedProjectComparisons));
+        OnPropertyChanged(nameof(CanDeleteSelectedProject));
+        OnPropertyChanged(nameof(CanAddComparison));
+        OnPropertyChanged(nameof(SelectedProjectName));
+        OnPropertyChanged(nameof(SelectedComparison));
+        OnPropertyChanged(nameof(HasSelectedComparison));
+        OnPropertyChanged(nameof(CanDeleteSelectedComparison));
+        OnPropertyChanged(nameof(SelectedComparisonImages));
+        OnPropertyChanged(nameof(SelectedComparisonName));
+        OnPropertyChanged(nameof(SelectedComparisonImageCountText));
+        NotifyWorkspaceStateChanged();
     }
 
     private void RefreshProjectRows()
@@ -564,15 +553,7 @@ public partial class WorkspaceNavigatorViewModel : ViewModelBase
     partial void OnSelectedProjectRowChanged(ProjectListItemViewModel? value)
     {
         RefreshComparisonRows();
-
-        OnPropertyChanged(nameof(SelectedProjectName));
-        OnPropertyChanged(nameof(SelectedComparisonName));
-        OnPropertyChanged(nameof(SelectedComparison));
-        OnPropertyChanged(nameof(HasSelectedComparison));
-        OnPropertyChanged(nameof(CanDeleteSelectedComparison));
-        OnPropertyChanged(nameof(SelectedComparisonImages));
-        OnPropertyChanged(nameof(SelectedComparisonImageCountText));
-        NotifyWorkspaceStateChanged();
+        NotifySelectedStateChanged();
     }
 
     partial void OnSelectedComparisonRowChanged(ComparisonListItemViewModel? value)
@@ -588,7 +569,7 @@ public partial class WorkspaceNavigatorViewModel : ViewModelBase
             return;
         }
 
-        OnPropertyChanged(nameof(SelectedComparisonName));
-        NotifyWorkspaceStateChanged();
+        NotifySelectedStateChanged();
     }
+
 }
