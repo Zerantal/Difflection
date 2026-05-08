@@ -127,6 +127,61 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
+    public async Task SelectedProjectRow_and_SelectedProject_stay_in_sync_without_view_selection_repair()
+    {
+        var first = new Project { Name = "First" };
+        first.Comparisons.Add(new ComparisonSet { Name = "First A" });
+        var second = new Project { Name = "Second" };
+        var secondComparison = new ComparisonSet { Name = "Second A" };
+        second.Comparisons.Add(secondComparison);
+        second.Comparisons.Add(new ComparisonSet { Name = "Second B" });
+        var viewModel = new MainWindowViewModel(new FakeProjectStorage(first, second));
+        await viewModel.LoadProjectsAsync(TestContext.Current.CancellationToken);
+
+        var secondRow = viewModel.ProjectRows.Single(row => ReferenceEquals(row.Project, second));
+        viewModel.SelectedProjectRow = secondRow;
+
+        Assert.Same(second, viewModel.SelectedProject);
+        Assert.Same(secondRow, viewModel.SelectedProjectRow);
+        Assert.Same(secondComparison, viewModel.SelectedComparison);
+        Assert.Same(
+            viewModel.SelectedProjectComparisonRows.Single(row => ReferenceEquals(row.Comparison, secondComparison)),
+            viewModel.SelectedComparisonRow);
+
+        viewModel.SelectedProject = first;
+
+        Assert.Same(first, viewModel.SelectedProject);
+        Assert.Same(viewModel.ProjectRows.Single(row => ReferenceEquals(row.Project, first)), viewModel.SelectedProjectRow);
+        Assert.Same(first.Comparisons[0], viewModel.SelectedComparison);
+        Assert.Same(
+            viewModel.SelectedProjectComparisonRows.Single(row => ReferenceEquals(row.Comparison, first.Comparisons[0])),
+            viewModel.SelectedComparisonRow);
+    }
+
+    [Fact]
+    public async Task SelectedComparisonRow_and_SelectedComparison_stay_in_sync_without_view_selection_repair()
+    {
+        var storage = new FakeProjectStorage();
+        var viewModel = new MainWindowViewModel(storage);
+        await viewModel.AddProjectAsync("Project", TestContext.Current.CancellationToken);
+        var first = await viewModel.AddComparisonAsync("First", TestContext.Current.CancellationToken);
+        var second = await viewModel.AddComparisonAsync("Second", TestContext.Current.CancellationToken);
+
+        var firstRow = viewModel.SelectedProjectComparisonRows.Single(row => ReferenceEquals(row.Comparison, first));
+        viewModel.SelectedComparisonRow = firstRow;
+
+        Assert.Same(first, viewModel.SelectedComparison);
+        Assert.Same(firstRow, viewModel.SelectedComparisonRow);
+
+        viewModel.SelectedComparison = second;
+
+        Assert.Same(second, viewModel.SelectedComparison);
+        Assert.Same(
+            viewModel.SelectedProjectComparisonRows.Single(row => ReferenceEquals(row.Comparison, second)),
+            viewModel.SelectedComparisonRow);
+    }
+
+    [Fact]
     public async Task AddComparisonAsync_requires_selected_project()
     {
         var viewModel = new MainWindowViewModel(new FakeProjectStorage());
