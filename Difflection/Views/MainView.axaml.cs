@@ -151,7 +151,7 @@ public partial class MainView : UserControl
     {
         if (sender is MenuItem { DataContext: ProjectListItemViewModel row })
         {
-            _viewModel?.BeginRenameProject(row.Project);
+            _viewModel?.BeginRenameProject(row);
         }
     }
 
@@ -159,7 +159,7 @@ public partial class MainView : UserControl
     {
         if (sender is MenuItem { DataContext: ComparisonListItemViewModel row })
         {
-            _viewModel?.BeginRenameComparison(row.Comparison);
+            _viewModel?.BeginRenameComparison(row);
         }
     }
 

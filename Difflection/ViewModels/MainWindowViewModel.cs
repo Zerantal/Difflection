@@ -165,7 +165,7 @@ public partial class MainWindowViewModel : ViewModelBase
             if (SelectedProject is null) return;
             SelectedProject.Name = NormalizeName(value, DefaultProjectName);
             SelectedProject.UpdatedAt = DateTimeOffset.UtcNow;
-            FindProjectRow(SelectedProject)?.NotifyNameChanged();
+            FindProjectRow(SelectedProject)?.Refresh();
             OnPropertyChanged();
             OnPropertyChanged(nameof(SelectedProjectComparisons));
             OnPropertyChanged(nameof(WorkspaceContextTitle));
@@ -181,7 +181,7 @@ public partial class MainWindowViewModel : ViewModelBase
             SelectedComparison.Name = NormalizeName(value, DefaultComparisonName);
             SelectedComparison.UpdatedAt = DateTimeOffset.UtcNow;
             SelectedProject.UpdatedAt = DateTimeOffset.UtcNow;
-            FindComparisonRow(SelectedComparison)?.NotifyNameChanged();
+            FindComparisonRow(SelectedComparison)?.Refresh();
             OnPropertyChanged();
             OnPropertyChanged(nameof(SelectedProjectComparisons));
             OnPropertyChanged(nameof(WorkspaceContextTitle));
@@ -195,10 +195,19 @@ public partial class MainWindowViewModel : ViewModelBase
     public void BeginRenameProject(Project project)
     {
         ArgumentNullException.ThrowIfNull(project);
+        if (FindProjectRow(project) is { } row)
+        {
+            BeginRenameProject(row);
+        }
+    }
+
+    public void BeginRenameProject(ProjectListItemViewModel projectRow)
+    {
+        ArgumentNullException.ThrowIfNull(projectRow);
 
         foreach (var row in ProjectRows)
         {
-            if (ReferenceEquals(row.Project, project))
+            if (ReferenceEquals(row, projectRow))
             {
                 SelectedProjectRow = row;
                 row.BeginEdit();
@@ -213,10 +222,19 @@ public partial class MainWindowViewModel : ViewModelBase
     public void BeginRenameComparison(ComparisonSet comparison)
     {
         ArgumentNullException.ThrowIfNull(comparison);
+        if (FindComparisonRow(comparison) is { } row)
+        {
+            BeginRenameComparison(row);
+        }
+    }
+
+    public void BeginRenameComparison(ComparisonListItemViewModel comparisonRow)
+    {
+        ArgumentNullException.ThrowIfNull(comparisonRow);
 
         foreach (var row in SelectedProjectComparisonRows)
         {
-            if (ReferenceEquals(row.Comparison, comparison))
+            if (ReferenceEquals(row, comparisonRow))
             {
                 SelectedComparisonRow = row;
                 row.BeginEdit();
@@ -539,6 +557,7 @@ public partial class MainWindowViewModel : ViewModelBase
         SelectedProject.Comparisons.Add(comparison);
         SelectedProject.UpdatedAt = DateTimeOffset.UtcNow;
         RefreshComparisonRows();
+        FindProjectRow(SelectedProject)?.Refresh();
         OnPropertyChanged(nameof(SelectedProjectComparisons));
         SelectedComparison = comparison;
         NotifyWorkspaceStateChanged();
@@ -591,7 +610,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
         project.Name = NormalizeName(name, DefaultProjectName);
         project.UpdatedAt = DateTimeOffset.UtcNow;
-        FindProjectRow(project)?.NotifyNameChanged();
+        FindProjectRow(project)?.Refresh();
         OnPropertyChanged(nameof(SelectedProjectName));
         OnPropertyChanged(nameof(SelectedProjectComparisons));
         OnPropertyChanged(nameof(WorkspaceContextTitle));
@@ -610,7 +629,7 @@ public partial class MainWindowViewModel : ViewModelBase
         comparison.Name = NormalizeName(name, DefaultComparisonName);
         comparison.UpdatedAt = DateTimeOffset.UtcNow;
         await SaveProjectAsync(SelectedProject, cancellationToken);
-        FindComparisonRow(comparison)?.NotifyNameChanged();
+        FindComparisonRow(comparison)?.Refresh();
         OnPropertyChanged(nameof(SelectedComparisonName));
         OnPropertyChanged(nameof(SelectedProjectComparisons));
         OnPropertyChanged(nameof(WorkspaceContextTitle));
@@ -634,6 +653,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
         SelectedProject.UpdatedAt = DateTimeOffset.UtcNow;
         RefreshComparisonRows();
+        FindProjectRow(SelectedProject)?.Refresh();
 
         if (SelectedComparison == comparison)
         {
@@ -1045,6 +1065,11 @@ public partial class MainWindowViewModel : ViewModelBase
 
     private void NotifySelectedComparisonImagesChanged()
     {
+        if (SelectedComparison is not null)
+        {
+            FindComparisonRow(SelectedComparison)?.Refresh();
+        }
+
         OnPropertyChanged(nameof(SelectedComparisonImages));
         OnPropertyChanged(nameof(SelectedComparisonImageCountText));
         OnPropertyChanged(nameof(WorkspaceContextDetail));
@@ -1133,7 +1158,7 @@ public partial class MainWindowViewModel : ViewModelBase
         }
 
         comparison.Name = NormalizeName(imageLabel, DefaultComparisonName);
-        FindComparisonRow(comparison)?.NotifyNameChanged();
+        FindComparisonRow(comparison)?.Refresh();
         OnPropertyChanged(nameof(SelectedComparisonName));
         OnPropertyChanged(nameof(SelectedProjectComparisons));
         OnPropertyChanged(nameof(WorkspaceContextTitle));

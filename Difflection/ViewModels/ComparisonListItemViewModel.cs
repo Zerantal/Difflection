@@ -1,50 +1,17 @@
 using System;
-using CommunityToolkit.Mvvm.ComponentModel;
 using Difflection.Models;
 
 namespace Difflection.ViewModels;
 
-public partial class ComparisonListItemViewModel(ComparisonSet comparison) : ViewModelBase
+public partial class ComparisonListItemViewModel(ComparisonSet comparison) : SidebarListItemViewModel<ComparisonSet>(comparison)
 {
-    public ComparisonSet Comparison { get; } = comparison;
+    public ComparisonSet Comparison => Model;
 
     public Guid Id => Comparison.Id;
 
-    public string Name => Comparison.Name;
+    public override string Name => Comparison.Name;
 
-    public bool IsNotEditing => !IsEditing;
-
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsNotEditing))]
-    public partial bool IsEditing { get; set; }
-
-    [ObservableProperty]
-    public partial string DraftName { get; set; } = comparison.Name;
-
-    public void BeginEdit()
-    {
-        DraftName = Comparison.Name;
-        IsEditing = true;
-    }
-
-    public void CancelEdit()
-    {
-        DraftName = Comparison.Name;
-        IsEditing = false;
-    }
-
-    public void EndEdit()
-    {
-        IsEditing = false;
-        NotifyNameChanged();
-    }
-
-    public void NotifyNameChanged()
-    {
-        OnPropertyChanged(nameof(Name));
-        if (!IsEditing)
-        {
-            DraftName = Comparison.Name;
-        }
-    }
+    public override string DetailText => Comparison.Images.Count == 1
+        ? "1 image"
+        : $"{Comparison.Images.Count} images";
 }

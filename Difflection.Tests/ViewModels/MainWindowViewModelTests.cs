@@ -46,6 +46,14 @@ public sealed class MainWindowViewModelTests
         Assert.Same(project, Assert.Single(viewModel.Projects));
         Assert.Same(project, viewModel.SelectedProject);
         Assert.Same(comparison, viewModel.SelectedComparison);
+        var projectRow = Assert.Single(viewModel.ProjectRows);
+        Assert.Same(project, projectRow.Project);
+        Assert.Same(projectRow, viewModel.SelectedProjectRow);
+        Assert.Equal("1 comparison", projectRow.DetailText);
+        var comparisonRow = Assert.Single(viewModel.SelectedProjectComparisonRows);
+        Assert.Same(comparison, comparisonRow.Comparison);
+        Assert.Same(comparisonRow, viewModel.SelectedComparisonRow);
+        Assert.Equal("0 images", comparisonRow.DetailText);
     }
 
     [Fact]
@@ -93,6 +101,9 @@ public sealed class MainWindowViewModelTests
         Assert.Equal("Header States", comparison.Name);
         Assert.Same(comparison, Assert.Single(project.Comparisons));
         Assert.Same(comparison, viewModel.SelectedComparison);
+        Assert.Same(viewModel.SelectedComparisonRow, Assert.Single(viewModel.SelectedProjectComparisonRows));
+        Assert.Equal("1 comparison", Assert.Single(viewModel.ProjectRows).DetailText);
+        Assert.Equal("0 images", viewModel.SelectedComparisonRow?.DetailText);
         Assert.Same(project, Assert.Single(storage.SavedProjects));
     }
 
@@ -149,6 +160,7 @@ public sealed class MainWindowViewModelTests
         Assert.Same(image, Assert.Single(comparison.Images));
         Assert.Equal(image.Id, comparison.ReferenceImageId);
         Assert.Null(comparison.CandidateImageId);
+        Assert.Equal("1 image", viewModel.SelectedComparisonRow?.DetailText);
         Assert.Equal([1, 2, 3], storage.SavedImageContents[image.Id]);
         Assert.Same(project, Assert.Single(storage.SavedProjects));
     }
