@@ -169,21 +169,21 @@ The MVP UI now has the right structural pieces, but it still feels more like a f
 
 Recommended UI polish sequence:
 
-1. Make the selected project and comparison visible in the main workspace.
+1. ~~Make the selected project and comparison visible in the main workspace.~~
 
-   The sidebar owns the current project and comparison context, but the main stage does not repeat it. Once users have several projects or comparisons, it will be easy to lose orientation. Add a compact header above the stage showing the selected project, selected comparison, save or monitoring state, and possibly the image count.
+   ~~The sidebar owns the current project and comparison context, but the main stage does not repeat it. Once users have several projects or comparisons, it will be easy to lose orientation. Add a compact header above the stage showing the selected project, selected comparison, save or monitoring state, and possibly the image count.~~
 
-2. Improve empty states.
+2. ~~Improve empty states.~~
 
-   The empty UI should distinguish between:
+   ~~The empty UI should distinguish between:~~
 
-   - No projects.
-   - Project selected but no comparisons.
-   - Comparison selected but no images.
-   - One image loaded.
-   - Two or more images ready to compare.
+   - ~~No projects.~~
+   - ~~Project selected but no comparisons.~~
+   - ~~Comparison selected but no images.~~
+   - ~~One image loaded.~~
+   - ~~Two or more images ready to compare.~~
 
-   This matters because the app is now project-oriented, not just a drag-two-images comparison surface.
+   ~~This matters because the app is now project-oriented, not just a drag-two-images comparison surface.~~
 
 3. Rework the image set area around images as primary objects.
 
@@ -225,3 +225,29 @@ Recommended UI polish sequence:
 9. Refresh UI snapshots after the structure is settled.
 
    The current snapshot baselines represent the pre-sidebar shell and no longer match the rendered workspace UI. After the polish pass settles the layout, update the snapshot baselines so future UI regressions are meaningful.
+
+## MainView Refactor
+
+The next architectural cleanup should make `MainView` less dependent on the rendered control tree and move more UI state into explicit, testable view-model state.
+
+Suggested improvements:
+
+1. Replace visual-tree based inline rename with explicit row edit state.
+
+   Project and comparison rename mode should be represented by sidebar row state, not by searching for a `TextBox` and toggling its properties. The view should render normal text or an editor based on row state, and commit/cancel through view-model commands or methods.
+
+2. Split sidebar item presentation from persisted domain models.
+
+   `Project` and `ComparisonSet` should remain storage/domain objects. Sidebar-specific concerns such as selected row, draft rename text, editing state, counts, and row actions should live in lightweight row view models.
+
+3. Remove manual sidebar selection synchronization from `MainView`.
+
+   Selection should flow through bindable `SelectedProjectRow` and `SelectedComparisonRow` state. Code-behind should not need to set list indices after property changes.
+
+4. Move drop/file-add orchestration out of event handlers.
+
+   `MainView` can still adapt Avalonia events and storage files, but the workflow decisions should sit behind view-model methods so empty-state drops, toolbar adds, and future image-set drops follow the same path.
+
+5. Keep code-behind focused on view adapters.
+
+   Long-term, `MainView.axaml.cs` should mostly handle Avalonia-specific adapters: focus, pointer/keyboard events, file picker integration, and comparison-stage coordination. Business rules and UI state transitions should be owned by the view model.

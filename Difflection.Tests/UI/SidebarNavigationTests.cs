@@ -68,7 +68,7 @@ public sealed class SidebarNavigationTests
             var project = Assert.Single(viewModel.Projects);
             Assert.Equal("Untitled Project", project.Name);
             Assert.Same(project, viewModel.SelectedProject);
-            Assert.Same(project, projectsList.SelectedItem);
+            Assert.Same(viewModel.SelectedProjectRow, projectsList.SelectedItem);
             Assert.Same(project, Assert.Single(storage.SavedProjects));
         }
         finally
@@ -90,31 +90,29 @@ public sealed class SidebarNavigationTests
 
             Click(GetControl<Button>(mainView, "AddProjectButton"));
             var projectsList = GetControl<ListBox>(mainView, "ProjectsList");
-            var projectNameTextBox = await WaitForInlineNameTextBoxAsync(projectsList, viewModel.SelectedProject!);
-            await TestUiSupport.WaitForAsync(() => !projectNameTextBox.IsReadOnly);
+            var projectRow = viewModel.SelectedProjectRow!;
+            var projectNameTextBox = await WaitForInlineNameTextBoxAsync(projectsList, projectRow);
+            await TestUiSupport.WaitForAsync(() => projectRow.IsEditing);
             projectNameTextBox.Text = "  Client Work  ";
             LoseFocus(projectNameTextBox);
 
-            await TestUiSupport.WaitForAsync(() => viewModel.SelectedProject?.Name == "Client Work");
+            await TestUiSupport.WaitForAsync(() => viewModel.SelectedProject?.Name == "Client Work" && !projectRow.IsEditing);
 
             Click(GetControl<Button>(mainView, "AddComparisonButton"));
             await TestUiSupport.WaitForAsync(() => viewModel.SelectedComparison is not null);
             storage.SavedProjects.Clear();
 
             var comparisonsList = GetControl<ListBox>(mainView, "ComparisonsList");
-            var comparisonNameTextBox = await WaitForInlineNameTextBoxAsync(comparisonsList, viewModel.SelectedComparison!);
-            await TestUiSupport.WaitForAsync(() => !comparisonNameTextBox.IsReadOnly);
+            var comparisonRow = viewModel.SelectedComparisonRow!;
+            var comparisonNameTextBox = await WaitForInlineNameTextBoxAsync(comparisonsList, comparisonRow);
+            await TestUiSupport.WaitForAsync(() => comparisonRow.IsEditing);
             comparisonNameTextBox.Text = "  Header States  ";
             LoseFocus(comparisonNameTextBox);
 
-            await TestUiSupport.WaitForAsync(() => viewModel.SelectedComparison?.Name == "Header States");
+            await TestUiSupport.WaitForAsync(() => viewModel.SelectedComparison?.Name == "Header States" && !comparisonRow.IsEditing);
 
             Assert.Equal("Client Work", viewModel.SelectedProject?.Name);
             Assert.Equal("Header States", viewModel.SelectedComparison?.Name);
-            Assert.True(projectNameTextBox.IsReadOnly);
-            Assert.True(comparisonNameTextBox.IsReadOnly);
-            Assert.False(projectNameTextBox.IsHitTestVisible);
-            Assert.False(comparisonNameTextBox.IsHitTestVisible);
             Assert.NotEmpty(storage.SavedProjects);
         }
         finally
@@ -180,7 +178,7 @@ public sealed class SidebarNavigationTests
 
             await TestUiSupport.WaitForAsync(() => viewModel.LeftFileName == firstImage.Label);
 
-            comparisonsList.SelectedItem = second;
+            comparisonsList.SelectedItem = viewModel.SelectedProjectComparisonRows.Single(row => ReferenceEquals(row.Comparison, second));
 
             await TestUiSupport.WaitForAsync(() => viewModel.LeftFileName == secondImage.Label);
 
@@ -219,7 +217,7 @@ public sealed class SidebarNavigationTests
                 && viewModel.LeftImage is null
                 && viewModel.RightImage is null);
 
-            Assert.Same(viewModel.SelectedComparison, comparisonsList.SelectedItem);
+            Assert.Same(viewModel.SelectedComparisonRow, comparisonsList.SelectedItem);
             Assert.Equal("Reference image", viewModel.LeftFileName);
             Assert.Equal("Candidate image", viewModel.RightFileName);
         }
@@ -283,13 +281,13 @@ public sealed class SidebarNavigationTests
 
             await TestUiSupport.WaitForAsync(() => projectsList.ItemCount == 2);
 
-            projectsList.SelectedItem = second;
+            projectsList.SelectedItem = viewModel.ProjectRows.Single(row => ReferenceEquals(row.Project, second));
 
             await TestUiSupport.WaitForAsync(() => ReferenceEquals(viewModel.SelectedProject, second)
                 && ReferenceEquals(viewModel.SelectedComparison, secondComparison)
                 && comparisonsList.ItemCount == 2);
 
-            Assert.Same(second, projectsList.SelectedItem);
+            Assert.Same(viewModel.SelectedProjectRow, projectsList.SelectedItem);
             Assert.Equal(2, comparisonsList.ItemCount);
         }
         finally

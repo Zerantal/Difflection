@@ -33,6 +33,10 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public ObservableCollection<Project> Projects { get; } = [];
 
+    public ObservableCollection<ProjectListItemViewModel> ProjectRows { get; } = [];
+
+    public ObservableCollection<ComparisonListItemViewModel> SelectedProjectComparisonRows { get; } = [];
+
     public IProjectStorage? ProjectStorage { get; }
 
     [ObservableProperty]
@@ -58,6 +62,9 @@ public partial class MainWindowViewModel : ViewModelBase
     public partial Project? SelectedProject { get; set; }
 
     [ObservableProperty]
+    public partial ProjectListItemViewModel? SelectedProjectRow { get; set; }
+
+    [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasSelectedComparison))]
     [NotifyPropertyChangedFor(nameof(CanDeleteSelectedComparison))]
     [NotifyPropertyChangedFor(nameof(SelectedComparisonImages))]
@@ -72,6 +79,9 @@ public partial class MainWindowViewModel : ViewModelBase
     [NotifyPropertyChangedFor(nameof(MainEmptyStateMessage))]
     [NotifyPropertyChangedFor(nameof(ShowComparisonsEmptyState))]
     public partial ComparisonSet? SelectedComparison { get; set; }
+
+    [ObservableProperty]
+    public partial ComparisonListItemViewModel? SelectedComparisonRow { get; set; }
 
     [ObservableProperty]
     public partial string SplitPercentageText { get; set; } = "50 / 50";
@@ -139,7 +149,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public bool ShowProjectsEmptyState => !HasProjects;
 
-    public bool ShowComparisonsEmptyState => HasSelectedProject && SelectedProjectComparisons.Count == 0;
+    public bool ShowComparisonsEmptyState => HasSelectedProject && SelectedProjectComparisonRows.Count == 0;
 
     public bool CanDeleteSelectedProject => HasSelectedProject;
 
@@ -155,6 +165,7 @@ public partial class MainWindowViewModel : ViewModelBase
             if (SelectedProject is null) return;
             SelectedProject.Name = NormalizeName(value, DefaultProjectName);
             SelectedProject.UpdatedAt = DateTimeOffset.UtcNow;
+            FindProjectRow(SelectedProject)?.NotifyNameChanged();
             OnPropertyChanged();
             OnPropertyChanged(nameof(SelectedProjectComparisons));
             OnPropertyChanged(nameof(WorkspaceContextTitle));
@@ -170,6 +181,7 @@ public partial class MainWindowViewModel : ViewModelBase
             SelectedComparison.Name = NormalizeName(value, DefaultComparisonName);
             SelectedComparison.UpdatedAt = DateTimeOffset.UtcNow;
             SelectedProject.UpdatedAt = DateTimeOffset.UtcNow;
+            FindComparisonRow(SelectedComparison)?.NotifyNameChanged();
             OnPropertyChanged();
             OnPropertyChanged(nameof(SelectedProjectComparisons));
             OnPropertyChanged(nameof(WorkspaceContextTitle));
@@ -179,6 +191,93 @@ public partial class MainWindowViewModel : ViewModelBase
     public IReadOnlyList<ComparisonSet> SelectedProjectComparisons => SelectedProject?.Comparisons.ToArray() ?? [];
 
     public IReadOnlyList<ImageAsset> SelectedComparisonImages => SelectedComparison?.Images.ToArray() ?? [];
+
+    public void BeginRenameProject(Project project)
+    {
+        ArgumentNullException.ThrowIfNull(project);
+
+        foreach (var row in ProjectRows)
+        {
+            if (ReferenceEquals(row.Project, project))
+            {
+                SelectedProjectRow = row;
+                row.BeginEdit();
+            }
+            else
+            {
+                row.CancelEdit();
+            }
+        }
+    }
+
+    public void BeginRenameComparison(ComparisonSet comparison)
+    {
+        ArgumentNullException.ThrowIfNull(comparison);
+
+        foreach (var row in SelectedProjectComparisonRows)
+        {
+            if (ReferenceEquals(row.Comparison, comparison))
+            {
+                SelectedComparisonRow = row;
+                row.BeginEdit();
+            }
+            else
+            {
+                row.CancelEdit();
+            }
+        }
+    }
+
+    public async Task CommitProjectRenameAsync(ProjectListItemViewModel row, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(row);
+
+        if (!row.IsEditing)
+        {
+            return;
+        }
+
+        await RenameProjectAsync(row.Project, row.DraftName, cancellationToken);
+        row.EndEdit();
+    }
+
+    public async Task CommitComparisonRenameAsync(ComparisonListItemViewModel row, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(row);
+
+        if (!row.IsEditing)
+        {
+            return;
+        }
+
+        await RenameComparisonAsync(row.Comparison, row.DraftName, cancellationToken);
+        row.EndEdit();
+    }
+
+    public void CancelProjectRename(ProjectListItemViewModel row)
+    {
+        ArgumentNullException.ThrowIfNull(row);
+        row.CancelEdit();
+    }
+
+    public void CancelComparisonRename(ComparisonListItemViewModel row)
+    {
+        ArgumentNullException.ThrowIfNull(row);
+        row.CancelEdit();
+    }
+
+    public async Task CommitActiveInlineRenamesAsync(CancellationToken cancellationToken = default)
+    {
+        foreach (var row in ProjectRows.Where(row => row.IsEditing).ToArray())
+        {
+            await CommitProjectRenameAsync(row, cancellationToken);
+        }
+
+        foreach (var row in SelectedProjectComparisonRows.Where(row => row.IsEditing).ToArray())
+        {
+            await CommitComparisonRenameAsync(row, cancellationToken);
+        }
+    }
 
     public string SelectedComparisonImageCountText
     {
@@ -367,6 +466,7 @@ public partial class MainWindowViewModel : ViewModelBase
             Projects.Add(project);
         }
 
+        RefreshProjectRows();
         SelectedProject = Projects.FirstOrDefault();
         SelectedComparison = SelectedProject?.Comparisons.FirstOrDefault();
         NotifyWorkspaceStateChanged();
@@ -380,6 +480,7 @@ public partial class MainWindowViewModel : ViewModelBase
         };
 
         Projects.Add(project);
+        RefreshProjectRows();
         SelectedProject = project;
         SelectedComparison = null;
         NotifyWorkspaceStateChanged();
@@ -399,6 +500,7 @@ public partial class MainWindowViewModel : ViewModelBase
             return false;
         }
 
+        RefreshProjectRows();
         if (SelectedProject == project)
         {
             SelectedProject = Projects.FirstOrDefault();
@@ -436,6 +538,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
         SelectedProject.Comparisons.Add(comparison);
         SelectedProject.UpdatedAt = DateTimeOffset.UtcNow;
+        RefreshComparisonRows();
         OnPropertyChanged(nameof(SelectedProjectComparisons));
         SelectedComparison = comparison;
         NotifyWorkspaceStateChanged();
@@ -488,6 +591,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
         project.Name = NormalizeName(name, DefaultProjectName);
         project.UpdatedAt = DateTimeOffset.UtcNow;
+        FindProjectRow(project)?.NotifyNameChanged();
         OnPropertyChanged(nameof(SelectedProjectName));
         OnPropertyChanged(nameof(SelectedProjectComparisons));
         OnPropertyChanged(nameof(WorkspaceContextTitle));
@@ -506,6 +610,7 @@ public partial class MainWindowViewModel : ViewModelBase
         comparison.Name = NormalizeName(name, DefaultComparisonName);
         comparison.UpdatedAt = DateTimeOffset.UtcNow;
         await SaveProjectAsync(SelectedProject, cancellationToken);
+        FindComparisonRow(comparison)?.NotifyNameChanged();
         OnPropertyChanged(nameof(SelectedComparisonName));
         OnPropertyChanged(nameof(SelectedProjectComparisons));
         OnPropertyChanged(nameof(WorkspaceContextTitle));
@@ -528,6 +633,7 @@ public partial class MainWindowViewModel : ViewModelBase
         }
 
         SelectedProject.UpdatedAt = DateTimeOffset.UtcNow;
+        RefreshComparisonRows();
 
         if (SelectedComparison == comparison)
         {
@@ -961,6 +1067,64 @@ public partial class MainWindowViewModel : ViewModelBase
         OnPropertyChanged(nameof(MainEmptyStateMessage));
     }
 
+    private void RefreshProjectRows()
+    {
+        ProjectRows.Clear();
+
+        foreach (var project in Projects)
+        {
+            ProjectRows.Add(new ProjectListItemViewModel(project));
+        }
+
+        SyncSelectedProjectRow();
+        OnPropertyChanged(nameof(ProjectRows));
+    }
+
+    private void RefreshComparisonRows()
+    {
+        SelectedProjectComparisonRows.Clear();
+
+        if (SelectedProject is not null)
+        {
+            foreach (var comparison in SelectedProject.Comparisons)
+            {
+                SelectedProjectComparisonRows.Add(new ComparisonListItemViewModel(comparison));
+            }
+        }
+
+        SyncSelectedComparisonRow();
+        OnPropertyChanged(nameof(SelectedProjectComparisonRows));
+        OnPropertyChanged(nameof(ShowComparisonsEmptyState));
+    }
+
+    private ProjectListItemViewModel? FindProjectRow(Project project)
+    {
+        return ProjectRows.FirstOrDefault(row => ReferenceEquals(row.Project, project));
+    }
+
+    private ComparisonListItemViewModel? FindComparisonRow(ComparisonSet comparison)
+    {
+        return SelectedProjectComparisonRows.FirstOrDefault(row => ReferenceEquals(row.Comparison, comparison));
+    }
+
+    private void SyncSelectedProjectRow()
+    {
+        var row = SelectedProject is null ? null : FindProjectRow(SelectedProject);
+        if (!ReferenceEquals(SelectedProjectRow, row))
+        {
+            SelectedProjectRow = row;
+        }
+    }
+
+    private void SyncSelectedComparisonRow()
+    {
+        var row = SelectedComparison is null ? null : FindComparisonRow(SelectedComparison);
+        if (!ReferenceEquals(SelectedComparisonRow, row))
+        {
+            SelectedComparisonRow = row;
+        }
+    }
+
     private void RenameDefaultComparisonFromFirstImage(ComparisonSet comparison, string imageLabel)
     {
         if (comparison.Images.Count > 0 || !string.Equals(comparison.Name, DefaultComparisonName, StringComparison.Ordinal))
@@ -969,6 +1133,7 @@ public partial class MainWindowViewModel : ViewModelBase
         }
 
         comparison.Name = NormalizeName(imageLabel, DefaultComparisonName);
+        FindComparisonRow(comparison)?.NotifyNameChanged();
         OnPropertyChanged(nameof(SelectedComparisonName));
         OnPropertyChanged(nameof(SelectedProjectComparisons));
         OnPropertyChanged(nameof(WorkspaceContextTitle));
@@ -1035,6 +1200,8 @@ public partial class MainWindowViewModel : ViewModelBase
             SelectedComparison = value?.Comparisons.FirstOrDefault();
         }
 
+        RefreshComparisonRows();
+        SyncSelectedProjectRow();
         OnPropertyChanged(nameof(SelectedProjectName));
         OnPropertyChanged(nameof(SelectedComparisonName));
         NotifyWorkspaceStateChanged();
@@ -1053,6 +1220,7 @@ public partial class MainWindowViewModel : ViewModelBase
             SelectedComparison = SelectedProject.Comparisons.FirstOrDefault();
         }
 
+        SyncSelectedComparisonRow();
         OnPropertyChanged(nameof(SelectedComparisonName));
         NotifyWorkspaceStateChanged();
 
@@ -1066,6 +1234,22 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             RightImage = null;
             RightFileName = "Candidate image";
+        }
+    }
+
+    partial void OnSelectedProjectRowChanged(ProjectListItemViewModel? value)
+    {
+        if (!ReferenceEquals(SelectedProject, value?.Project))
+        {
+            SelectedProject = value?.Project;
+        }
+    }
+
+    partial void OnSelectedComparisonRowChanged(ComparisonListItemViewModel? value)
+    {
+        if (!ReferenceEquals(SelectedComparison, value?.Comparison))
+        {
+            SelectedComparison = value?.Comparison;
         }
     }
 

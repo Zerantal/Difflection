@@ -287,10 +287,10 @@
                 <ListBox x:Name="ProjectsList"
                          Grid.Row="1"
                          Classes="sidebarList"
-                         ItemsSource="{Binding Projects}"
-                         SelectedItem="{Binding SelectedProject, Mode=TwoWay}">
+                         ItemsSource="{Binding ProjectRows}"
+                         SelectedItem="{Binding SelectedProjectRow, Mode=TwoWay}">
                     <ListBox.ItemTemplate>
-                        <DataTemplate x:DataType="models:Project">
+                        <DataTemplate x:DataType="vm:ProjectListItemViewModel">
                             <Border Background="Transparent">
                                 <Border.ContextMenu>
                                     <ContextMenu>
@@ -298,13 +298,19 @@
                                                   Click="ProjectRenameMenuItem_OnClick" />
                                     </ContextMenu>
                                 </Border.ContextMenu>
-                                <TextBox Classes="sidebarInlineName"
-                                         Text="{Binding Name}"
-                                         IsReadOnly="True"
-                                         Focusable="False"
-                                         IsHitTestVisible="False"
-                                         LostFocus="ProjectListNameTextBox_OnLostFocus"
-                                         KeyDown="ProjectListNameTextBox_OnKeyDown" />
+                                <Grid>
+                                    <TextBlock Classes="sidebarItemText"
+                                               Text="{Binding Name}"
+                                               VerticalAlignment="Center"
+                                               IsVisible="{Binding IsNotEditing}" />
+                                    <TextBox Classes="sidebarInlineName editing"
+                                             Text="{Binding DraftName, Mode=TwoWay}"
+                                             IsVisible="{Binding IsEditing}"
+                                             AttachedToVisualTree="InlineNameTextBox_OnAttachedToVisualTree"
+                                             PropertyChanged="InlineNameTextBox_OnPropertyChanged"
+                                             LostFocus="ProjectListNameTextBox_OnLostFocus"
+                                             KeyDown="ProjectListNameTextBox_OnKeyDown" />
+                                </Grid>
                             </Border>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
@@ -339,10 +345,10 @@
                 <ListBox x:Name="ComparisonsList"
                          Grid.Row="4"
                          Classes="sidebarList"
-                         ItemsSource="{Binding SelectedProjectComparisons}"
-                         SelectedItem="{Binding SelectedComparison, Mode=TwoWay}">
+                         ItemsSource="{Binding SelectedProjectComparisonRows}"
+                         SelectedItem="{Binding SelectedComparisonRow, Mode=TwoWay}">
                     <ListBox.ItemTemplate>
-                        <DataTemplate x:DataType="models:ComparisonSet">
+                        <DataTemplate x:DataType="vm:ComparisonListItemViewModel">
                             <Border Background="Transparent">
                                 <Border.ContextMenu>
                                     <ContextMenu>
@@ -350,13 +356,19 @@
                                                   Click="ComparisonRenameMenuItem_OnClick" />
                                     </ContextMenu>
                                 </Border.ContextMenu>
-                                <TextBox Classes="sidebarInlineName"
-                                         Text="{Binding Name}"
-                                         IsReadOnly="True"
-                                         Focusable="False"
-                                         IsHitTestVisible="False"
-                                         LostFocus="ComparisonListNameTextBox_OnLostFocus"
-                                         KeyDown="ComparisonListNameTextBox_OnKeyDown" />
+                                <Grid>
+                                    <TextBlock Classes="sidebarItemText"
+                                               Text="{Binding Name}"
+                                               VerticalAlignment="Center"
+                                               IsVisible="{Binding IsNotEditing}" />
+                                    <TextBox Classes="sidebarInlineName editing"
+                                             Text="{Binding DraftName, Mode=TwoWay}"
+                                             IsVisible="{Binding IsEditing}"
+                                             AttachedToVisualTree="InlineNameTextBox_OnAttachedToVisualTree"
+                                             PropertyChanged="InlineNameTextBox_OnPropertyChanged"
+                                             LostFocus="ComparisonListNameTextBox_OnLostFocus"
+                                             KeyDown="ComparisonListNameTextBox_OnKeyDown" />
+                                </Grid>
                             </Border>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
