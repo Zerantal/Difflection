@@ -23,10 +23,12 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         Workspace = new WorkspaceNavigatorViewModel();
         ToolState = new ComparisonToolStateViewModel(() => HasBothImages);
+        WorkspaceStatus = new WorkspaceStatusViewModel(Workspace, ComparisonDisplay);
         ImageSet = new ComparisonImageSetViewModel(Workspace, ComparisonDisplay, ProjectStorage);
         ComparisonDisplay.PropertyChanged += OnComparisonDisplayPropertyChanged;
         Workspace.PropertyChanged += OnWorkspacePropertyChanged;
         ToolState.PropertyChanged += OnToolStatePropertyChanged;
+        WorkspaceStatus.PropertyChanged += OnWorkspaceStatusPropertyChanged;
         ImageSet.ImageSetChanged += OnImageSetChanged;
     }
 
@@ -35,11 +37,13 @@ public partial class MainWindowViewModel : ViewModelBase
         ProjectStorage = projectStorage;
         Workspace = new WorkspaceNavigatorViewModel(projectStorage);
         ToolState = new ComparisonToolStateViewModel(() => HasBothImages);
+        WorkspaceStatus = new WorkspaceStatusViewModel(Workspace, ComparisonDisplay);
         ImageSet = new ComparisonImageSetViewModel(Workspace, ComparisonDisplay, projectStorage);
         _monitoredImageVersionCapture = new MonitoredImageVersionCapture(projectStorage);
         ComparisonDisplay.PropertyChanged += OnComparisonDisplayPropertyChanged;
         Workspace.PropertyChanged += OnWorkspacePropertyChanged;
         ToolState.PropertyChanged += OnToolStatePropertyChanged;
+        WorkspaceStatus.PropertyChanged += OnWorkspaceStatusPropertyChanged;
         ImageSet.ImageSetChanged += OnImageSetChanged;
     }
 
@@ -54,6 +58,8 @@ public partial class MainWindowViewModel : ViewModelBase
     public WorkspaceNavigatorViewModel Workspace { get; }
 
     public ComparisonToolStateViewModel ToolState { get; }
+
+    public WorkspaceStatusViewModel WorkspaceStatus { get; }
 
     public ComparisonImageSetViewModel ImageSet { get; }
 
@@ -158,9 +164,9 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public bool HasProjects => Workspace.HasProjects;
 
-    public bool ShowProjectsEmptyState => Workspace.ShowProjectsEmptyState;
+    public bool ShowProjectsEmptyState => WorkspaceStatus.ShowProjectsEmptyState;
 
-    public bool ShowComparisonsEmptyState => Workspace.ShowComparisonsEmptyState;
+    public bool ShowComparisonsEmptyState => WorkspaceStatus.ShowComparisonsEmptyState;
 
     public bool CanDeleteSelectedProject => Workspace.CanDeleteSelectedProject;
 
@@ -233,116 +239,19 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public string SelectedComparisonImageCountText => Workspace.SelectedComparisonImageCountText;
 
-    public string WorkspaceContextTitle
-    {
-        get
-        {
-            if (SelectedProject is null)
-            {
-                return "No project selected";
-            }
+    public string WorkspaceContextTitle => WorkspaceStatus.WorkspaceContextTitle;
 
-            return SelectedComparison is null
-                ? SelectedProject.Name
-                : $"{SelectedProject.Name} / {SelectedComparison.Name}";
-        }
-    }
+    public string WorkspaceContextDetail => WorkspaceStatus.WorkspaceContextDetail;
 
-    public string WorkspaceContextDetail
-    {
-        get
-        {
-            if (SelectedProject is null)
-            {
-                return "Create or select a project";
-            }
+    public string WorkspaceActionHint => WorkspaceStatus.WorkspaceActionHint;
 
-            if (SelectedComparison is null)
-            {
-                return "No comparison selected";
-            }
+    public bool ShowWorkspaceActionHint => WorkspaceStatus.ShowWorkspaceActionHint;
 
-            return $"{SelectedComparisonImageCountText} in image set";
-        }
-    }
+    public bool ShowMainEmptyState => WorkspaceStatus.ShowMainEmptyState;
 
-    public string WorkspaceActionHint
-    {
-        get
-        {
-            if (!HasProjects)
-            {
-                return "Create a project to start a workspace.";
-            }
+    public string MainEmptyStateTitle => WorkspaceStatus.MainEmptyStateTitle;
 
-            if (SelectedProject is null)
-            {
-                return "Select a project to continue.";
-            }
-
-            if (SelectedComparison is null)
-            {
-                return "Create a comparison for this project.";
-            }
-
-            return SelectedComparison.Images.Count switch
-            {
-                0 => "Add or drop a reference image.",
-                1 => "Add or drop a candidate image.",
-                _ => string.Empty
-            };
-        }
-    }
-
-    public bool ShowWorkspaceActionHint => !string.IsNullOrWhiteSpace(WorkspaceActionHint);
-
-    public bool ShowMainEmptyState => !HasAnyImage && SelectedComparison?.Images.Count is null or 0;
-
-    public string MainEmptyStateTitle
-    {
-        get
-        {
-            if (!HasProjects)
-            {
-                return "No projects";
-            }
-
-            if (SelectedProject is null)
-            {
-                return "No project selected";
-            }
-
-            if (SelectedComparison is null)
-            {
-                return "No comparison selected";
-            }
-
-            return "No images in this comparison";
-        }
-    }
-
-    public string MainEmptyStateMessage
-    {
-        get
-        {
-            if (!HasProjects)
-            {
-                return "Create a project, or drop images to create one automatically.";
-            }
-
-            if (SelectedProject is null)
-            {
-                return "Select a project from the sidebar.";
-            }
-
-            if (SelectedComparison is null)
-            {
-                return "Create a comparison, or drop images to create one automatically.";
-            }
-
-            return "Add or drop a reference image to begin.";
-        }
-    }
+    public string MainEmptyStateMessage => WorkspaceStatus.MainEmptyStateMessage;
 
     public bool CanSetReferenceImage(ImageAsset? image)
     {
@@ -649,12 +558,7 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         OnPropertyChanged(nameof(SelectedComparisonImages));
         OnPropertyChanged(nameof(SelectedComparisonImageCountText));
-        OnPropertyChanged(nameof(WorkspaceContextDetail));
-        OnPropertyChanged(nameof(WorkspaceActionHint));
-        OnPropertyChanged(nameof(ShowWorkspaceActionHint));
-        OnPropertyChanged(nameof(ShowMainEmptyState));
-        OnPropertyChanged(nameof(MainEmptyStateTitle));
-        OnPropertyChanged(nameof(MainEmptyStateMessage));
+        WorkspaceStatus.NotifyImageStateChanged();
     }
 
     private void OnImageSetChanged(object? sender, EventArgs e)
@@ -665,15 +569,7 @@ public partial class MainWindowViewModel : ViewModelBase
     private void NotifyWorkspaceStateChanged()
     {
         OnPropertyChanged(nameof(HasProjects));
-        OnPropertyChanged(nameof(ShowProjectsEmptyState));
-        OnPropertyChanged(nameof(ShowComparisonsEmptyState));
-        OnPropertyChanged(nameof(WorkspaceContextTitle));
-        OnPropertyChanged(nameof(WorkspaceContextDetail));
-        OnPropertyChanged(nameof(WorkspaceActionHint));
-        OnPropertyChanged(nameof(ShowWorkspaceActionHint));
-        OnPropertyChanged(nameof(ShowMainEmptyState));
-        OnPropertyChanged(nameof(MainEmptyStateTitle));
-        OnPropertyChanged(nameof(MainEmptyStateMessage));
+        WorkspaceStatus.NotifyWorkspaceStateChanged();
     }
 
     private void OnComparisonDisplayPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -690,10 +586,20 @@ public partial class MainWindowViewModel : ViewModelBase
             or nameof(ComparisonDisplayViewModel.HasBothImages))) return;
 
         ToolState.NotifyCanUseSplitScreenChanged();
-        OnPropertyChanged(nameof(ShowMainEmptyState));
+        WorkspaceStatus.NotifyImageStateChanged();
     }
 
     private void OnToolStatePropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (string.IsNullOrEmpty(e.PropertyName))
+        {
+            return;
+        }
+
+        OnPropertyChanged(e.PropertyName);
+    }
+
+    private void OnWorkspaceStatusPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (string.IsNullOrEmpty(e.PropertyName))
         {
