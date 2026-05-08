@@ -389,7 +389,7 @@ Suggested implementation order:
 1. ~~Extract `ComparisonDisplayViewModel`.~~
 2. ~~Extract `WorkspaceNavigatorViewModel`.~~
 3. ~~Extract image-set operations into a child VM or workflow service.~~
-4. Simplify selected row/domain state.
+4. ~~Simplify selected row/domain state.~~
 5. Extract comparison tool state.
 6. Extract empty-state/status presentation.
 

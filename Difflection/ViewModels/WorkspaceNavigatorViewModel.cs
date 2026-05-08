@@ -34,28 +34,36 @@ public partial class WorkspaceNavigatorViewModel : ViewModelBase
     private IProjectStorage? ProjectStorage { get; }
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(SelectedProject))]
     [NotifyPropertyChangedFor(nameof(HasSelectedProject))]
     [NotifyPropertyChangedFor(nameof(SelectedProjectComparisons))]
     [NotifyPropertyChangedFor(nameof(CanDeleteSelectedProject))]
     [NotifyPropertyChangedFor(nameof(CanAddComparison))]
     [NotifyPropertyChangedFor(nameof(SelectedProjectName))]
     [NotifyPropertyChangedFor(nameof(ShowComparisonsEmptyState))]
-    public partial Project? SelectedProject { get; set; }
-
-    [ObservableProperty]
     public partial ProjectListItemViewModel? SelectedProjectRow { get; set; }
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(SelectedComparison))]
     [NotifyPropertyChangedFor(nameof(HasSelectedComparison))]
     [NotifyPropertyChangedFor(nameof(CanDeleteSelectedComparison))]
     [NotifyPropertyChangedFor(nameof(SelectedComparisonImages))]
     [NotifyPropertyChangedFor(nameof(SelectedComparisonName))]
     [NotifyPropertyChangedFor(nameof(SelectedComparisonImageCountText))]
     [NotifyPropertyChangedFor(nameof(ShowComparisonsEmptyState))]
-    public partial ComparisonSet? SelectedComparison { get; set; }
-
-    [ObservableProperty]
     public partial ComparisonListItemViewModel? SelectedComparisonRow { get; set; }
+
+    public Project? SelectedProject
+    {
+        get => SelectedProjectRow?.Project;
+        set => SelectProject(value);
+    }
+
+    public ComparisonSet? SelectedComparison
+    {
+        get => SelectedComparisonRow?.Comparison;
+        set => SelectComparison(value);
+    }
 
     public bool HasSelectedProject => SelectedProject is not null;
 
@@ -240,7 +248,6 @@ public partial class WorkspaceNavigatorViewModel : ViewModelBase
 
         RefreshProjectRows();
         SelectedProject = Projects.FirstOrDefault();
-        SelectedComparison = SelectedProject?.Comparisons.FirstOrDefault();
         NotifyWorkspaceStateChanged();
     }
 
@@ -254,7 +261,6 @@ public partial class WorkspaceNavigatorViewModel : ViewModelBase
         Projects.Add(project);
         RefreshProjectRows();
         SelectedProject = project;
-        SelectedComparison = null;
         NotifyWorkspaceStateChanged();
 
         await SaveProjectAsync(project, cancellationToken);
@@ -273,6 +279,7 @@ public partial class WorkspaceNavigatorViewModel : ViewModelBase
     {
         ArgumentNullException.ThrowIfNull(project);
 
+        var wasSelected = ReferenceEquals(SelectedProject, project);
         var removed = Projects.Remove(project);
 
         if (!removed)
@@ -281,10 +288,9 @@ public partial class WorkspaceNavigatorViewModel : ViewModelBase
         }
 
         RefreshProjectRows();
-        if (SelectedProject == project)
+        if (wasSelected)
         {
             SelectedProject = Projects.FirstOrDefault();
-            SelectedComparison = SelectedProject?.Comparisons.FirstOrDefault();
         }
 
         NotifyWorkspaceStateChanged();
@@ -424,11 +430,6 @@ public partial class WorkspaceNavigatorViewModel : ViewModelBase
         RefreshComparisonRows();
         FindProjectRow(SelectedProject)?.Refresh();
 
-        if (SelectedComparison == comparison)
-        {
-            SelectedComparison = SelectedProject.Comparisons.FirstOrDefault();
-        }
-
         OnPropertyChanged(nameof(SelectedProjectComparisons));
         NotifyWorkspaceStateChanged();
         await SaveProjectAsync(SelectedProject, cancellationToken);
@@ -491,6 +492,7 @@ public partial class WorkspaceNavigatorViewModel : ViewModelBase
 
     private void RefreshProjectRows()
     {
+        var selectedProject = SelectedProject;
         ProjectRows.Clear();
 
         foreach (var project in Projects)
@@ -498,12 +500,13 @@ public partial class WorkspaceNavigatorViewModel : ViewModelBase
             ProjectRows.Add(new ProjectListItemViewModel(project));
         }
 
-        SyncSelectedProjectRow();
+        SelectedProjectRow = selectedProject is null ? null : FindProjectRow(selectedProject);
         OnPropertyChanged(nameof(ProjectRows));
     }
 
     private void RefreshComparisonRows()
     {
+        var selectedComparison = SelectedComparison;
         SelectedProjectComparisonRows.Clear();
 
         if (SelectedProject is not null)
@@ -514,7 +517,9 @@ public partial class WorkspaceNavigatorViewModel : ViewModelBase
             }
         }
 
-        SyncSelectedComparisonRow();
+        SelectedComparisonRow = selectedComparison is null
+            ? SelectedProjectComparisonRows.FirstOrDefault()
+            : FindComparisonRow(selectedComparison) ?? SelectedProjectComparisonRows.FirstOrDefault();
         OnPropertyChanged(nameof(SelectedProjectComparisonRows));
         OnPropertyChanged(nameof(ShowComparisonsEmptyState));
     }
@@ -529,70 +534,59 @@ public partial class WorkspaceNavigatorViewModel : ViewModelBase
         return SelectedProjectComparisonRows.FirstOrDefault(row => ReferenceEquals(row.Comparison, comparison));
     }
 
-    private void SyncSelectedProjectRow()
+    private void SelectProject(Project? project)
     {
-        var row = SelectedProject is null ? null : FindProjectRow(SelectedProject);
-        if (!ReferenceEquals(SelectedProjectRow, row))
+        var selectedProject = project;
+        if ((selectedProject is null || !Projects.Contains(selectedProject)) && Projects.Count > 0)
         {
-            SelectedProjectRow = row;
+            selectedProject = Projects.FirstOrDefault();
         }
+
+        var row = selectedProject is null ? null : FindProjectRow(selectedProject);
+        SelectedProjectRow = row;
     }
 
-    private void SyncSelectedComparisonRow()
+    private void SelectComparison(ComparisonSet? comparison)
     {
-        var row = SelectedComparison is null ? null : FindComparisonRow(SelectedComparison);
-        if (!ReferenceEquals(SelectedComparisonRow, row))
-        {
-            SelectedComparisonRow = row;
-        }
-    }
-
-    partial void OnSelectedProjectChanged(Project? value)
-    {
-        if ((value is null || !Projects.Contains(value)) && Projects.Count > 0)
-        {
-            SelectedProject = Projects.FirstOrDefault();
-            return;
-        }
-
-        if (value is null || SelectedComparison is null || !value.Comparisons.Contains(SelectedComparison))
-        {
-            SelectedComparison = value?.Comparisons.FirstOrDefault();
-        }
-
-        RefreshComparisonRows();
-        SyncSelectedProjectRow();
-        OnPropertyChanged(nameof(SelectedProjectName));
-        OnPropertyChanged(nameof(SelectedComparisonName));
-        NotifyWorkspaceStateChanged();
-    }
-
-    partial void OnSelectedComparisonChanged(ComparisonSet? value)
-    {
+        var selectedComparison = comparison;
         if (SelectedProject is not null
-            && (value is null || !SelectedProject.Comparisons.Contains(value)))
+            && (selectedComparison is null || !SelectedProject.Comparisons.Contains(selectedComparison)))
         {
-            SelectedComparison = SelectedProject.Comparisons.FirstOrDefault();
+            selectedComparison = SelectedProject.Comparisons.FirstOrDefault();
         }
 
-        SyncSelectedComparisonRow();
-        OnPropertyChanged(nameof(SelectedComparisonName));
-        NotifyWorkspaceStateChanged();
+        var row = selectedComparison is null ? null : FindComparisonRow(selectedComparison);
+        SelectedComparisonRow = row;
     }
 
     partial void OnSelectedProjectRowChanged(ProjectListItemViewModel? value)
     {
-        if (!ReferenceEquals(SelectedProject, value?.Project))
-        {
-            SelectedProject = value?.Project;
-        }
+        RefreshComparisonRows();
+
+        OnPropertyChanged(nameof(SelectedProjectName));
+        OnPropertyChanged(nameof(SelectedComparisonName));
+        OnPropertyChanged(nameof(SelectedComparison));
+        OnPropertyChanged(nameof(HasSelectedComparison));
+        OnPropertyChanged(nameof(CanDeleteSelectedComparison));
+        OnPropertyChanged(nameof(SelectedComparisonImages));
+        OnPropertyChanged(nameof(SelectedComparisonImageCountText));
+        NotifyWorkspaceStateChanged();
     }
 
     partial void OnSelectedComparisonRowChanged(ComparisonListItemViewModel? value)
     {
-        if (!ReferenceEquals(SelectedComparison, value?.Comparison))
+        if (value is not null && (SelectedProject is null || !SelectedProject.Comparisons.Contains(value.Comparison)))
         {
-            SelectedComparison = value?.Comparison;
+            var repairedRow = SelectedProjectComparisonRows.FirstOrDefault();
+            if (!ReferenceEquals(SelectedComparisonRow, repairedRow))
+            {
+                SelectedComparisonRow = repairedRow;
+            }
+
+            return;
         }
+
+        OnPropertyChanged(nameof(SelectedComparisonName));
+        NotifyWorkspaceStateChanged();
     }
 }
