@@ -165,7 +165,9 @@ The overall direction is sound. The most important early decision is to keep per
 
 ## UI Polish Assessment
 
-The MVP UI now has the right structural pieces, but it still feels more like a feature scaffold than a persistent workspace. Before refining color or visual styling, the next pass should focus on information architecture, interaction clarity, and making the project/comparison/image relationships obvious.
+The MVP UI now has the right structural pieces and several orientation problems have been addressed. The main workspace shows the selected project/comparison context, empty states distinguish the major workspace states, and the view-model refactor has created explicit workspace, image-set, comparison display, tool-state, and status presenters.
+
+The remaining polish work should now focus less on broad architecture and more on making the visible controls match the project model: images should feel like the primary managed objects, row actions should be clearer and safer, and comparison tools should read as a coherent toolbar.
 
 Recommended UI polish sequence:
 
@@ -187,7 +189,7 @@ Recommended UI polish sequence:
 
 3. Rework the image set area around images as primary objects.
 
-   The image set should be the authoritative place where images are managed. Reference and candidate should be roles assigned to images, not separate fixed slots. Replace the duplicated role summary cards plus table-style image list with a thumbnail strip or grid where each image card shows:
+   This remains the largest visible gap. The current UI still combines duplicated reference/candidate summary cards with a table-style image list. The image set should be the authoritative place where images are managed. Reference and candidate should be roles assigned to images, not separate fixed slots. Replace the summary cards plus list with a thumbnail strip or grid where each image card shows:
 
    - Thumbnail.
    - Label and source name.
@@ -199,11 +201,11 @@ Recommended UI polish sequence:
 
 4. Move destructive project and comparison actions out of tiny minus buttons.
 
-   The current add/delete sidebar controls are functional but too terse for destructive actions. Keep add actions easily available, but move delete and other row-specific actions into contextual menus or explicit row actions with confirmation. This reduces accidental data loss and gives the sidebar more room to breathe.
+   The current add/delete sidebar controls are functional but too terse for destructive actions, and they currently perform deletion without an explicit confirmation surface. Keep add actions easily available, but move delete and other row-specific actions into contextual menus or explicit row actions with confirmation. This reduces accidental data loss and gives the sidebar more room to breathe.
 
 5. Make sidebar list rows richer.
 
-   Project and comparison rows currently show only names. Add lightweight metadata so the workspace remains navigable with real data:
+   The row view models now expose lightweight metadata through `DetailText`, but the XAML still renders only the row names. Surface that metadata so the workspace remains navigable with real data:
 
    - Comparison count per project.
    - Image count per comparison.
@@ -212,7 +214,7 @@ Recommended UI polish sequence:
 
 6. Promote comparison controls into a proper tool row.
 
-   View mode, split ratio, zoom, fit, and reset controls should live together in a consistent comparison toolbar. The current top tabs plus local zoom controls split related controls across separate bands. A single tool row will make comparison actions easier to scan and extend.
+   View mode, split ratio, zoom, fit, and reset controls should live together in a consistent comparison toolbar. The current top tabs plus local zoom controls still split related controls across separate bands, and fit/reset behavior is available through stage interactions rather than a visible tool row. A single tool row will make comparison actions easier to scan and extend.
 
 7. Clarify comparison stage affordances.
 
@@ -220,11 +222,11 @@ Recommended UI polish sequence:
 
 8. Handle Settings before exposing it.
 
-   The Settings button should either open a real settings surface or be removed/disabled until settings exist. Inert controls make the MVP feel unfinished.
+   The Settings button should either open a real settings surface or be removed/disabled until settings exist. It is still visible as a toolbar button without a wired action, which makes the MVP feel unfinished.
 
 9. Refresh UI snapshots after the structure is settled.
 
-   The current snapshot baselines represent the pre-sidebar shell and no longer match the rendered workspace UI. After the polish pass settles the layout, update the snapshot baselines so future UI regressions are meaningful.
+   The snapshot suite now includes workspace states, image-set states, split-screen, side-by-side, zoomed, and narrow-layout baselines. After the next structural polish pass, refresh the affected baselines through explicit visual review so future UI regressions remain meaningful.
 
 ## MainView Refactor
 
