@@ -22,9 +22,11 @@ public partial class MainWindowViewModel : ViewModelBase
     public MainWindowViewModel()
     {
         Workspace = new WorkspaceNavigatorViewModel();
+        ToolState = new ComparisonToolStateViewModel(() => HasBothImages);
         ImageSet = new ComparisonImageSetViewModel(Workspace, ComparisonDisplay, ProjectStorage);
         ComparisonDisplay.PropertyChanged += OnComparisonDisplayPropertyChanged;
         Workspace.PropertyChanged += OnWorkspacePropertyChanged;
+        ToolState.PropertyChanged += OnToolStatePropertyChanged;
         ImageSet.ImageSetChanged += OnImageSetChanged;
     }
 
@@ -32,10 +34,12 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         ProjectStorage = projectStorage;
         Workspace = new WorkspaceNavigatorViewModel(projectStorage);
+        ToolState = new ComparisonToolStateViewModel(() => HasBothImages);
         ImageSet = new ComparisonImageSetViewModel(Workspace, ComparisonDisplay, projectStorage);
         _monitoredImageVersionCapture = new MonitoredImageVersionCapture(projectStorage);
         ComparisonDisplay.PropertyChanged += OnComparisonDisplayPropertyChanged;
         Workspace.PropertyChanged += OnWorkspacePropertyChanged;
+        ToolState.PropertyChanged += OnToolStatePropertyChanged;
         ImageSet.ImageSetChanged += OnImageSetChanged;
     }
 
@@ -49,15 +53,17 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public WorkspaceNavigatorViewModel Workspace { get; }
 
+    public ComparisonToolStateViewModel ToolState { get; }
+
     public ComparisonImageSetViewModel ImageSet { get; }
 
     public IProjectStorage? ProjectStorage { get; }
 
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsSideBySideView))]
-    [NotifyPropertyChangedFor(nameof(IsSplitScreenView))]
-    [NotifyPropertyChangedFor(nameof(CurrentViewTitle))]
-    public partial ComparisonViewMode SelectedViewMode { get; set; } = ComparisonViewMode.SideBySide;
+    public ComparisonViewMode SelectedViewMode
+    {
+        get => ToolState.SelectedViewMode;
+        set => ToolState.SelectedViewMode = value;
+    }
 
     public Project? SelectedProject
     {
@@ -83,15 +89,23 @@ public partial class MainWindowViewModel : ViewModelBase
         set => Workspace.SelectedComparisonRow = value;
     }
 
-    [ObservableProperty]
-    public partial string SplitPercentageText { get; set; } = "50 / 50";
+    public string SplitPercentageText
+    {
+        get => ToolState.SplitPercentageText;
+        set => ToolState.SplitPercentageText = value;
+    }
 
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(ZoomText))]
-    public partial double ZoomScale { get; set; } = 1.0;
+    public double ZoomScale
+    {
+        get => ToolState.ZoomScale;
+        set => ToolState.ZoomScale = value;
+    }
 
-    [ObservableProperty]
-    public partial string ZoomText { get; set; } = "100%";
+    public string ZoomText
+    {
+        get => ToolState.ZoomText;
+        set => ToolState.ZoomText = value;
+    }
     public double StageWidth
     {
         get => ComparisonDisplay.StageWidth;
@@ -348,17 +362,13 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public double RightImageHeight => ComparisonDisplay.RightImageHeight;
 
-    public bool IsSideBySideView => SelectedViewMode == ComparisonViewMode.SideBySide;
+    public bool IsSideBySideView => ToolState.IsSideBySideView;
 
-    public bool IsSplitScreenView => SelectedViewMode == ComparisonViewMode.SplitScreen;
+    public bool IsSplitScreenView => ToolState.IsSplitScreenView;
 
-    public bool CanUseSplitScreen => HasBothImages;
+    public bool CanUseSplitScreen => ToolState.CanUseSplitScreen;
 
-    public string CurrentViewTitle => SelectedViewMode switch
-    {
-        ComparisonViewMode.SplitScreen => "Split screen",
-        _ => "Side-by-side"
-    };
+    public string CurrentViewTitle => ToolState.CurrentViewTitle;
 
     public double SideBySideStageWidth => ComparisonDisplay.SideBySideStageWidth;
 
@@ -586,41 +596,22 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public void SetZoomScale(double zoomScale)
     {
-        ZoomScale = Math.Clamp(zoomScale, 0.05, 64.0);
+        ToolState.SetZoomScale(zoomScale);
     }
 
     public bool TrySetZoomText(string? text)
     {
-        if (string.IsNullOrWhiteSpace(text))
-        {
-            ZoomText = $"{Math.Round(ZoomScale * 100):0}%";
-            return false;
-        }
-
-        var trimmed = text.Trim();
-        var percentText = trimmed.EndsWith('%') ? trimmed[..^1] : trimmed;
-
-        if (!double.TryParse(percentText, out var percent) || percent <= 0)
-        {
-            ZoomText = $"{Math.Round(ZoomScale * 100):0}%";
-            return false;
-        }
-
-        SetZoomScale(percent / 100.0);
-        return true;
+        return ToolState.TrySetZoomText(text);
     }
 
     public void SelectSideBySideView()
     {
-        SelectedViewMode = ComparisonViewMode.SideBySide;
+        ToolState.SelectSideBySideView();
     }
 
     public void SelectSplitScreenView()
     {
-        if (CanUseSplitScreen)
-        {
-            SelectedViewMode = ComparisonViewMode.SplitScreen;
-        }
+        ToolState.SelectSplitScreenView();
     }
 
     public async Task LoadImageAsync(ImageSlot slot, IStorageFile file)
@@ -697,14 +688,19 @@ public partial class MainWindowViewModel : ViewModelBase
         if (e.PropertyName is not (nameof(ComparisonDisplayViewModel.LeftImage)
             or nameof(ComparisonDisplayViewModel.RightImage)
             or nameof(ComparisonDisplayViewModel.HasBothImages))) return;
-        
-        OnPropertyChanged(nameof(CanUseSplitScreen));
-        OnPropertyChanged(nameof(ShowMainEmptyState));
 
-        if (!CanUseSplitScreen && IsSplitScreenView)
+        ToolState.NotifyCanUseSplitScreenChanged();
+        OnPropertyChanged(nameof(ShowMainEmptyState));
+    }
+
+    private void OnToolStatePropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (string.IsNullOrEmpty(e.PropertyName))
         {
-            SelectSideBySideView();
+            return;
         }
+
+        OnPropertyChanged(e.PropertyName);
     }
 
     private void OnWorkspacePropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -751,11 +747,6 @@ public partial class MainWindowViewModel : ViewModelBase
                 break;
             }
         }
-    }
-
-    partial void OnZoomScaleChanged(double value)
-    {
-        ZoomText = $"{Math.Round(value * 100):0}%";
     }
 
     private void ClearDisplayedComparisonImages()
