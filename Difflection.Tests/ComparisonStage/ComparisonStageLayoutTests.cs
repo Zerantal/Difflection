@@ -15,9 +15,9 @@ public sealed partial class ComparisonStageTests
     public async Task Split_screen_divider_starts_centered()
     {
         var viewModel = new MainWindowViewModel();
-        await viewModel.LoadImageAsync(ImageSlot.Left, TestUiSupport.CreateStorageFile("left.png"));
-        await viewModel.LoadImageAsync(ImageSlot.Right, TestUiSupport.CreateStorageFile("right.png"));
-        viewModel.SelectSplitScreenView();
+        await viewModel.ComparisonDisplay.LoadImageAsync(ImageSlot.Left, TestUiSupport.CreateStorageFile("left.png"));
+        await viewModel.ComparisonDisplay.LoadImageAsync(ImageSlot.Right, TestUiSupport.CreateStorageFile("right.png"));
+        viewModel.ToolState.SelectSplitScreenView();
 
         var window = TestUiSupport.CreateWindow(viewModel);
         try

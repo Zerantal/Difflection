@@ -3,7 +3,7 @@ using Difflection.Models;
 
 namespace Difflection.ViewModels;
 
-public partial class ProjectListItemViewModel(Project project) : SidebarListItemViewModel<Project>(project)
+public class ProjectListItemViewModel(Project project) : SidebarListItemViewModel<Project>(project)
 {
     public Project Project => Model;
 

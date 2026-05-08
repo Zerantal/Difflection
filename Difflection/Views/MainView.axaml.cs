@@ -10,11 +10,11 @@ using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
-using Avalonia.VisualTree;
 using Difflection.Infrastructure;
 using Difflection.Models;
 using Difflection.Monitoring;
 using Difflection.ViewModels;
+using JetBrains.Annotations;
 
 namespace Difflection.Views;
 
@@ -174,6 +174,7 @@ public partial class MainView : UserControl
         ComparisonStage.FitZoomToStage();
     }
 
+    [UsedImplicitly]
     private void MainEmptyStateOverlay_OnDragOver(object? sender, DragEventArgs e)
     {
         var hasFiles = GetDroppedFiles(e.DataTransfer).Any();
@@ -181,6 +182,7 @@ public partial class MainView : UserControl
         e.Handled = true;
     }
 
+    [UsedImplicitly]
     private void MainEmptyStateOverlay_OnDrop(object? sender, DragEventArgs e)
     {
         e.Handled = true;
@@ -318,7 +320,7 @@ public partial class MainView : UserControl
             return;
         }
 
-        await _viewModel.ComparisonDisplay.RefreshCurrentComparisonImagesAsync(_viewModel.SelectedComparison, _viewModel.ProjectStorage);
+        await _viewModel.ComparisonDisplay.RefreshCurrentComparisonImagesAsync(_viewModel.Workspace.SelectedComparison, _viewModel.ProjectStorage);
         UpdateViewControls();
         ComparisonStage.FitZoomToStage();
     }
@@ -377,7 +379,7 @@ public partial class MainView : UserControl
     {
         if (_viewModel is not null)
         {
-            _imageChangeMonitor?.Start(_viewModel.Projects);
+            _imageChangeMonitor?.Start(_viewModel.Workspace.Projects);
         }
     }
 
@@ -413,8 +415,8 @@ public partial class MainView : UserControl
             return;
         }
 
-        if (ReferenceEquals(e.Project, _viewModel.SelectedProject)
-            && ReferenceEquals(e.Comparison, _viewModel.SelectedComparison))
+        if (ReferenceEquals(e.Project, _viewModel.Workspace.SelectedProject)
+            && ReferenceEquals(e.Comparison, _viewModel.Workspace.SelectedComparison))
         {
             await RefreshCurrentComparisonAndFitStageAsync();
         }

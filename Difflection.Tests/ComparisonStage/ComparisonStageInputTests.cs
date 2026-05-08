@@ -18,7 +18,7 @@ public sealed partial class ComparisonStageTests
     public async Task Side_by_side_wheel_scrolls_vertical_and_shift_scrolls_horizontal()
     {
         var viewModel = new MainWindowViewModel();
-        await viewModel.LoadImageAsync(ImageSlot.Left, TestUiSupport.CreateStorageFile("reference.png", 1600, 1200));
+        await viewModel.ComparisonDisplay.LoadImageAsync(ImageSlot.Left, TestUiSupport.CreateStorageFile("reference.png", 1600, 1200));
 
         var window = TestUiSupport.CreateWindow(viewModel);
         try
@@ -56,8 +56,8 @@ public sealed partial class ComparisonStageTests
     public async Task Side_by_side_ctrl_zoom_keeps_both_panes_anchored()
     {
         var viewModel = new MainWindowViewModel();
-        await viewModel.LoadImageAsync(ImageSlot.Left, TestUiSupport.CreateStorageFile("left.png", 1600, 1200));
-        await viewModel.LoadImageAsync(ImageSlot.Right, TestUiSupport.CreateStorageFile("right.png", 1600, 1200));
+        await viewModel.ComparisonDisplay.LoadImageAsync(ImageSlot.Left, TestUiSupport.CreateStorageFile("left.png", 1600, 1200));
+        await viewModel.ComparisonDisplay.LoadImageAsync(ImageSlot.Right, TestUiSupport.CreateStorageFile("right.png", 1600, 1200));
 
         var window = TestUiSupport.CreateWindow(viewModel);
         try
@@ -98,7 +98,7 @@ public sealed partial class ComparisonStageTests
     public async Task Side_by_side_fit_zoom_uses_the_larger_loaded_image_dimensions()
     {
         var viewModel = new MainWindowViewModel();
-        await viewModel.LoadImageAsync(ImageSlot.Left, TestUiSupport.CreateStorageFile("left.png", 1600, 500));
+        await viewModel.ComparisonDisplay.LoadImageAsync(ImageSlot.Left, TestUiSupport.CreateStorageFile("left.png", 1600, 500));
 
         var window = TestUiSupport.CreateWindow(viewModel);
         try
@@ -111,21 +111,21 @@ public sealed partial class ComparisonStageTests
 
             var leftOnlyZoom = viewModel.ToolState.ZoomScale;
 
-            await viewModel.LoadImageAsync(ImageSlot.Right, TestUiSupport.CreateStorageFile("right.png", 800, 1200));
+            await viewModel.ComparisonDisplay.LoadImageAsync(ImageSlot.Right, TestUiSupport.CreateStorageFile("right.png", 800, 1200));
             Dispatcher.UIThread.RunJobs();
 
             await TestUiSupport.WaitForAsync(() =>
             {
-                var targetWidth = Math.Max(viewModel.LeftImageWidth, viewModel.RightImageWidth);
-                var targetHeight = Math.Max(viewModel.LeftImageHeight, viewModel.RightImageHeight);
+                var targetWidth = Math.Max(viewModel.ComparisonDisplay.LeftImageWidth, viewModel.ComparisonDisplay.RightImageWidth);
+                var targetHeight = Math.Max(viewModel.ComparisonDisplay.LeftImageHeight, viewModel.ComparisonDisplay.RightImageHeight);
                 var expectedZoom = Math.Min(
                     scrollViewer.Bounds.Width / Math.Max(1, targetWidth),
                     scrollViewer.Bounds.Height / Math.Max(1, targetHeight));
                 return Math.Abs(viewModel.ToolState.ZoomScale - expectedZoom) < 0.01;
             });
 
-            var targetWidth = Math.Max(viewModel.LeftImageWidth, viewModel.RightImageWidth);
-            var targetHeight = Math.Max(viewModel.LeftImageHeight, viewModel.RightImageHeight);
+            var targetWidth = Math.Max(viewModel.ComparisonDisplay.LeftImageWidth, viewModel.ComparisonDisplay.RightImageWidth);
+            var targetHeight = Math.Max(viewModel.ComparisonDisplay.LeftImageHeight, viewModel.ComparisonDisplay.RightImageHeight);
             var expectedZoom = Math.Min(
                 scrollViewer.Bounds.Width / Math.Max(1, targetWidth),
                 scrollViewer.Bounds.Height / Math.Max(1, targetHeight));
@@ -143,9 +143,9 @@ public sealed partial class ComparisonStageTests
     public async Task Split_screen_divider_can_be_dragged()
     {
         var viewModel = new MainWindowViewModel();
-        await viewModel.LoadImageAsync(ImageSlot.Left, TestUiSupport.CreateStorageFile("left.png"));
-        await viewModel.LoadImageAsync(ImageSlot.Right, TestUiSupport.CreateStorageFile("right.png"));
-        viewModel.SelectSplitScreenView();
+        await viewModel.ComparisonDisplay.LoadImageAsync(ImageSlot.Left, TestUiSupport.CreateStorageFile("left.png"));
+        await viewModel.ComparisonDisplay.LoadImageAsync(ImageSlot.Right, TestUiSupport.CreateStorageFile("right.png"));
+        viewModel.ToolState.SelectSplitScreenView();
 
         var window = TestUiSupport.CreateWindow(viewModel, height: 900);
         try
@@ -191,7 +191,7 @@ public sealed partial class ComparisonStageTests
     public async Task Ctrl_wheel_zoom_stays_applied()
     {
         var viewModel = new MainWindowViewModel();
-        await viewModel.LoadImageAsync(ImageSlot.Left, TestUiSupport.CreateStorageFile("reference.png"));
+        await viewModel.ComparisonDisplay.LoadImageAsync(ImageSlot.Left, TestUiSupport.CreateStorageFile("reference.png"));
 
         var window = TestUiSupport.CreateWindow(viewModel);
         try

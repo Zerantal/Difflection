@@ -40,7 +40,7 @@ public sealed class MainWindowSnapshotTests
     {
         var viewModel = new MainWindowViewModel();
         await LoadFixtureImagesAsync(viewModel);
-        viewModel.SelectSplitScreenView();
+        viewModel.ToolState.SelectSplitScreenView();
 
         var window = TestUiSupport.CreateWindow(viewModel);
         try
@@ -80,7 +80,7 @@ public sealed class MainWindowSnapshotTests
         var window = TestUiSupport.CreateWindow(viewModel);
         try
         {
-            await TestUiSupport.WaitForAsync(() => viewModel.SelectedProject is not null);
+            await TestUiSupport.WaitForAsync(() => viewModel.Workspace.SelectedProject is not null);
 
             AssertSnapshot(window, "main-window-workspace-no-comparisons");
         }
@@ -101,7 +101,7 @@ public sealed class MainWindowSnapshotTests
         var window = TestUiSupport.CreateWindow(viewModel);
         try
         {
-            await TestUiSupport.WaitForAsync(() => viewModel.SelectedComparison is not null);
+            await TestUiSupport.WaitForAsync(() => viewModel.Workspace.SelectedComparison is not null);
 
             AssertSnapshot(window, "main-window-workspace-empty-comparison");
         }
@@ -116,10 +116,10 @@ public sealed class MainWindowSnapshotTests
     {
         var storage = new SnapshotProjectStorage();
         var viewModel = new MainWindowViewModel(storage);
-        await viewModel.AddProjectAsync("Client Redesign");
-        await viewModel.AddComparisonAsync("Homepage Header");
+        await viewModel.Workspace.AddProjectAsync("Client Redesign");
+        await viewModel.Workspace.AddComparisonAsync("Homepage Header");
         await AddFixtureImageAsync(viewModel, "reference.png", "Approved Header", new SKColor(34, 89, 165), new SKColor(249, 115, 22));
-        await viewModel.RefreshCurrentComparisonImagesAsync();
+        await viewModel.ComparisonDisplay.RefreshCurrentComparisonImagesAsync(viewModel.Workspace.SelectedComparison, viewModel.ProjectStorage);
 
         var window = TestUiSupport.CreateWindow(viewModel);
         try
@@ -137,11 +137,11 @@ public sealed class MainWindowSnapshotTests
     {
         var storage = new SnapshotProjectStorage();
         var viewModel = new MainWindowViewModel(storage);
-        await viewModel.AddProjectAsync("Client Redesign");
-        await viewModel.AddComparisonAsync("Homepage Header");
+        await viewModel.Workspace.AddProjectAsync("Client Redesign");
+        await viewModel.Workspace.AddComparisonAsync("Homepage Header");
         await AddFixtureImageAsync(viewModel, "reference.png", "Approved Header", new SKColor(34, 89, 165), new SKColor(249, 115, 22));
         await AddFixtureImageAsync(viewModel, "candidate.png", "Current Header", new SKColor(92, 42, 145), new SKColor(14, 165, 233));
-        await viewModel.RefreshCurrentComparisonImagesAsync();
+        await viewModel.ComparisonDisplay.RefreshCurrentComparisonImagesAsync(viewModel.Workspace.SelectedComparison, viewModel.ProjectStorage);
         viewModel.ToolState.TrySetZoomText("50%");
 
         var window = TestUiSupport.CreateWindow(viewModel);
@@ -160,11 +160,11 @@ public sealed class MainWindowSnapshotTests
     {
         var storage = new SnapshotProjectStorage();
         var viewModel = new MainWindowViewModel(storage);
-        await viewModel.AddProjectAsync("Mobile Review");
-        await viewModel.AddComparisonAsync("Receipt Screen");
+        await viewModel.Workspace.AddProjectAsync("Mobile Review");
+        await viewModel.Workspace.AddComparisonAsync("Receipt Screen");
         await AddFixtureImageAsync(viewModel, "reference.png", "Reference Receipt", new SKColor(34, 89, 165), new SKColor(249, 115, 22));
         await AddFixtureImageAsync(viewModel, "candidate.png", "Candidate Receipt", new SKColor(92, 42, 145), new SKColor(14, 165, 233));
-        await viewModel.RefreshCurrentComparisonImagesAsync();
+        await viewModel.ComparisonDisplay.RefreshCurrentComparisonImagesAsync(viewModel.Workspace.SelectedComparison, viewModel.ProjectStorage);
 
         var window = TestUiSupport.CreateWindow(viewModel, width: 820, height: 700);
         try
@@ -216,7 +216,7 @@ public sealed class MainWindowSnapshotTests
         SKColor accent)
     {
         await using var stream = new MemoryStream(CreateFixtureImageBytes(background, accent));
-        await viewModel.AddImageAsync(sourceName, stream, mediaType: "image/png", label: label);
+        await viewModel.ImageSet.AddImageAsync(sourceName, stream, mediaType: "image/png", label: label);
     }
 
     private static async Task LoadFixtureImagesAsync(MainWindowViewModel viewModel)
@@ -230,8 +230,8 @@ public sealed class MainWindowSnapshotTests
         WriteFixtureImage(referencePath, new SKColor(34, 89, 165), new SKColor(249, 115, 22));
         WriteFixtureImage(candidatePath, new SKColor(92, 42, 145), new SKColor(14, 165, 233));
 
-        await viewModel.LoadImageAsync(ImageSlot.Left, referencePath);
-        await viewModel.LoadImageAsync(ImageSlot.Right, candidatePath);
+        await viewModel.ComparisonDisplay.LoadImageAsync(ImageSlot.Left, referencePath);
+        await viewModel.ComparisonDisplay.LoadImageAsync(ImageSlot.Right, candidatePath);
     }
 
     private static void WriteFixtureImage(string path, SKColor background, SKColor accent)

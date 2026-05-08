@@ -3,7 +3,7 @@ using Difflection.Models;
 
 namespace Difflection.ViewModels;
 
-public partial class ComparisonListItemViewModel(ComparisonSet comparison) : SidebarListItemViewModel<ComparisonSet>(comparison)
+public class ComparisonListItemViewModel(ComparisonSet comparison) : SidebarListItemViewModel<ComparisonSet>(comparison)
 {
     public ComparisonSet Comparison => Model;
 

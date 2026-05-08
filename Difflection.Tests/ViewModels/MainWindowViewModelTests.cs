@@ -21,11 +21,11 @@ public sealed class MainWindowViewModelTests
     {
         var viewModel = new MainWindowViewModel();
 
-        await viewModel.LoadImageAsync(ImageSlot.Left, TestUiSupport.CreateStorageFile("left-reference.png", 8, 8));
+        await viewModel.ComparisonDisplay.LoadImageAsync(ImageSlot.Left, TestUiSupport.CreateStorageFile("left-reference.png", 8, 8));
 
         Assert.Equal("Load two images to compare", viewModel.DifferenceStatusText);
 
-        await viewModel.LoadImageAsync(ImageSlot.Right, TestUiSupport.CreateStorageFile("candidate.png", 8, 8));
+        await viewModel.ComparisonDisplay.LoadImageAsync(ImageSlot.Right, TestUiSupport.CreateStorageFile("candidate.png", 8, 8));
 
         Assert.StartsWith("Difference 100.0%", viewModel.DifferenceStatusText);
         Assert.Contains("RMS error", viewModel.DifferenceStatusText);
@@ -43,16 +43,16 @@ public sealed class MainWindowViewModelTests
 
         await viewModel.LoadProjectsAsync(TestContext.Current.CancellationToken);
 
-        Assert.Same(project, Assert.Single(viewModel.Projects));
-        Assert.Same(project, viewModel.SelectedProject);
-        Assert.Same(comparison, viewModel.SelectedComparison);
-        var projectRow = Assert.Single(viewModel.ProjectRows);
+        Assert.Same(project, Assert.Single(viewModel.Workspace.Projects));
+        Assert.Same(project, viewModel.Workspace.SelectedProject);
+        Assert.Same(comparison, viewModel.Workspace.SelectedComparison);
+        var projectRow = Assert.Single(viewModel.Workspace.ProjectRows);
         Assert.Same(project, projectRow.Project);
-        Assert.Same(projectRow, viewModel.SelectedProjectRow);
+        Assert.Same(projectRow, viewModel.Workspace.SelectedProjectRow);
         Assert.Equal("1 comparison", projectRow.DetailText);
-        var comparisonRow = Assert.Single(viewModel.SelectedProjectComparisonRows);
+        var comparisonRow = Assert.Single(viewModel.Workspace.SelectedProjectComparisonRows);
         Assert.Same(comparison, comparisonRow.Comparison);
-        Assert.Same(comparisonRow, viewModel.SelectedComparisonRow);
+        Assert.Same(comparisonRow, viewModel.Workspace.SelectedComparisonRow);
         Assert.Equal("0 images", comparisonRow.DetailText);
     }
 
@@ -62,12 +62,12 @@ public sealed class MainWindowViewModelTests
         var storage = new FakeProjectStorage();
         var viewModel = new MainWindowViewModel(storage);
 
-        var project = await viewModel.AddProjectAsync("  Visual Checks  ", TestContext.Current.CancellationToken);
+        var project = await viewModel.Workspace.AddProjectAsync("  Visual Checks  ", TestContext.Current.CancellationToken);
 
         Assert.Equal("Visual Checks", project.Name);
-        Assert.Same(project, Assert.Single(viewModel.Projects));
-        Assert.Same(project, viewModel.SelectedProject);
-        Assert.Null(viewModel.SelectedComparison);
+        Assert.Same(project, Assert.Single(viewModel.Workspace.Projects));
+        Assert.Same(project, viewModel.Workspace.SelectedProject);
+        Assert.Null(viewModel.Workspace.SelectedComparison);
         Assert.Same(project, Assert.Single(storage.SavedProjects));
     }
 
@@ -80,11 +80,11 @@ public sealed class MainWindowViewModelTests
         var viewModel = new MainWindowViewModel(storage);
         await viewModel.LoadProjectsAsync(TestContext.Current.CancellationToken);
 
-        var deleted = await viewModel.DeleteSelectedProjectAsync(TestContext.Current.CancellationToken);
+        var deleted = await viewModel.Workspace.DeleteSelectedProjectAsync(TestContext.Current.CancellationToken);
 
         Assert.True(deleted);
-        Assert.DoesNotContain(first, viewModel.Projects);
-        Assert.Same(second, viewModel.SelectedProject);
+        Assert.DoesNotContain(first, viewModel.Workspace.Projects);
+        Assert.Same(second, viewModel.Workspace.SelectedProject);
         Assert.Contains(first.Id, storage.DeletedProjectIds);
     }
 
@@ -93,17 +93,17 @@ public sealed class MainWindowViewModelTests
     {
         var storage = new FakeProjectStorage();
         var viewModel = new MainWindowViewModel(storage);
-        var project = await viewModel.AddProjectAsync("Project", TestContext.Current.CancellationToken);
+        var project = await viewModel.Workspace.AddProjectAsync("Project", TestContext.Current.CancellationToken);
         storage.SavedProjects.Clear();
 
-        var comparison = await viewModel.AddComparisonAsync("  Header States  ", TestContext.Current.CancellationToken);
+        var comparison = await viewModel.Workspace.AddComparisonAsync("  Header States  ", TestContext.Current.CancellationToken);
 
         Assert.Equal("Header States", comparison.Name);
         Assert.Same(comparison, Assert.Single(project.Comparisons));
-        Assert.Same(comparison, viewModel.SelectedComparison);
-        Assert.Same(viewModel.SelectedComparisonRow, Assert.Single(viewModel.SelectedProjectComparisonRows));
-        Assert.Equal("1 comparison", Assert.Single(viewModel.ProjectRows).DetailText);
-        Assert.Equal("0 images", viewModel.SelectedComparisonRow?.DetailText);
+        Assert.Same(comparison, viewModel.Workspace.SelectedComparison);
+        Assert.Same(viewModel.Workspace.SelectedComparisonRow, Assert.Single(viewModel.Workspace.SelectedProjectComparisonRows));
+        Assert.Equal("1 comparison", Assert.Single(viewModel.Workspace.ProjectRows).DetailText);
+        Assert.Equal("0 images", viewModel.Workspace.SelectedComparisonRow?.DetailText);
         Assert.Same(project, Assert.Single(storage.SavedProjects));
     }
 
@@ -112,17 +112,17 @@ public sealed class MainWindowViewModelTests
     {
         var storage = new FakeProjectStorage();
         var viewModel = new MainWindowViewModel(storage);
-        var project = await viewModel.AddProjectAsync("Project", TestContext.Current.CancellationToken);
-        var first = await viewModel.AddComparisonAsync("First", TestContext.Current.CancellationToken);
-        var second = await viewModel.AddComparisonAsync("Second", TestContext.Current.CancellationToken);
-        viewModel.SelectedComparison = first;
+        var project = await viewModel.Workspace.AddProjectAsync("Project", TestContext.Current.CancellationToken);
+        var first = await viewModel.Workspace.AddComparisonAsync("First", TestContext.Current.CancellationToken);
+        var second = await viewModel.Workspace.AddComparisonAsync("Second", TestContext.Current.CancellationToken);
+        viewModel.Workspace.SelectedComparison = first;
         storage.SavedProjects.Clear();
 
-        var deleted = await viewModel.DeleteSelectedComparisonAsync(TestContext.Current.CancellationToken);
+        var deleted = await viewModel.Workspace.DeleteSelectedComparisonAsync(TestContext.Current.CancellationToken);
 
         Assert.True(deleted);
         Assert.DoesNotContain(first, project.Comparisons);
-        Assert.Same(second, viewModel.SelectedComparison);
+        Assert.Same(second, viewModel.Workspace.SelectedComparison);
         Assert.Same(project, Assert.Single(storage.SavedProjects));
     }
 
@@ -138,24 +138,24 @@ public sealed class MainWindowViewModelTests
         var viewModel = new MainWindowViewModel(new FakeProjectStorage(first, second));
         await viewModel.LoadProjectsAsync(TestContext.Current.CancellationToken);
 
-        var secondRow = viewModel.ProjectRows.Single(row => ReferenceEquals(row.Project, second));
-        viewModel.SelectedProjectRow = secondRow;
+        var secondRow = viewModel.Workspace.ProjectRows.Single(row => ReferenceEquals(row.Project, second));
+        viewModel.Workspace.SelectedProjectRow = secondRow;
 
-        Assert.Same(second, viewModel.SelectedProject);
-        Assert.Same(secondRow, viewModel.SelectedProjectRow);
-        Assert.Same(secondComparison, viewModel.SelectedComparison);
+        Assert.Same(second, viewModel.Workspace.SelectedProject);
+        Assert.Same(secondRow, viewModel.Workspace.SelectedProjectRow);
+        Assert.Same(secondComparison, viewModel.Workspace.SelectedComparison);
         Assert.Same(
-            viewModel.SelectedProjectComparisonRows.Single(row => ReferenceEquals(row.Comparison, secondComparison)),
-            viewModel.SelectedComparisonRow);
+            viewModel.Workspace.SelectedProjectComparisonRows.Single(row => ReferenceEquals(row.Comparison, secondComparison)),
+            viewModel.Workspace.SelectedComparisonRow);
 
-        viewModel.SelectedProject = first;
+        viewModel.Workspace.SelectedProject = first;
 
-        Assert.Same(first, viewModel.SelectedProject);
-        Assert.Same(viewModel.ProjectRows.Single(row => ReferenceEquals(row.Project, first)), viewModel.SelectedProjectRow);
-        Assert.Same(first.Comparisons[0], viewModel.SelectedComparison);
+        Assert.Same(first, viewModel.Workspace.SelectedProject);
+        Assert.Same(viewModel.Workspace.ProjectRows.Single(row => ReferenceEquals(row.Project, first)), viewModel.Workspace.SelectedProjectRow);
+        Assert.Same(first.Comparisons[0], viewModel.Workspace.SelectedComparison);
         Assert.Same(
-            viewModel.SelectedProjectComparisonRows.Single(row => ReferenceEquals(row.Comparison, first.Comparisons[0])),
-            viewModel.SelectedComparisonRow);
+            viewModel.Workspace.SelectedProjectComparisonRows.Single(row => ReferenceEquals(row.Comparison, first.Comparisons[0])),
+            viewModel.Workspace.SelectedComparisonRow);
     }
 
     [Fact]
@@ -163,22 +163,22 @@ public sealed class MainWindowViewModelTests
     {
         var storage = new FakeProjectStorage();
         var viewModel = new MainWindowViewModel(storage);
-        await viewModel.AddProjectAsync("Project", TestContext.Current.CancellationToken);
-        var first = await viewModel.AddComparisonAsync("First", TestContext.Current.CancellationToken);
-        var second = await viewModel.AddComparisonAsync("Second", TestContext.Current.CancellationToken);
+        await viewModel.Workspace.AddProjectAsync("Project", TestContext.Current.CancellationToken);
+        var first = await viewModel.Workspace.AddComparisonAsync("First", TestContext.Current.CancellationToken);
+        var second = await viewModel.Workspace.AddComparisonAsync("Second", TestContext.Current.CancellationToken);
 
-        var firstRow = viewModel.SelectedProjectComparisonRows.Single(row => ReferenceEquals(row.Comparison, first));
-        viewModel.SelectedComparisonRow = firstRow;
+        var firstRow = viewModel.Workspace.SelectedProjectComparisonRows.Single(row => ReferenceEquals(row.Comparison, first));
+        viewModel.Workspace.SelectedComparisonRow = firstRow;
 
-        Assert.Same(first, viewModel.SelectedComparison);
-        Assert.Same(firstRow, viewModel.SelectedComparisonRow);
+        Assert.Same(first, viewModel.Workspace.SelectedComparison);
+        Assert.Same(firstRow, viewModel.Workspace.SelectedComparisonRow);
 
-        viewModel.SelectedComparison = second;
+        viewModel.Workspace.SelectedComparison = second;
 
-        Assert.Same(second, viewModel.SelectedComparison);
+        Assert.Same(second, viewModel.Workspace.SelectedComparison);
         Assert.Same(
-            viewModel.SelectedProjectComparisonRows.Single(row => ReferenceEquals(row.Comparison, second)),
-            viewModel.SelectedComparisonRow);
+            viewModel.Workspace.SelectedProjectComparisonRows.Single(row => ReferenceEquals(row.Comparison, second)),
+            viewModel.Workspace.SelectedComparisonRow);
     }
 
     [Fact]
@@ -187,7 +187,7 @@ public sealed class MainWindowViewModelTests
         var viewModel = new MainWindowViewModel(new FakeProjectStorage());
 
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => viewModel.AddComparisonAsync("No Project", TestContext.Current.CancellationToken));
+            () => viewModel.Workspace.AddComparisonAsync("No Project", TestContext.Current.CancellationToken));
 
         Assert.Contains("project must be selected", exception.Message);
     }
@@ -197,11 +197,11 @@ public sealed class MainWindowViewModelTests
     {
         var storage = new FakeProjectStorage();
         var viewModel = new MainWindowViewModel(storage);
-        var project = await viewModel.AddProjectAsync("Project", TestContext.Current.CancellationToken);
-        var comparison = await viewModel.AddComparisonAsync("Comparison", TestContext.Current.CancellationToken);
+        var project = await viewModel.Workspace.AddProjectAsync("Project", TestContext.Current.CancellationToken);
+        var comparison = await viewModel.Workspace.AddComparisonAsync("Comparison", TestContext.Current.CancellationToken);
         storage.SavedProjects.Clear();
 
-        var image = await viewModel.AddImageAsync(
+        var image = await viewModel.ImageSet.AddImageAsync(
             "  reference.png  ",
             new MemoryStream([1, 2, 3]),
             mediaType: "image/png",
@@ -215,7 +215,7 @@ public sealed class MainWindowViewModelTests
         Assert.Same(image, Assert.Single(comparison.Images));
         Assert.Equal(image.Id, comparison.ReferenceImageId);
         Assert.Null(comparison.CandidateImageId);
-        Assert.Equal("1 image", viewModel.SelectedComparisonRow?.DetailText);
+        Assert.Equal("1 image", viewModel.Workspace.SelectedComparisonRow?.DetailText);
         Assert.Equal([1, 2, 3], storage.SavedImageContents[image.Id]);
         Assert.Same(project, Assert.Single(storage.SavedProjects));
     }
@@ -227,11 +227,11 @@ public sealed class MainWindowViewModelTests
         var referenceFile = TestUiSupport.CreateStorageFile("reference-drop.png");
         var candidateFile = TestUiSupport.CreateStorageFile("candidate-drop.png");
 
-        var addedImages = await viewModel.AddFilesToCurrentComparisonAsync(
+        var addedImages = await viewModel.ImageSet.AddFilesToCurrentComparisonAsync(
             [referenceFile, candidateFile],
             cancellationToken: TestContext.Current.CancellationToken);
 
-        var project = Assert.Single(viewModel.Projects);
+        var project = Assert.Single(viewModel.Workspace.Projects);
         var comparison = Assert.Single(project.Comparisons);
         Assert.Equal(2, addedImages.Count);
         Assert.Equal(2, comparison.Images.Count);
@@ -248,7 +248,7 @@ public sealed class MainWindowViewModelTests
     {
         var viewModel = new MainWindowViewModel();
 
-        var addedImages = await viewModel.AddFilesToCurrentComparisonAsync(
+        var addedImages = await viewModel.ImageSet.AddFilesToCurrentComparisonAsync(
             [
                 TestUiSupport.CreateStorageFile("first.png"),
                 TestUiSupport.CreateStorageFile("second.png")
@@ -256,7 +256,7 @@ public sealed class MainWindowViewModelTests
             maxFiles: 1,
             cancellationToken: TestContext.Current.CancellationToken);
 
-        var comparison = Assert.Single(Assert.Single(viewModel.Projects).Comparisons);
+        var comparison = Assert.Single(Assert.Single(viewModel.Workspace.Projects).Comparisons);
         Assert.Single(addedImages);
         Assert.Single(comparison.Images);
         Assert.Equal("first.png", viewModel.LeftFileName);
@@ -268,12 +268,12 @@ public sealed class MainWindowViewModelTests
     {
         var viewModel = new MainWindowViewModel();
 
-        var addedImages = await viewModel.AddBrowserFilesToCurrentComparisonAsync(
+        var addedImages = await viewModel.ImageSet.AddBrowserFilesToCurrentComparisonAsync(
             ["browser-reference.png", "browser-candidate.png"],
             [TestUiSupport.CreatePngBytes(), TestUiSupport.CreatePngBytes()],
             cancellationToken: TestContext.Current.CancellationToken);
 
-        var comparison = Assert.Single(Assert.Single(viewModel.Projects).Comparisons);
+        var comparison = Assert.Single(Assert.Single(viewModel.Workspace.Projects).Comparisons);
         Assert.Equal(2, addedImages.Count);
         Assert.Equal(2, comparison.Images.Count);
         Assert.Equal("browser-reference", comparison.Name);
@@ -286,27 +286,27 @@ public sealed class MainWindowViewModelTests
     public async Task AddImageAsync_renames_default_comparison_from_first_image_label()
     {
         var viewModel = new MainWindowViewModel(new FakeProjectStorage());
-        await viewModel.AddProjectAsync("Project", TestContext.Current.CancellationToken);
-        var comparison = await viewModel.AddComparisonAsync(cancellationToken: TestContext.Current.CancellationToken);
+        await viewModel.Workspace.AddProjectAsync("Project", TestContext.Current.CancellationToken);
+        var comparison = await viewModel.Workspace.AddComparisonAsync(cancellationToken: TestContext.Current.CancellationToken);
 
-        await viewModel.AddImageAsync(
+        await viewModel.ImageSet.AddImageAsync(
             "first-reference.png",
             new MemoryStream([1]),
             label: "  Homepage Reference  ",
             cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.Equal("Homepage Reference", comparison.Name);
-        Assert.Equal("Project / Homepage Reference", viewModel.WorkspaceContextTitle);
+        Assert.Equal("Project / Homepage Reference", viewModel.WorkspaceStatus.WorkspaceContextTitle);
     }
 
     [Fact]
     public async Task AddImageAsync_keeps_user_named_comparison_name()
     {
         var viewModel = new MainWindowViewModel(new FakeProjectStorage());
-        await viewModel.AddProjectAsync("Project", TestContext.Current.CancellationToken);
-        var comparison = await viewModel.AddComparisonAsync("Header States", TestContext.Current.CancellationToken);
+        await viewModel.Workspace.AddProjectAsync("Project", TestContext.Current.CancellationToken);
+        var comparison = await viewModel.Workspace.AddComparisonAsync("Header States", TestContext.Current.CancellationToken);
 
-        await viewModel.AddImageAsync(
+        await viewModel.ImageSet.AddImageAsync(
             "first-reference.png",
             new MemoryStream([1]),
             label: "Homepage Reference",
@@ -321,49 +321,49 @@ public sealed class MainWindowViewModelTests
         var storage = new FakeProjectStorage();
         var viewModel = new MainWindowViewModel(storage);
 
-        Assert.Equal("No project selected", viewModel.WorkspaceContextTitle);
-        Assert.Equal("Create or select a project", viewModel.WorkspaceContextDetail);
-        Assert.True(viewModel.ShowProjectsEmptyState);
-        Assert.True(viewModel.ShowMainEmptyState);
-        Assert.Equal("No projects", viewModel.MainEmptyStateTitle);
+        Assert.Equal("No project selected", viewModel.WorkspaceStatus.WorkspaceContextTitle);
+        Assert.Equal("Create or select a project", viewModel.WorkspaceStatus.WorkspaceContextDetail);
+        Assert.True(viewModel.WorkspaceStatus.ShowProjectsEmptyState);
+        Assert.True(viewModel.WorkspaceStatus.ShowMainEmptyState);
+        Assert.Equal("No projects", viewModel.WorkspaceStatus.MainEmptyStateTitle);
 
-        await viewModel.AddProjectAsync("Project A", TestContext.Current.CancellationToken);
+        await viewModel.Workspace.AddProjectAsync("Project A", TestContext.Current.CancellationToken);
 
-        Assert.Equal("Project A", viewModel.WorkspaceContextTitle);
-        Assert.Equal("No comparison selected", viewModel.WorkspaceContextDetail);
-        Assert.False(viewModel.ShowProjectsEmptyState);
-        Assert.True(viewModel.ShowComparisonsEmptyState);
-        Assert.Equal("No comparison selected", viewModel.MainEmptyStateTitle);
+        Assert.Equal("Project A", viewModel.WorkspaceStatus.WorkspaceContextTitle);
+        Assert.Equal("No comparison selected", viewModel.WorkspaceStatus.WorkspaceContextDetail);
+        Assert.False(viewModel.WorkspaceStatus.ShowProjectsEmptyState);
+        Assert.True(viewModel.WorkspaceStatus.ShowComparisonsEmptyState);
+        Assert.Equal("No comparison selected", viewModel.WorkspaceStatus.MainEmptyStateTitle);
 
-        await viewModel.AddComparisonAsync("Header States", TestContext.Current.CancellationToken);
+        await viewModel.Workspace.AddComparisonAsync("Header States", TestContext.Current.CancellationToken);
 
-        Assert.Equal("Project A / Header States", viewModel.WorkspaceContextTitle);
-        Assert.Equal("0 images in image set", viewModel.WorkspaceContextDetail);
-        Assert.True(viewModel.ShowMainEmptyState);
-        Assert.Equal("No images in this comparison", viewModel.MainEmptyStateTitle);
-        Assert.Equal("Add or drop a reference image.", viewModel.WorkspaceActionHint);
+        Assert.Equal("Project A / Header States", viewModel.WorkspaceStatus.WorkspaceContextTitle);
+        Assert.Equal("0 images in image set", viewModel.WorkspaceStatus.WorkspaceContextDetail);
+        Assert.True(viewModel.WorkspaceStatus.ShowMainEmptyState);
+        Assert.Equal("No images in this comparison", viewModel.WorkspaceStatus.MainEmptyStateTitle);
+        Assert.Equal("Add or drop a reference image.", viewModel.WorkspaceStatus.WorkspaceActionHint);
 
-        await viewModel.AddImageAsync("reference.png", new MemoryStream([1]), cancellationToken: TestContext.Current.CancellationToken);
+        await viewModel.ImageSet.AddImageAsync("reference.png", new MemoryStream([1]), cancellationToken: TestContext.Current.CancellationToken);
 
-        Assert.Equal("1 image", viewModel.SelectedComparisonImageCountText);
-        Assert.Equal("1 image in image set", viewModel.WorkspaceContextDetail);
-        Assert.False(viewModel.ShowMainEmptyState);
-        Assert.Equal("Add or drop a candidate image.", viewModel.WorkspaceActionHint);
+        Assert.Equal("1 image", viewModel.Workspace.SelectedComparisonImageCountText);
+        Assert.Equal("1 image in image set", viewModel.WorkspaceStatus.WorkspaceContextDetail);
+        Assert.False(viewModel.WorkspaceStatus.ShowMainEmptyState);
+        Assert.Equal("Add or drop a candidate image.", viewModel.WorkspaceStatus.WorkspaceActionHint);
 
-        await viewModel.RenameSelectedProjectAsync("Project B", TestContext.Current.CancellationToken);
-        await viewModel.RenameSelectedComparisonAsync("Footer States", TestContext.Current.CancellationToken);
+        await viewModel.Workspace.RenameSelectedProjectAsync("Project B", TestContext.Current.CancellationToken);
+        await viewModel.Workspace.RenameSelectedComparisonAsync("Footer States", TestContext.Current.CancellationToken);
 
-        Assert.Equal("Project B / Footer States", viewModel.WorkspaceContextTitle);
+        Assert.Equal("Project B / Footer States", viewModel.WorkspaceStatus.WorkspaceContextTitle);
     }
 
     [Fact]
     public async Task AddImageAsync_requires_selected_comparison()
     {
         var viewModel = new MainWindowViewModel(new FakeProjectStorage());
-        await viewModel.AddProjectAsync("Project", TestContext.Current.CancellationToken);
+        await viewModel.Workspace.AddProjectAsync("Project", TestContext.Current.CancellationToken);
 
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => viewModel.AddImageAsync("image.png", new MemoryStream([1]), cancellationToken: TestContext.Current.CancellationToken));
+            () => viewModel.ImageSet.AddImageAsync("image.png", new MemoryStream([1]), cancellationToken: TestContext.Current.CancellationToken));
 
         Assert.Contains("comparison must be selected", exception.Message);
     }
@@ -373,13 +373,13 @@ public sealed class MainWindowViewModelTests
     {
         var storage = new FakeProjectStorage();
         var viewModel = new MainWindowViewModel(storage);
-        var project = await viewModel.AddProjectAsync("Project", TestContext.Current.CancellationToken);
-        var comparison = await viewModel.AddComparisonAsync("Comparison", TestContext.Current.CancellationToken);
-        var reference = await viewModel.AddImageAsync("reference.png", new MemoryStream([1]), cancellationToken: TestContext.Current.CancellationToken);
-        var candidate = await viewModel.AddImageAsync("candidate.png", new MemoryStream([2]), cancellationToken: TestContext.Current.CancellationToken);
+        var project = await viewModel.Workspace.AddProjectAsync("Project", TestContext.Current.CancellationToken);
+        var comparison = await viewModel.Workspace.AddComparisonAsync("Comparison", TestContext.Current.CancellationToken);
+        var reference = await viewModel.ImageSet.AddImageAsync("reference.png", new MemoryStream([1]), cancellationToken: TestContext.Current.CancellationToken);
+        var candidate = await viewModel.ImageSet.AddImageAsync("candidate.png", new MemoryStream([2]), cancellationToken: TestContext.Current.CancellationToken);
         storage.SavedProjects.Clear();
 
-        var deleted = await viewModel.DeleteImageAsync(reference, TestContext.Current.CancellationToken);
+        var deleted = await viewModel.ImageSet.DeleteImageAsync(reference, TestContext.Current.CancellationToken);
 
         Assert.True(deleted);
         Assert.DoesNotContain(reference, comparison.Images);
@@ -394,11 +394,11 @@ public sealed class MainWindowViewModelTests
     {
         var storage = new FakeProjectStorage();
         var viewModel = new MainWindowViewModel(storage);
-        await viewModel.AddProjectAsync("Project", TestContext.Current.CancellationToken);
-        await viewModel.AddComparisonAsync("Comparison", TestContext.Current.CancellationToken);
+        await viewModel.Workspace.AddProjectAsync("Project", TestContext.Current.CancellationToken);
+        await viewModel.Workspace.AddComparisonAsync("Comparison", TestContext.Current.CancellationToken);
         storage.SavedProjects.Clear();
 
-        var deleted = await viewModel.DeleteImageAsync(new ImageAsset(), TestContext.Current.CancellationToken);
+        var deleted = await viewModel.ImageSet.DeleteImageAsync(new ImageAsset(), TestContext.Current.CancellationToken);
 
         Assert.False(deleted);
         Assert.Empty(storage.SavedProjects);
@@ -410,12 +410,12 @@ public sealed class MainWindowViewModelTests
     {
         var storage = new FakeProjectStorage();
         var viewModel = new MainWindowViewModel(storage);
-        var project = await viewModel.AddProjectAsync("Project", TestContext.Current.CancellationToken);
-        await viewModel.AddComparisonAsync("Comparison", TestContext.Current.CancellationToken);
-        var image = await viewModel.AddImageAsync("candidate.png", new MemoryStream([1]), cancellationToken: TestContext.Current.CancellationToken);
+        var project = await viewModel.Workspace.AddProjectAsync("Project", TestContext.Current.CancellationToken);
+        await viewModel.Workspace.AddComparisonAsync("Comparison", TestContext.Current.CancellationToken);
+        var image = await viewModel.ImageSet.AddImageAsync("candidate.png", new MemoryStream([1]), cancellationToken: TestContext.Current.CancellationToken);
         storage.SavedProjects.Clear();
 
-        var labelled = await viewModel.LabelImageAsync(image, "  Current Render  ", TestContext.Current.CancellationToken);
+        var labelled = await viewModel.ImageSet.LabelImageAsync(image, "  Current Render  ", TestContext.Current.CancellationToken);
 
         Assert.True(labelled);
         Assert.Equal("Current Render", image.Label);
@@ -427,11 +427,11 @@ public sealed class MainWindowViewModelTests
     {
         var storage = new FakeProjectStorage();
         var viewModel = new MainWindowViewModel(storage);
-        await viewModel.AddProjectAsync("Project", TestContext.Current.CancellationToken);
-        await viewModel.AddComparisonAsync("Comparison", TestContext.Current.CancellationToken);
+        await viewModel.Workspace.AddProjectAsync("Project", TestContext.Current.CancellationToken);
+        await viewModel.Workspace.AddComparisonAsync("Comparison", TestContext.Current.CancellationToken);
         storage.SavedProjects.Clear();
 
-        var labelled = await viewModel.LabelImageAsync(new ImageAsset(), "Missing", TestContext.Current.CancellationToken);
+        var labelled = await viewModel.ImageSet.LabelImageAsync(new ImageAsset(), "Missing", TestContext.Current.CancellationToken);
 
         Assert.False(labelled);
         Assert.Empty(storage.SavedProjects);
@@ -442,14 +442,14 @@ public sealed class MainWindowViewModelTests
     {
         var storage = new FakeProjectStorage();
         var viewModel = new MainWindowViewModel(storage);
-        var project = await viewModel.AddProjectAsync("Project", TestContext.Current.CancellationToken);
-        var comparison = await viewModel.AddComparisonAsync("Comparison", TestContext.Current.CancellationToken);
-        var reference = await viewModel.AddImageAsync("reference.png", new MemoryStream([1]), cancellationToken: TestContext.Current.CancellationToken);
-        var candidate = await viewModel.AddImageAsync("candidate.png", new MemoryStream([2]), cancellationToken: TestContext.Current.CancellationToken);
-        var alternate = await viewModel.AddImageAsync("alternate.png", new MemoryStream([3]), cancellationToken: TestContext.Current.CancellationToken);
+        var project = await viewModel.Workspace.AddProjectAsync("Project", TestContext.Current.CancellationToken);
+        var comparison = await viewModel.Workspace.AddComparisonAsync("Comparison", TestContext.Current.CancellationToken);
+        var reference = await viewModel.ImageSet.AddImageAsync("reference.png", new MemoryStream([1]), cancellationToken: TestContext.Current.CancellationToken);
+        var candidate = await viewModel.ImageSet.AddImageAsync("candidate.png", new MemoryStream([2]), cancellationToken: TestContext.Current.CancellationToken);
+        var alternate = await viewModel.ImageSet.AddImageAsync("alternate.png", new MemoryStream([3]), cancellationToken: TestContext.Current.CancellationToken);
         storage.SavedProjects.Clear();
 
-        var changed = await viewModel.SetReferenceImageAsync(alternate, TestContext.Current.CancellationToken);
+        var changed = await viewModel.ImageSet.SetReferenceImageAsync(alternate, TestContext.Current.CancellationToken);
 
         Assert.True(changed);
         Assert.Equal(alternate.Id, comparison.ReferenceImageId);
@@ -463,14 +463,14 @@ public sealed class MainWindowViewModelTests
     {
         var storage = new FakeProjectStorage();
         var viewModel = new MainWindowViewModel(storage);
-        var project = await viewModel.AddProjectAsync("Project", TestContext.Current.CancellationToken);
-        var comparison = await viewModel.AddComparisonAsync("Comparison", TestContext.Current.CancellationToken);
-        var reference = await viewModel.AddImageAsync("reference.png", new MemoryStream([1]), cancellationToken: TestContext.Current.CancellationToken);
-        var candidate = await viewModel.AddImageAsync("candidate.png", new MemoryStream([2]), cancellationToken: TestContext.Current.CancellationToken);
-        var alternate = await viewModel.AddImageAsync("alternate.png", new MemoryStream([3]), cancellationToken: TestContext.Current.CancellationToken);
+        var project = await viewModel.Workspace.AddProjectAsync("Project", TestContext.Current.CancellationToken);
+        var comparison = await viewModel.Workspace.AddComparisonAsync("Comparison", TestContext.Current.CancellationToken);
+        var reference = await viewModel.ImageSet.AddImageAsync("reference.png", new MemoryStream([1]), cancellationToken: TestContext.Current.CancellationToken);
+        var candidate = await viewModel.ImageSet.AddImageAsync("candidate.png", new MemoryStream([2]), cancellationToken: TestContext.Current.CancellationToken);
+        var alternate = await viewModel.ImageSet.AddImageAsync("alternate.png", new MemoryStream([3]), cancellationToken: TestContext.Current.CancellationToken);
         storage.SavedProjects.Clear();
 
-        var changed = await viewModel.SetCandidateImageAsync(alternate, TestContext.Current.CancellationToken);
+        var changed = await viewModel.ImageSet.SetCandidateImageAsync(alternate, TestContext.Current.CancellationToken);
 
         Assert.True(changed);
         Assert.Equal(reference.Id, comparison.ReferenceImageId);
@@ -484,12 +484,12 @@ public sealed class MainWindowViewModelTests
     {
         var storage = new FakeProjectStorage();
         var viewModel = new MainWindowViewModel(storage);
-        await viewModel.AddProjectAsync("Project", TestContext.Current.CancellationToken);
-        var comparison = await viewModel.AddComparisonAsync("Comparison", TestContext.Current.CancellationToken);
-        var reference = await viewModel.AddImageAsync("reference.png", new MemoryStream([1]), cancellationToken: TestContext.Current.CancellationToken);
-        var candidate = await viewModel.AddImageAsync("candidate.png", new MemoryStream([2]), cancellationToken: TestContext.Current.CancellationToken);
+        await viewModel.Workspace.AddProjectAsync("Project", TestContext.Current.CancellationToken);
+        var comparison = await viewModel.Workspace.AddComparisonAsync("Comparison", TestContext.Current.CancellationToken);
+        var reference = await viewModel.ImageSet.AddImageAsync("reference.png", new MemoryStream([1]), cancellationToken: TestContext.Current.CancellationToken);
+        var candidate = await viewModel.ImageSet.AddImageAsync("candidate.png", new MemoryStream([2]), cancellationToken: TestContext.Current.CancellationToken);
 
-        var changed = await viewModel.SetReferenceImageAsync(candidate, TestContext.Current.CancellationToken);
+        var changed = await viewModel.ImageSet.SetReferenceImageAsync(candidate, TestContext.Current.CancellationToken);
 
         Assert.True(changed);
         Assert.Equal(candidate.Id, comparison.ReferenceImageId);
@@ -501,12 +501,12 @@ public sealed class MainWindowViewModelTests
     {
         var storage = new FakeProjectStorage();
         var viewModel = new MainWindowViewModel(storage);
-        await viewModel.AddProjectAsync("Project", TestContext.Current.CancellationToken);
-        var comparison = await viewModel.AddComparisonAsync("Comparison", TestContext.Current.CancellationToken);
-        var reference = await viewModel.AddImageAsync("reference.png", new MemoryStream([1]), cancellationToken: TestContext.Current.CancellationToken);
-        var candidate = await viewModel.AddImageAsync("candidate.png", new MemoryStream([2]), cancellationToken: TestContext.Current.CancellationToken);
+        await viewModel.Workspace.AddProjectAsync("Project", TestContext.Current.CancellationToken);
+        var comparison = await viewModel.Workspace.AddComparisonAsync("Comparison", TestContext.Current.CancellationToken);
+        var reference = await viewModel.ImageSet.AddImageAsync("reference.png", new MemoryStream([1]), cancellationToken: TestContext.Current.CancellationToken);
+        var candidate = await viewModel.ImageSet.AddImageAsync("candidate.png", new MemoryStream([2]), cancellationToken: TestContext.Current.CancellationToken);
 
-        var changed = await viewModel.SetCandidateImageAsync(reference, TestContext.Current.CancellationToken);
+        var changed = await viewModel.ImageSet.SetCandidateImageAsync(reference, TestContext.Current.CancellationToken);
 
         Assert.True(changed);
         Assert.Equal(candidate.Id, comparison.ReferenceImageId);
@@ -517,12 +517,12 @@ public sealed class MainWindowViewModelTests
     public async Task SetCandidateImageAsync_requires_at_least_two_images()
     {
         var viewModel = new MainWindowViewModel(new FakeProjectStorage());
-        await viewModel.AddProjectAsync("Project", TestContext.Current.CancellationToken);
-        await viewModel.AddComparisonAsync("Comparison", TestContext.Current.CancellationToken);
-        var image = await viewModel.AddImageAsync("reference.png", new MemoryStream([1]), cancellationToken: TestContext.Current.CancellationToken);
+        await viewModel.Workspace.AddProjectAsync("Project", TestContext.Current.CancellationToken);
+        await viewModel.Workspace.AddComparisonAsync("Comparison", TestContext.Current.CancellationToken);
+        var image = await viewModel.ImageSet.AddImageAsync("reference.png", new MemoryStream([1]), cancellationToken: TestContext.Current.CancellationToken);
 
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => viewModel.SetCandidateImageAsync(image, TestContext.Current.CancellationToken));
+            () => viewModel.ImageSet.SetCandidateImageAsync(image, TestContext.Current.CancellationToken));
 
         Assert.Contains("at least two images", exception.Message);
     }
@@ -532,13 +532,13 @@ public sealed class MainWindowViewModelTests
     {
         var storage = new FakeProjectStorage();
         var viewModel = new MainWindowViewModel(storage);
-        await viewModel.AddProjectAsync("Project", TestContext.Current.CancellationToken);
-        await viewModel.AddComparisonAsync("Comparison", TestContext.Current.CancellationToken);
+        await viewModel.Workspace.AddProjectAsync("Project", TestContext.Current.CancellationToken);
+        await viewModel.Workspace.AddComparisonAsync("Comparison", TestContext.Current.CancellationToken);
         var missing = new ImageAsset();
         storage.SavedProjects.Clear();
 
-        var referenceChanged = await viewModel.SetReferenceImageAsync(missing, TestContext.Current.CancellationToken);
-        var candidateChanged = await viewModel.SetCandidateImageAsync(missing, TestContext.Current.CancellationToken);
+        var referenceChanged = await viewModel.ImageSet.SetReferenceImageAsync(missing, TestContext.Current.CancellationToken);
+        var candidateChanged = await viewModel.ImageSet.SetCandidateImageAsync(missing, TestContext.Current.CancellationToken);
 
         Assert.False(referenceChanged);
         Assert.False(candidateChanged);
@@ -549,18 +549,18 @@ public sealed class MainWindowViewModelTests
     public async Task Role_reassignment_guard_methods_reflect_selected_comparison_state()
     {
         var viewModel = new MainWindowViewModel(new FakeProjectStorage());
-        await viewModel.AddProjectAsync("Project", TestContext.Current.CancellationToken);
-        await viewModel.AddComparisonAsync("Comparison", TestContext.Current.CancellationToken);
-        var reference = await viewModel.AddImageAsync("reference.png", new MemoryStream([1]), cancellationToken: TestContext.Current.CancellationToken);
-        var candidate = await viewModel.AddImageAsync("candidate.png", new MemoryStream([2]), cancellationToken: TestContext.Current.CancellationToken);
+        await viewModel.Workspace.AddProjectAsync("Project", TestContext.Current.CancellationToken);
+        await viewModel.Workspace.AddComparisonAsync("Comparison", TestContext.Current.CancellationToken);
+        var reference = await viewModel.ImageSet.AddImageAsync("reference.png", new MemoryStream([1]), cancellationToken: TestContext.Current.CancellationToken);
+        var candidate = await viewModel.ImageSet.AddImageAsync("candidate.png", new MemoryStream([2]), cancellationToken: TestContext.Current.CancellationToken);
         var missing = new ImageAsset();
 
-        Assert.True(viewModel.CanSetReferenceImage(reference));
-        Assert.True(viewModel.CanSetCandidateImage(candidate));
-        Assert.False(viewModel.CanSetReferenceImage(missing));
-        Assert.False(viewModel.CanSetCandidateImage(missing));
-        Assert.False(viewModel.CanSetReferenceImage(null));
-        Assert.False(viewModel.CanSetCandidateImage(null));
+        Assert.True(viewModel.ImageSet.CanSetReferenceImage(reference));
+        Assert.True(viewModel.ImageSet.CanSetCandidateImage(candidate));
+        Assert.False(viewModel.ImageSet.CanSetReferenceImage(missing));
+        Assert.False(viewModel.ImageSet.CanSetCandidateImage(missing));
+        Assert.False(viewModel.ImageSet.CanSetReferenceImage(null));
+        Assert.False(viewModel.ImageSet.CanSetCandidateImage(null));
     }
 
     [AvaloniaFact]
@@ -568,10 +568,10 @@ public sealed class MainWindowViewModelTests
     {
         var storage = new FakeProjectStorage();
         var viewModel = new MainWindowViewModel(storage);
-        var project = await viewModel.AddProjectAsync("Project", TestContext.Current.CancellationToken);
-        var comparison = await viewModel.AddComparisonAsync("Comparison", TestContext.Current.CancellationToken);
+        var project = await viewModel.Workspace.AddProjectAsync("Project", TestContext.Current.CancellationToken);
+        var comparison = await viewModel.Workspace.AddComparisonAsync("Comparison", TestContext.Current.CancellationToken);
         var file = TestUiSupport.CreateStorageFile("monitored-reference.png");
-        var image = await viewModel.AddImageAsync(file, cancellationToken: TestContext.Current.CancellationToken);
+        var image = await viewModel.ImageSet.AddImageAsync(file, cancellationToken: TestContext.Current.CancellationToken);
         await viewModel.SetImageMonitoringAsync(image, ImageMonitoringRole.Reference, TestContext.Current.CancellationToken);
         storage.SavedProjects.Clear();
 
@@ -593,11 +593,11 @@ public sealed class MainWindowViewModelTests
     {
         var storage = new FakeProjectStorage();
         var viewModel = new MainWindowViewModel(storage);
-        var project = await viewModel.AddProjectAsync("Project", TestContext.Current.CancellationToken);
-        var comparison = await viewModel.AddComparisonAsync("Comparison", TestContext.Current.CancellationToken);
-        var reference = await viewModel.AddImageAsync(TestUiSupport.CreateStorageFile("reference-source.png"), cancellationToken: TestContext.Current.CancellationToken);
+        var project = await viewModel.Workspace.AddProjectAsync("Project", TestContext.Current.CancellationToken);
+        var comparison = await viewModel.Workspace.AddComparisonAsync("Comparison", TestContext.Current.CancellationToken);
+        var reference = await viewModel.ImageSet.AddImageAsync(TestUiSupport.CreateStorageFile("reference-source.png"), cancellationToken: TestContext.Current.CancellationToken);
         var candidateFile = TestUiSupport.CreateStorageFile("candidate-source.png");
-        var candidate = await viewModel.AddImageAsync(candidateFile, cancellationToken: TestContext.Current.CancellationToken);
+        var candidate = await viewModel.ImageSet.AddImageAsync(candidateFile, cancellationToken: TestContext.Current.CancellationToken);
         await viewModel.SetImageMonitoringAsync(candidate, ImageMonitoringRole.Candidate, TestContext.Current.CancellationToken);
         storage.SavedProjects.Clear();
 
@@ -619,9 +619,9 @@ public sealed class MainWindowViewModelTests
     {
         var storage = new FakeProjectStorage();
         var viewModel = new MainWindowViewModel(storage);
-        var project = await viewModel.AddProjectAsync("Project", TestContext.Current.CancellationToken);
-        var comparison = await viewModel.AddComparisonAsync("Comparison", TestContext.Current.CancellationToken);
-        var image = await viewModel.AddImageAsync(TestUiSupport.CreateStorageFile("unchanged-source.png"), cancellationToken: TestContext.Current.CancellationToken);
+        var project = await viewModel.Workspace.AddProjectAsync("Project", TestContext.Current.CancellationToken);
+        var comparison = await viewModel.Workspace.AddComparisonAsync("Comparison", TestContext.Current.CancellationToken);
+        var image = await viewModel.ImageSet.AddImageAsync(TestUiSupport.CreateStorageFile("unchanged-source.png"), cancellationToken: TestContext.Current.CancellationToken);
         await viewModel.SetImageMonitoringAsync(image, ImageMonitoringRole.Reference, TestContext.Current.CancellationToken);
         storage.SavedProjects.Clear();
 

@@ -22,16 +22,16 @@ public sealed class ProjectImageChangeMonitorTests : IDisposable
     {
         var storage = new LocalFileProjectStorage(_storageRootPath);
         var viewModel = new MainWindowViewModel(storage);
-        var project = await viewModel.AddProjectAsync("Project", TestContext.Current.CancellationToken);
-        var comparison = await viewModel.AddComparisonAsync("Comparison", TestContext.Current.CancellationToken);
+        var project = await viewModel.Workspace.AddProjectAsync("Project", TestContext.Current.CancellationToken);
+        var comparison = await viewModel.Workspace.AddComparisonAsync("Comparison", TestContext.Current.CancellationToken);
         var sourceFile = TestUiSupport.CreateStorageFile("monitor-capture.png");
-        var image = await viewModel.AddImageAsync(sourceFile, cancellationToken: TestContext.Current.CancellationToken);
+        var image = await viewModel.ImageSet.AddImageAsync(sourceFile, cancellationToken: TestContext.Current.CancellationToken);
         await viewModel.SetImageMonitoringAsync(image, ImageMonitoringRole.Reference, TestContext.Current.CancellationToken);
         using var watcher = new FakeImageSourceChangeWatcher();
         using var monitor = new ProjectImageChangeMonitor(watcher, new MonitoredImageVersionCapture(storage));
         MonitoredImageVersionCapturedEventArgs? captured = null;
         monitor.VersionCaptured += (_, e) => captured = e;
-        monitor.Start(viewModel.Projects);
+        monitor.Start(viewModel.Workspace.Projects);
 
         WriteFixtureImage(sourceFile.Path.LocalPath, SKColors.CornflowerBlue);
 
@@ -45,7 +45,7 @@ public sealed class ProjectImageChangeMonitorTests : IDisposable
         Assert.Same(project, captured!.Project);
         Assert.Same(comparison, captured.Comparison);
         Assert.Same(image, captured.PreviousVersion);
-        Assert.Same(project, viewModel.SelectedProject);
+        Assert.Same(project, viewModel.Workspace.SelectedProject);
 
         var firstVersion = comparison.ReferenceImage;
         Assert.NotNull(firstVersion);

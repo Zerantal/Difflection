@@ -16,7 +16,7 @@ public sealed partial class ComparisonStageTests
     public async Task Side_by_side_ruler_zero_stays_aligned_with_image_origin_after_zoom()
     {
         var viewModel = new MainWindowViewModel();
-        await viewModel.LoadImageAsync(ImageSlot.Left, TestUiSupport.CreateStorageFile("reference.png", 1600, 1200));
+        await viewModel.ComparisonDisplay.LoadImageAsync(ImageSlot.Left, TestUiSupport.CreateStorageFile("reference.png", 1600, 1200));
 
         var window = TestUiSupport.CreateWindow(viewModel);
         try
@@ -49,9 +49,9 @@ public sealed partial class ComparisonStageTests
     public async Task Split_screen_ruler_zero_stays_aligned_with_image_origin_after_zoom()
     {
         var viewModel = new MainWindowViewModel();
-        await viewModel.LoadImageAsync(ImageSlot.Left, TestUiSupport.CreateStorageFile("left.png", 1600, 1200));
-        await viewModel.LoadImageAsync(ImageSlot.Right, TestUiSupport.CreateStorageFile("right.png", 1600, 1200));
-        viewModel.SelectSplitScreenView();
+        await viewModel.ComparisonDisplay.LoadImageAsync(ImageSlot.Left, TestUiSupport.CreateStorageFile("left.png", 1600, 1200));
+        await viewModel.ComparisonDisplay.LoadImageAsync(ImageSlot.Right, TestUiSupport.CreateStorageFile("right.png", 1600, 1200));
+        viewModel.ToolState.SelectSplitScreenView();
 
         var window = TestUiSupport.CreateWindow(viewModel);
         try

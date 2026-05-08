@@ -37,8 +37,8 @@ public sealed class SidebarNavigationTests
 
             await TestUiSupport.WaitForAsync(() => projectsList.ItemCount == 2);
 
-            Assert.Same(first, viewModel.SelectedProject);
-            Assert.Same(firstComparison, viewModel.SelectedComparison);
+            Assert.Same(first, viewModel.Workspace.SelectedProject);
+            Assert.Same(firstComparison, viewModel.Workspace.SelectedComparison);
             Assert.Equal(0, projectsList.SelectedIndex);
             Assert.Equal(0, comparisonsList.SelectedIndex);
             Assert.Equal(1, comparisonsList.ItemCount);
@@ -65,10 +65,10 @@ public sealed class SidebarNavigationTests
 
             await TestUiSupport.WaitForAsync(() => projectsList.ItemCount == 1);
 
-            var project = Assert.Single(viewModel.Projects);
+            var project = Assert.Single(viewModel.Workspace.Projects);
             Assert.Equal("Untitled Project", project.Name);
-            Assert.Same(project, viewModel.SelectedProject);
-            Assert.Same(viewModel.SelectedProjectRow, projectsList.SelectedItem);
+            Assert.Same(project, viewModel.Workspace.SelectedProject);
+            Assert.Same(viewModel.Workspace.SelectedProjectRow, projectsList.SelectedItem);
             Assert.Same(project, Assert.Single(storage.SavedProjects));
         }
         finally
@@ -90,29 +90,29 @@ public sealed class SidebarNavigationTests
 
             Click(GetControl<Button>(mainView, "AddProjectButton"));
             var projectsList = GetControl<ListBox>(mainView, "ProjectsList");
-            var projectRow = viewModel.SelectedProjectRow!;
+            var projectRow = viewModel.Workspace.SelectedProjectRow!;
             var projectNameTextBox = await WaitForInlineNameTextBoxAsync(projectsList, projectRow);
             await TestUiSupport.WaitForAsync(() => projectRow.IsEditing);
             projectNameTextBox.Text = "  Client Work  ";
             LoseFocus(projectNameTextBox);
 
-            await TestUiSupport.WaitForAsync(() => viewModel.SelectedProject?.Name == "Client Work" && !projectRow.IsEditing);
+            await TestUiSupport.WaitForAsync(() => viewModel.Workspace.SelectedProject?.Name == "Client Work" && !projectRow.IsEditing);
 
             Click(GetControl<Button>(mainView, "AddComparisonButton"));
-            await TestUiSupport.WaitForAsync(() => viewModel.SelectedComparison is not null);
+            await TestUiSupport.WaitForAsync(() => viewModel.Workspace.SelectedComparison is not null);
             storage.SavedProjects.Clear();
 
             var comparisonsList = GetControl<ListBox>(mainView, "ComparisonsList");
-            var comparisonRow = viewModel.SelectedComparisonRow!;
+            var comparisonRow = viewModel.Workspace.SelectedComparisonRow!;
             var comparisonNameTextBox = await WaitForInlineNameTextBoxAsync(comparisonsList, comparisonRow);
             await TestUiSupport.WaitForAsync(() => comparisonRow.IsEditing);
             comparisonNameTextBox.Text = "  Header States  ";
             LoseFocus(comparisonNameTextBox);
 
-            await TestUiSupport.WaitForAsync(() => viewModel.SelectedComparison?.Name == "Header States" && !comparisonRow.IsEditing);
+            await TestUiSupport.WaitForAsync(() => viewModel.Workspace.SelectedComparison?.Name == "Header States" && !comparisonRow.IsEditing);
 
-            Assert.Equal("Client Work", viewModel.SelectedProject?.Name);
-            Assert.Equal("Header States", viewModel.SelectedComparison?.Name);
+            Assert.Equal("Client Work", viewModel.Workspace.SelectedProject?.Name);
+            Assert.Equal("Header States", viewModel.Workspace.SelectedComparison?.Name);
             Assert.NotEmpty(storage.SavedProjects);
         }
         finally
@@ -126,11 +126,11 @@ public sealed class SidebarNavigationTests
     {
         var storage = new FakeProjectStorage();
         var viewModel = new MainWindowViewModel(storage);
-        await viewModel.AddProjectAsync("Project", TestContext.Current.CancellationToken);
-        await viewModel.AddComparisonAsync("Comparison", TestContext.Current.CancellationToken);
-        var reference = await viewModel.AddImageAsync(TestUiSupport.CreateStorageFile("left-reference.png"), cancellationToken: TestContext.Current.CancellationToken);
-        var candidate = await viewModel.AddImageAsync(TestUiSupport.CreateStorageFile("candidate.png"), cancellationToken: TestContext.Current.CancellationToken);
-        await viewModel.RefreshCurrentComparisonImagesAsync(TestContext.Current.CancellationToken);
+        await viewModel.Workspace.AddProjectAsync("Project", TestContext.Current.CancellationToken);
+        await viewModel.Workspace.AddComparisonAsync("Comparison", TestContext.Current.CancellationToken);
+        var reference = await viewModel.ImageSet.AddImageAsync(TestUiSupport.CreateStorageFile("left-reference.png"), cancellationToken: TestContext.Current.CancellationToken);
+        var candidate = await viewModel.ImageSet.AddImageAsync(TestUiSupport.CreateStorageFile("candidate.png"), cancellationToken: TestContext.Current.CancellationToken);
+        await viewModel.ComparisonDisplay.RefreshCurrentComparisonImagesAsync(viewModel.Workspace.SelectedComparison, viewModel.ProjectStorage, TestContext.Current.CancellationToken);
         storage.SavedProjects.Clear();
 
         var window = TestUiSupport.CreateWindow(viewModel);
@@ -145,11 +145,11 @@ public sealed class SidebarNavigationTests
 
             await TestUiSupport.WaitForAsync(() => imagesList.ItemCount == 1 && viewModel.LeftFileName == candidate.Label);
 
-            Assert.DoesNotContain(reference, viewModel.SelectedComparison!.Images);
-            Assert.Equal(candidate.Id, viewModel.SelectedComparison.ReferenceImageId);
-            Assert.Null(viewModel.SelectedComparison.CandidateImageId);
+            Assert.DoesNotContain(reference, viewModel.Workspace.SelectedComparison!.Images);
+            Assert.Equal(candidate.Id, viewModel.Workspace.SelectedComparison.ReferenceImageId);
+            Assert.Null(viewModel.Workspace.SelectedComparison.CandidateImageId);
             Assert.Contains(reference.Id, storage.DeletedImageIds);
-            Assert.Same(viewModel.SelectedProject, Assert.Single(storage.SavedProjects));
+            Assert.Same(viewModel.Workspace.SelectedProject, Assert.Single(storage.SavedProjects));
         }
         finally
         {
@@ -162,13 +162,13 @@ public sealed class SidebarNavigationTests
     {
         var storage = new FakeProjectStorage();
         var viewModel = new MainWindowViewModel(storage);
-        await viewModel.AddProjectAsync("Project", TestContext.Current.CancellationToken);
-        var first = await viewModel.AddComparisonAsync("First", TestContext.Current.CancellationToken);
-        var firstImage = await viewModel.AddImageAsync(TestUiSupport.CreateStorageFile("first-left-reference.png"), label: "First Reference", cancellationToken: TestContext.Current.CancellationToken);
-        var second = await viewModel.AddComparisonAsync("Second", TestContext.Current.CancellationToken);
-        var secondImage = await viewModel.AddImageAsync(TestUiSupport.CreateStorageFile("second-left-reference.png"), label: "Second Reference", cancellationToken: TestContext.Current.CancellationToken);
-        viewModel.SelectedComparison = first;
-        await viewModel.RefreshCurrentComparisonImagesAsync(TestContext.Current.CancellationToken);
+        await viewModel.Workspace.AddProjectAsync("Project", TestContext.Current.CancellationToken);
+        var first = await viewModel.Workspace.AddComparisonAsync("First", TestContext.Current.CancellationToken);
+        var firstImage = await viewModel.ImageSet.AddImageAsync(TestUiSupport.CreateStorageFile("first-left-reference.png"), label: "First Reference", cancellationToken: TestContext.Current.CancellationToken);
+        var second = await viewModel.Workspace.AddComparisonAsync("Second", TestContext.Current.CancellationToken);
+        var secondImage = await viewModel.ImageSet.AddImageAsync(TestUiSupport.CreateStorageFile("second-left-reference.png"), label: "Second Reference", cancellationToken: TestContext.Current.CancellationToken);
+        viewModel.Workspace.SelectedComparison = first;
+        await viewModel.ComparisonDisplay.RefreshCurrentComparisonImagesAsync(viewModel.Workspace.SelectedComparison, viewModel.ProjectStorage, TestContext.Current.CancellationToken);
 
         var window = TestUiSupport.CreateWindow(viewModel);
         try
@@ -178,11 +178,11 @@ public sealed class SidebarNavigationTests
 
             await TestUiSupport.WaitForAsync(() => viewModel.LeftFileName == firstImage.Label);
 
-            comparisonsList.SelectedItem = viewModel.SelectedProjectComparisonRows.Single(row => ReferenceEquals(row.Comparison, second));
+            comparisonsList.SelectedItem = viewModel.Workspace.SelectedProjectComparisonRows.Single(row => ReferenceEquals(row.Comparison, second));
 
             await TestUiSupport.WaitForAsync(() => viewModel.LeftFileName == secondImage.Label);
 
-            Assert.Same(second, viewModel.SelectedComparison);
+            Assert.Same(second, viewModel.Workspace.SelectedComparison);
             Assert.Null(viewModel.RightImage);
             Assert.Equal("Candidate image", viewModel.RightFileName);
         }
@@ -197,10 +197,10 @@ public sealed class SidebarNavigationTests
     {
         var storage = new FakeProjectStorage();
         var viewModel = new MainWindowViewModel(storage);
-        await viewModel.AddProjectAsync("Project", TestContext.Current.CancellationToken);
-        await viewModel.AddComparisonAsync("First", TestContext.Current.CancellationToken);
-        await viewModel.AddImageAsync(TestUiSupport.CreateStorageFile("first-left-reference.png"), label: "First Reference", cancellationToken: TestContext.Current.CancellationToken);
-        await viewModel.RefreshCurrentComparisonImagesAsync(TestContext.Current.CancellationToken);
+        await viewModel.Workspace.AddProjectAsync("Project", TestContext.Current.CancellationToken);
+        await viewModel.Workspace.AddComparisonAsync("First", TestContext.Current.CancellationToken);
+        await viewModel.ImageSet.AddImageAsync(TestUiSupport.CreateStorageFile("first-left-reference.png"), label: "First Reference", cancellationToken: TestContext.Current.CancellationToken);
+        await viewModel.ComparisonDisplay.RefreshCurrentComparisonImagesAsync(viewModel.Workspace.SelectedComparison, viewModel.ProjectStorage, TestContext.Current.CancellationToken);
 
         var window = TestUiSupport.CreateWindow(viewModel);
         try
@@ -213,11 +213,11 @@ public sealed class SidebarNavigationTests
             Click(GetControl<Button>(mainView, "AddComparisonButton"));
 
             await TestUiSupport.WaitForAsync(() => comparisonsList.ItemCount == 2
-                && viewModel.SelectedComparison?.Images.Count == 0
+                && viewModel.Workspace.SelectedComparison?.Images.Count == 0
                 && viewModel.LeftImage is null
                 && viewModel.RightImage is null);
 
-            Assert.Same(viewModel.SelectedComparisonRow, comparisonsList.SelectedItem);
+            Assert.Same(viewModel.Workspace.SelectedComparisonRow, comparisonsList.SelectedItem);
             Assert.Equal("Reference image", viewModel.LeftFileName);
             Assert.Equal("Candidate image", viewModel.RightFileName);
         }
@@ -250,9 +250,9 @@ public sealed class SidebarNavigationTests
             Click(addComparisonButton);
             await TestUiSupport.WaitForAsync(() => comparisonsList.ItemCount == 1);
 
-            var comparison = Assert.Single(viewModel.SelectedProject!.Comparisons);
+            var comparison = Assert.Single(viewModel.Workspace.SelectedProject!.Comparisons);
             Assert.Equal("Untitled Comparison", comparison.Name);
-            Assert.Same(comparison, viewModel.SelectedComparison);
+            Assert.Same(comparison, viewModel.Workspace.SelectedComparison);
             Assert.True(deleteComparisonButton.IsEffectivelyEnabled);
         }
         finally
@@ -281,13 +281,13 @@ public sealed class SidebarNavigationTests
 
             await TestUiSupport.WaitForAsync(() => projectsList.ItemCount == 2);
 
-            projectsList.SelectedItem = viewModel.ProjectRows.Single(row => ReferenceEquals(row.Project, second));
+            projectsList.SelectedItem = viewModel.Workspace.ProjectRows.Single(row => ReferenceEquals(row.Project, second));
 
-            await TestUiSupport.WaitForAsync(() => ReferenceEquals(viewModel.SelectedProject, second)
-                && ReferenceEquals(viewModel.SelectedComparison, secondComparison)
+            await TestUiSupport.WaitForAsync(() => ReferenceEquals(viewModel.Workspace.SelectedProject, second)
+                && ReferenceEquals(viewModel.Workspace.SelectedComparison, secondComparison)
                 && comparisonsList.ItemCount == 2);
 
-            Assert.Same(viewModel.SelectedProjectRow, projectsList.SelectedItem);
+            Assert.Same(viewModel.Workspace.SelectedProjectRow, projectsList.SelectedItem);
             Assert.Equal(2, comparisonsList.ItemCount);
         }
         finally
@@ -321,15 +321,15 @@ public sealed class SidebarNavigationTests
             await TestUiSupport.WaitForAsync(() => comparisonsList.ItemCount == 1);
 
             Assert.DoesNotContain(firstComparison, first.Comparisons);
-            Assert.Same(secondComparison, viewModel.SelectedComparison);
+            Assert.Same(secondComparison, viewModel.Workspace.SelectedComparison);
             Assert.Same(first, Assert.Single(storage.SavedProjects));
 
             Click(GetControl<Button>(mainView, "DeleteProjectButton"));
             await TestUiSupport.WaitForAsync(() => projectsList.ItemCount == 1);
 
-            Assert.DoesNotContain(first, viewModel.Projects);
-            Assert.Same(second, viewModel.SelectedProject);
-            Assert.Null(viewModel.SelectedComparison);
+            Assert.DoesNotContain(first, viewModel.Workspace.Projects);
+            Assert.Same(second, viewModel.Workspace.SelectedProject);
+            Assert.Null(viewModel.Workspace.SelectedComparison);
             Assert.Contains(first.Id, storage.DeletedProjectIds);
         }
         finally

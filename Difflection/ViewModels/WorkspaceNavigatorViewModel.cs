@@ -8,6 +8,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Difflection.Models;
 using Difflection.Storage;
+using JetBrains.Annotations;
 
 namespace Difflection.ViewModels;
 
@@ -268,6 +269,7 @@ public partial class WorkspaceNavigatorViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    [UsedImplicitly]
     public async Task<Project> AddProjectForInlineRenameAsync(CancellationToken cancellationToken = default)
     {
         var project = await AddProjectAsync(cancellationToken: cancellationToken);
