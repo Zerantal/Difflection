@@ -229,7 +229,7 @@
                     </Border>
                     <Border x:Name="SplitScreenViewTab"
                             Classes="viewTab"
-                            IsEnabled="{Binding CanUseSplitScreen}"
+                            IsEnabled="{Binding ToolState.CanUseSplitScreen}"
                             PointerPressed="SplitScreenViewTab_OnPointerPressed">
                         <Grid RowDefinitions="*,2" RowSpacing="6">
                             <TextBlock x:Name="SplitScreenViewTabText"
@@ -281,7 +281,7 @@
                             Classes="sidebarIconButton"
                             Content="-"
                             ToolTip.Tip="Delete selected project"
-                            IsEnabled="{Binding CanDeleteSelectedProject}"
+                            IsEnabled="{Binding Workspace.CanDeleteSelectedProject}"
                             Command="{Binding DeleteSelectedProjectCommand}" />
                 </Grid>
 
@@ -289,7 +289,7 @@
                          Grid.Row="1"
                          Classes="sidebarList"
                          ItemsSource="{Binding ProjectRows}"
-                         SelectedItem="{Binding SelectedProjectRow, Mode=TwoWay}">
+                         SelectedItem="{Binding Workspace.SelectedProjectRow, Mode=TwoWay}">
                     <ListBox.ItemTemplate>
                         <DataTemplate x:DataType="vm:ProjectListItemViewModel">
                             <Border Background="Transparent">
@@ -320,7 +320,7 @@
                 <TextBlock Grid.Row="1"
                            Classes="sidebarEmptyText"
                            Text="No projects yet."
-                           IsVisible="{Binding ShowProjectsEmptyState}" />
+                           IsVisible="{Binding WorkspaceStatus.ShowProjectsEmptyState}" />
 
                 <Border Grid.Row="2" Height="1" Background="#303030" VerticalAlignment="Center" />
 
@@ -333,14 +333,14 @@
                             Classes="sidebarIconButton"
                             Content="+"
                             ToolTip.Tip="Add comparison"
-                            IsEnabled="{Binding CanAddComparison}"
+                            IsEnabled="{Binding Workspace.CanAddComparison}"
                             Command="{Binding AddComparisonForInlineRenameCommand}" />
                     <Button x:Name="DeleteComparisonButton"
                             Grid.Column="2"
                             Classes="sidebarIconButton"
                             Content="-"
                             ToolTip.Tip="Delete selected comparison"
-                            IsEnabled="{Binding CanDeleteSelectedComparison}"
+                            IsEnabled="{Binding Workspace.CanDeleteSelectedComparison}"
                             Command="{Binding DeleteSelectedComparisonCommand}" />
                 </Grid>
 
@@ -348,7 +348,7 @@
                          Grid.Row="4"
                          Classes="sidebarList"
                          ItemsSource="{Binding SelectedProjectComparisonRows}"
-                         SelectedItem="{Binding SelectedComparisonRow, Mode=TwoWay}">
+                         SelectedItem="{Binding Workspace.SelectedComparisonRow, Mode=TwoWay}">
                     <ListBox.ItemTemplate>
                         <DataTemplate x:DataType="vm:ComparisonListItemViewModel">
                             <Border Background="Transparent">
@@ -379,7 +379,7 @@
                 <TextBlock Grid.Row="4"
                            Classes="sidebarEmptyText"
                            Text="No comparisons in this project."
-                           IsVisible="{Binding ShowComparisonsEmptyState}" />
+                           IsVisible="{Binding WorkspaceStatus.ShowComparisonsEmptyState}" />
             </Grid>
         </Border>
 
@@ -389,19 +389,19 @@
                     <StackPanel Spacing="4"
                                 VerticalAlignment="Center">
                         <TextBlock Classes="workspaceContextTitle"
-                                   Text="{Binding WorkspaceContextTitle}" />
+                                   Text="{Binding WorkspaceStatus.WorkspaceContextTitle}" />
                         <StackPanel Orientation="Horizontal"
                                     Spacing="12">
                             <TextBlock Classes="workspaceContextDetail"
-                                       Text="{Binding WorkspaceContextDetail}" />
+                                       Text="{Binding WorkspaceStatus.WorkspaceContextDetail}" />
                             <TextBlock Classes="workspaceContextDetail"
-                                       Text="{Binding WorkspaceActionHint}"
-                                       IsVisible="{Binding ShowWorkspaceActionHint}" />
+                                       Text="{Binding WorkspaceStatus.WorkspaceActionHint}"
+                                       IsVisible="{Binding WorkspaceStatus.ShowWorkspaceActionHint}" />
                         </StackPanel>
                     </StackPanel>
                     <TextBlock Grid.Column="1"
-                               Text="{Binding SplitPercentageText}"
-                               IsVisible="{Binding IsSplitScreenView}"
+                               Text="{Binding ToolState.SplitPercentageText}"
+                               IsVisible="{Binding ToolState.IsSplitScreenView}"
                                Foreground="#BFC4CC"
                                FontSize="13"
                                FontWeight="SemiBold"
@@ -415,7 +415,7 @@
                     <TextBox x:Name="ZoomTextBox"
                              Grid.Column="3"
                              Width="84"
-                             Text="{Binding ZoomText, Mode=TwoWay}"
+                             Text="{Binding ToolState.ZoomText, Mode=TwoWay}"
                              HorizontalContentAlignment="Center"
                              VerticalContentAlignment="Center"
                              VerticalAlignment="Center"
@@ -427,7 +427,7 @@
                     <views:ComparisonStage x:Name="ComparisonStage" />
 
                     <Border x:Name="MainEmptyStateOverlay"
-                            IsVisible="{Binding ShowMainEmptyState}"
+                            IsVisible="{Binding WorkspaceStatus.ShowMainEmptyState}"
                             Background="#D0101010"
                             BorderBrush="#262626"
                             BorderThickness="1"
@@ -442,9 +442,9 @@
                                     HorizontalAlignment="Center"
                                     VerticalAlignment="Center">
                             <TextBlock Classes="emptyStateTitle"
-                                       Text="{Binding MainEmptyStateTitle}" />
+                                       Text="{Binding WorkspaceStatus.MainEmptyStateTitle}" />
                             <TextBlock Classes="emptyStateMessage"
-                                       Text="{Binding MainEmptyStateMessage}" />
+                                       Text="{Binding WorkspaceStatus.MainEmptyStateMessage}" />
                         </StackPanel>
                     </Border>
                 </Grid>
@@ -504,7 +504,7 @@
                          Grid.Row="2"
                          Classes="sidebarList"
                          MaxHeight="132"
-                         ItemsSource="{Binding SelectedComparisonImages}">
+                         ItemsSource="{Binding Workspace.SelectedComparisonImages}">
                     <ListBox.ItemTemplate>
                         <DataTemplate x:DataType="models:ImageAsset">
                             <Grid ColumnDefinitions="180,*,Auto,Auto,Auto" ColumnSpacing="8" Margin="0,2">

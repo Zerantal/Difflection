@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform.Storage;
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Difflection.Models;
 using Difflection.Storage;
@@ -216,7 +217,11 @@ public partial class ComparisonDisplayViewModel : ViewModelBase
     // ReSharper disable once UnusedParameterInPartialMethod
     partial void OnLeftImageChanged(Bitmap? oldValue, Bitmap? newValue)
     {
-        oldValue?.Dispose();
+        if (oldValue is not null)
+        {
+            Dispatcher.UIThread.Post(oldValue.Dispose, DispatcherPriority.Background);
+        }
+
         UpdateStageSize();
         UpdateDifferenceStatus();
     }
@@ -224,7 +229,11 @@ public partial class ComparisonDisplayViewModel : ViewModelBase
     // ReSharper disable once UnusedParameterInPartialMethod
     partial void OnRightImageChanged(Bitmap? oldValue, Bitmap? newValue)
     {
-        oldValue?.Dispose();
+        if (oldValue is not null)
+        {
+            Dispatcher.UIThread.Post(oldValue.Dispose, DispatcherPriority.Background);
+        }
+
         UpdateStageSize();
         UpdateDifferenceStatus();
     }

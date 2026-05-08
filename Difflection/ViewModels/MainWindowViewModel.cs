@@ -27,8 +27,6 @@ public partial class MainWindowViewModel : ViewModelBase
         ImageSet = new ComparisonImageSetViewModel(Workspace, ComparisonDisplay, ProjectStorage);
         ComparisonDisplay.PropertyChanged += OnComparisonDisplayPropertyChanged;
         Workspace.PropertyChanged += OnWorkspacePropertyChanged;
-        ToolState.PropertyChanged += OnToolStatePropertyChanged;
-        WorkspaceStatus.PropertyChanged += OnWorkspaceStatusPropertyChanged;
         ImageSet.ImageSetChanged += OnImageSetChanged;
     }
 
@@ -42,8 +40,6 @@ public partial class MainWindowViewModel : ViewModelBase
         _monitoredImageVersionCapture = new MonitoredImageVersionCapture(projectStorage);
         ComparisonDisplay.PropertyChanged += OnComparisonDisplayPropertyChanged;
         Workspace.PropertyChanged += OnWorkspacePropertyChanged;
-        ToolState.PropertyChanged += OnToolStatePropertyChanged;
-        WorkspaceStatus.PropertyChanged += OnWorkspaceStatusPropertyChanged;
         ImageSet.ImageSetChanged += OnImageSetChanged;
     }
 
@@ -428,7 +424,8 @@ public partial class MainWindowViewModel : ViewModelBase
         image.MonitoringRole = monitoringRole;
         SelectedComparison.UpdatedAt = DateTimeOffset.UtcNow;
         SelectedProject.UpdatedAt = DateTimeOffset.UtcNow;
-        NotifySelectedComparisonImagesChanged();
+        Workspace.NotifySelectedComparisonImagesChanged();
+        WorkspaceStatus.NotifyImageStateChanged();
 
         await SaveProjectAsync(SelectedProject, cancellationToken);
         return true;
@@ -449,7 +446,8 @@ public partial class MainWindowViewModel : ViewModelBase
 
         if (version is null || !ReferenceEquals(project, SelectedProject) ||
             !ReferenceEquals(comparison, SelectedComparison)) return version;
-        NotifySelectedComparisonImagesChanged();
+        Workspace.NotifySelectedComparisonImagesChanged();
+        WorkspaceStatus.NotifyImageStateChanged();
         await RefreshCurrentComparisonImagesAsync(cancellationToken);
 
         return version;
@@ -548,28 +546,9 @@ public partial class MainWindowViewModel : ViewModelBase
         return ProjectStorage?.SaveProjectAsync(project, cancellationToken) ?? Task.CompletedTask;
     }
 
-    private void NotifySelectedComparisonImagesChanged()
-    {
-        Workspace.NotifySelectedComparisonImagesChanged();
-        NotifySelectedComparisonImagePropertiesChanged();
-    }
-
-    private void NotifySelectedComparisonImagePropertiesChanged()
-    {
-        OnPropertyChanged(nameof(SelectedComparisonImages));
-        OnPropertyChanged(nameof(SelectedComparisonImageCountText));
-        WorkspaceStatus.NotifyImageStateChanged();
-    }
-
     private void OnImageSetChanged(object? sender, EventArgs e)
     {
-        NotifySelectedComparisonImagePropertiesChanged();
-    }
-
-    private void NotifyWorkspaceStateChanged()
-    {
-        OnPropertyChanged(nameof(HasProjects));
-        WorkspaceStatus.NotifyWorkspaceStateChanged();
+        WorkspaceStatus.NotifyImageStateChanged();
     }
 
     private void OnComparisonDisplayPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -579,8 +558,6 @@ public partial class MainWindowViewModel : ViewModelBase
             return;
         }
 
-        OnPropertyChanged(e.PropertyName);
-
         if (e.PropertyName is not (nameof(ComparisonDisplayViewModel.LeftImage)
             or nameof(ComparisonDisplayViewModel.RightImage)
             or nameof(ComparisonDisplayViewModel.HasBothImages))) return;
@@ -589,34 +566,12 @@ public partial class MainWindowViewModel : ViewModelBase
         WorkspaceStatus.NotifyImageStateChanged();
     }
 
-    private void OnToolStatePropertyChanged(object? sender, PropertyChangedEventArgs e)
-    {
-        if (string.IsNullOrEmpty(e.PropertyName))
-        {
-            return;
-        }
-
-        OnPropertyChanged(e.PropertyName);
-    }
-
-    private void OnWorkspaceStatusPropertyChanged(object? sender, PropertyChangedEventArgs e)
-    {
-        if (string.IsNullOrEmpty(e.PropertyName))
-        {
-            return;
-        }
-
-        OnPropertyChanged(e.PropertyName);
-    }
-
     private void OnWorkspacePropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (string.IsNullOrEmpty(e.PropertyName))
         {
             return;
         }
-
-        OnPropertyChanged(e.PropertyName);
 
         if (e.PropertyName is nameof(WorkspaceNavigatorViewModel.SelectedProject)
             or nameof(WorkspaceNavigatorViewModel.SelectedComparison)
@@ -627,7 +582,7 @@ public partial class MainWindowViewModel : ViewModelBase
             or nameof(WorkspaceNavigatorViewModel.ShowProjectsEmptyState)
             or nameof(WorkspaceNavigatorViewModel.ShowComparisonsEmptyState))
         {
-            NotifyWorkspaceStateChanged();
+            WorkspaceStatus.NotifyWorkspaceStateChanged();
         }
 
         switch (e.PropertyName)

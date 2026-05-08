@@ -38,7 +38,7 @@ public partial class MainView : UserControl
 
     private void SideBySideViewTab_OnPointerPressed(object? sender, PointerPressedEventArgs e)
     {
-        _viewModel?.SelectSideBySideView();
+        _viewModel?.ToolState.SelectSideBySideView();
         UpdateViewControls();
         ComparisonStage.FitZoomToStage();
         e.Handled = true;
@@ -46,7 +46,7 @@ public partial class MainView : UserControl
 
     private void SplitScreenViewTab_OnPointerPressed(object? sender, PointerPressedEventArgs e)
     {
-        _viewModel?.SelectSplitScreenView();
+        _viewModel?.ToolState.SelectSplitScreenView();
         UpdateViewControls();
         ComparisonStage.FitZoomToStage();
         e.Handled = true;
@@ -61,7 +61,7 @@ public partial class MainView : UserControl
     {
         if (_viewModel is not null && sender is TextBox { DataContext: ProjectListItemViewModel row } && row.IsEditing)
         {
-            await _viewModel.CommitProjectRenameAsync(row);
+        await _viewModel.Workspace.CommitProjectRenameAsync(row);
         }
     }
 
@@ -74,12 +74,12 @@ public partial class MainView : UserControl
 
         if (e.Key == Key.Enter && _viewModel is not null)
         {
-            await _viewModel.CommitProjectRenameAsync(row);
+            await _viewModel.Workspace.CommitProjectRenameAsync(row);
             e.Handled = true;
         }
         else if (e.Key == Key.Escape)
         {
-            _viewModel?.CancelProjectRename(row);
+            WorkspaceNavigatorViewModel.CancelProjectRename(row);
             e.Handled = true;
         }
     }
@@ -88,7 +88,7 @@ public partial class MainView : UserControl
     {
         if (_viewModel is not null && sender is TextBox { DataContext: ComparisonListItemViewModel row } && row.IsEditing)
         {
-            await _viewModel.CommitComparisonRenameAsync(row);
+        await _viewModel.Workspace.CommitComparisonRenameAsync(row);
         }
     }
 
@@ -101,12 +101,12 @@ public partial class MainView : UserControl
 
         if (e.Key == Key.Enter && _viewModel is not null)
         {
-            await _viewModel.CommitComparisonRenameAsync(row);
+            await _viewModel.Workspace.CommitComparisonRenameAsync(row);
             e.Handled = true;
         }
         else if (e.Key == Key.Escape)
         {
-            _viewModel?.CancelComparisonRename(row);
+            WorkspaceNavigatorViewModel.CancelComparisonRename(row);
             e.Handled = true;
         }
     }
@@ -148,7 +148,7 @@ public partial class MainView : UserControl
     {
         if (_viewModel is not null && sender is TextBox { DataContext: ImageAsset image } textBox)
         {
-            await _viewModel.LabelImageAsync(image, textBox.Text);
+            await _viewModel.ImageSet.LabelImageAsync(image, textBox.Text);
         }
     }
 
@@ -159,7 +159,7 @@ public partial class MainView : UserControl
             return;
         }
 
-        await _viewModel.LabelImageAsync(image, textBox.Text);
+        await _viewModel.ImageSet.LabelImageAsync(image, textBox.Text);
         e.Handled = true;
     }
 
@@ -170,7 +170,7 @@ public partial class MainView : UserControl
             return;
         }
 
-        await _viewModel.AddBrowserFilesToCurrentComparisonAsync(fileNames, fileContents, maxFiles: 2);
+        await _viewModel.ImageSet.AddBrowserFilesToCurrentComparisonAsync(fileNames, fileContents, maxFiles: 2);
         ComparisonStage.FitZoomToStage();
     }
 
@@ -200,13 +200,13 @@ public partial class MainView : UserControl
             return;
         }
 
-        await _viewModel.AddFilesToCurrentComparisonAfterCommittingRenamesAsync(files, maxFiles: 2);
+        await _viewModel.ImageSet.AddFilesToCurrentComparisonAfterCommittingRenamesAsync(files, maxFiles: 2);
         ComparisonStage.FitZoomToStage();
     }
 
     private void ZoomTextBox_OnLostFocus(object? sender, RoutedEventArgs e)
     {
-        _viewModel?.TrySetZoomText(ZoomTextBox.Text);
+        _viewModel?.ToolState.TrySetZoomText(ZoomTextBox.Text);
     }
 
     private void ZoomTextBox_OnKeyDown(object? sender, KeyEventArgs e)
@@ -216,7 +216,7 @@ public partial class MainView : UserControl
             return;
         }
 
-        _viewModel?.TrySetZoomText(ZoomTextBox.Text);
+        _viewModel?.ToolState.TrySetZoomText(ZoomTextBox.Text);
         e.Handled = true;
     }
 
@@ -252,45 +252,39 @@ public partial class MainView : UserControl
             return;
         }
 
-        await _viewModel.AddFilesToCurrentComparisonAsync(files);
+        await _viewModel.ImageSet.AddFilesToCurrentComparisonAsync(files);
         ComparisonStage.FitZoomToStage();
     }
 
     private void OnDataContextChanged(object? sender, EventArgs e)
     {
-        if (_viewModel is not null)
-        {
-            _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
-        }
+        UnsubscribeViewModelEvents();
 
         _viewModel = DataContext as MainWindowViewModel;
         DisposeImageChangeMonitor();
         _imageChangeMonitor = CreateImageChangeMonitor(_viewModel);
         _projectsLoaded = false;
 
-        if (_viewModel is not null)
-        {
-            _viewModel.PropertyChanged += OnViewModelPropertyChanged;
-        }
+        SubscribeViewModelEvents();
 
         UpdateViewControls();
     }
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName is nameof(MainWindowViewModel.SelectedViewMode) or nameof(MainWindowViewModel.CanUseSplitScreen))
+        if (e.PropertyName is nameof(ComparisonToolStateViewModel.SelectedViewMode) or nameof(ComparisonToolStateViewModel.CanUseSplitScreen))
         {
             UpdateViewControls();
         }
 
-        if (e.PropertyName is nameof(MainWindowViewModel.SelectedProject)
-            or nameof(MainWindowViewModel.SelectedComparison))
+        if (e.PropertyName is nameof(WorkspaceNavigatorViewModel.SelectedProject)
+            or nameof(WorkspaceNavigatorViewModel.SelectedComparison))
         {
             _ = RefreshCurrentComparisonAndFitStageAsync();
         }
 
-        if (e.PropertyName is nameof(MainWindowViewModel.SelectedProjectComparisons)
-            or nameof(MainWindowViewModel.SelectedComparisonImages))
+        if (e.PropertyName is nameof(WorkspaceNavigatorViewModel.SelectedProjectComparisons)
+            or nameof(WorkspaceNavigatorViewModel.SelectedComparisonImages))
         {
             RestartImageChangeMonitor();
         }
@@ -303,11 +297,11 @@ public partial class MainView : UserControl
             return;
         }
 
-        SideBySideViewTabText.Foreground = Brush.Parse(_viewModel.IsSideBySideView ? "#F97316" : "#A8AFB8");
-        SplitScreenViewTabText.Foreground = Brush.Parse(_viewModel.IsSplitScreenView ? "#F97316" : "#A8AFB8");
-        SplitScreenViewTab.Opacity = _viewModel.CanUseSplitScreen ? 1.0 : 0.58;
-        SideBySideViewTabUnderline.IsVisible = _viewModel.IsSideBySideView;
-        SplitScreenViewTabUnderline.IsVisible = _viewModel.IsSplitScreenView;
+        SideBySideViewTabText.Foreground = Brush.Parse(_viewModel.ToolState.IsSideBySideView ? "#F97316" : "#A8AFB8");
+        SplitScreenViewTabText.Foreground = Brush.Parse(_viewModel.ToolState.IsSplitScreenView ? "#F97316" : "#A8AFB8");
+        SplitScreenViewTab.Opacity = _viewModel.ToolState.CanUseSplitScreen ? 1.0 : 0.58;
+        SideBySideViewTabUnderline.IsVisible = _viewModel.ToolState.IsSideBySideView;
+        SplitScreenViewTabUnderline.IsVisible = _viewModel.ToolState.IsSplitScreenView;
     }
 
     private static IEnumerable<IStorageFile> GetDroppedFiles(IDataTransfer dataTransfer)
@@ -324,7 +318,7 @@ public partial class MainView : UserControl
             return;
         }
 
-        await _viewModel.RefreshCurrentComparisonImagesAsync();
+        await _viewModel.ComparisonDisplay.RefreshCurrentComparisonImagesAsync(_viewModel.SelectedComparison, _viewModel.ProjectStorage);
         UpdateViewControls();
         ComparisonStage.FitZoomToStage();
     }
@@ -333,12 +327,31 @@ public partial class MainView : UserControl
     {
         BrowserInterop.DetachBrowserBridge?.Invoke(this);
 
-        if (_viewModel is not null)
-        {
-            _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
-        }
+        UnsubscribeViewModelEvents();
 
         DisposeImageChangeMonitor();
+    }
+
+    private void SubscribeViewModelEvents()
+    {
+        if (_viewModel is null)
+        {
+            return;
+        }
+
+        _viewModel.ToolState.PropertyChanged += OnViewModelPropertyChanged;
+        _viewModel.Workspace.PropertyChanged += OnViewModelPropertyChanged;
+    }
+
+    private void UnsubscribeViewModelEvents()
+    {
+        if (_viewModel is null)
+        {
+            return;
+        }
+
+        _viewModel.ToolState.PropertyChanged -= OnViewModelPropertyChanged;
+        _viewModel.Workspace.PropertyChanged -= OnViewModelPropertyChanged;
     }
 
     private async void OnAttachedToVisualTree(object? sender, VisualTreeAttachmentEventArgs e)
