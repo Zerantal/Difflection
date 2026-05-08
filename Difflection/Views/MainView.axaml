@@ -7,6 +7,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
              x:Class="Difflection.Views.MainView"
+             x:Name="Root"
              x:DataType="vm:MainWindowViewModel"
              Background="#181818">
 
@@ -274,14 +275,14 @@
                             Classes="sidebarIconButton"
                             Content="+"
                             ToolTip.Tip="Add project"
-                            Click="AddProjectButton_OnClick" />
+                            Command="{Binding AddProjectForInlineRenameCommand}" />
                     <Button x:Name="DeleteProjectButton"
                             Grid.Column="2"
                             Classes="sidebarIconButton"
                             Content="-"
                             ToolTip.Tip="Delete selected project"
                             IsEnabled="{Binding CanDeleteSelectedProject}"
-                            Click="DeleteProjectButton_OnClick" />
+                            Command="{Binding DeleteSelectedProjectCommand}" />
                 </Grid>
 
                 <ListBox x:Name="ProjectsList"
@@ -295,7 +296,8 @@
                                 <Border.ContextMenu>
                                     <ContextMenu>
                                         <MenuItem Header="Rename"
-                                                  Click="ProjectRenameMenuItem_OnClick" />
+                                                  Command="{Binding #Root.DataContext.BeginRenameProjectCommand}"
+                                                  CommandParameter="{Binding}" />
                                     </ContextMenu>
                                 </Border.ContextMenu>
                                 <Grid>
@@ -332,14 +334,14 @@
                             Content="+"
                             ToolTip.Tip="Add comparison"
                             IsEnabled="{Binding CanAddComparison}"
-                            Click="AddComparisonButton_OnClick" />
+                            Command="{Binding AddComparisonForInlineRenameCommand}" />
                     <Button x:Name="DeleteComparisonButton"
                             Grid.Column="2"
                             Classes="sidebarIconButton"
                             Content="-"
                             ToolTip.Tip="Delete selected comparison"
                             IsEnabled="{Binding CanDeleteSelectedComparison}"
-                            Click="DeleteComparisonButton_OnClick" />
+                            Command="{Binding DeleteSelectedComparisonCommand}" />
                 </Grid>
 
                 <ListBox x:Name="ComparisonsList"
@@ -353,7 +355,8 @@
                                 <Border.ContextMenu>
                                     <ContextMenu>
                                         <MenuItem Header="Rename"
-                                                  Click="ComparisonRenameMenuItem_OnClick" />
+                                                  Command="{Binding #Root.DataContext.BeginRenameComparisonCommand}"
+                                                  CommandParameter="{Binding}" />
                                     </ContextMenu>
                                 </Border.ContextMenu>
                                 <Grid>
@@ -516,15 +519,18 @@
                                 <Button Grid.Column="2"
                                         Classes="imageActionButton"
                                         Content="Reference"
-                                        Click="SetReferenceImageButton_OnClick" />
+                                        Command="{Binding #Root.DataContext.SetReferenceImageAndRefreshCommand}"
+                                        CommandParameter="{Binding}" />
                                 <Button Grid.Column="3"
                                         Classes="imageActionButton"
                                         Content="Candidate"
-                                        Click="SetCandidateImageButton_OnClick" />
+                                        Command="{Binding #Root.DataContext.SetCandidateImageAndRefreshCommand}"
+                                        CommandParameter="{Binding}" />
                                 <Button Grid.Column="4"
                                         Classes="imageActionButton"
                                         Content="Remove"
-                                        Click="DeleteImageButton_OnClick" />
+                                        Command="{Binding #Root.DataContext.DeleteImageAndRefreshCommand}"
+                                        CommandParameter="{Binding}" />
                             </Grid>
                         </DataTemplate>
                     </ListBox.ItemTemplate>

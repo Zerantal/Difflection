@@ -244,6 +244,7 @@ public sealed partial class ComparisonStageTests
             var mainView = TestUiSupport.GetMainView(window);
             var addComparisonButton = mainView.FindControl<Button>("AddComparisonButton")
                 ?? throw new InvalidOperationException("AddComparisonButton not found.");
+            addComparisonButton.Command?.Execute(addComparisonButton.CommandParameter);
             addComparisonButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
 
             await TestUiSupport.WaitForAsync(() => viewModel.SelectedComparisonRow?.IsEditing == true);

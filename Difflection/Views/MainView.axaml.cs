@@ -57,40 +57,6 @@ public partial class MainView : UserControl
         await OpenFilePickerAndAddImagesAsync();
     }
 
-    private async void AddProjectButton_OnClick(object? sender, RoutedEventArgs e)
-    {
-        if (_viewModel is not null)
-        {
-            await _viewModel.AddProjectForInlineRenameAsync();
-            FitStageToCurrentComparison();
-        }
-    }
-
-    private async void DeleteProjectButton_OnClick(object? sender, RoutedEventArgs e)
-    {
-        if (_viewModel is not null)
-        {
-            await _viewModel.DeleteSelectedProjectAsync();
-        }
-    }
-
-    private async void AddComparisonButton_OnClick(object? sender, RoutedEventArgs e)
-    {
-        if (_viewModel is not null)
-        {
-            await _viewModel.AddComparisonForInlineRenameAsync();
-            FitStageToCurrentComparison();
-        }
-    }
-
-    private async void DeleteComparisonButton_OnClick(object? sender, RoutedEventArgs e)
-    {
-        if (_viewModel is not null)
-        {
-            await _viewModel.DeleteSelectedComparisonAsync();
-        }
-    }
-
     private async void ProjectListNameTextBox_OnLostFocus(object? sender, RoutedEventArgs e)
     {
         if (_viewModel is not null && sender is TextBox { DataContext: ProjectListItemViewModel row } && row.IsEditing)
@@ -145,22 +111,6 @@ public partial class MainView : UserControl
         }
     }
 
-    private void ProjectRenameMenuItem_OnClick(object? sender, RoutedEventArgs e)
-    {
-        if (sender is MenuItem { DataContext: ProjectListItemViewModel row })
-        {
-            _viewModel?.BeginRenameProject(row);
-        }
-    }
-
-    private void ComparisonRenameMenuItem_OnClick(object? sender, RoutedEventArgs e)
-    {
-        if (sender is MenuItem { DataContext: ComparisonListItemViewModel row })
-        {
-            _viewModel?.BeginRenameComparison(row);
-        }
-    }
-
     private void InlineNameTextBox_OnAttachedToVisualTree(object? sender, VisualTreeAttachmentEventArgs e)
     {
         FocusInlineNameEditor(sender as TextBox);
@@ -211,45 +161,6 @@ public partial class MainView : UserControl
 
         await _viewModel.LabelImageAsync(image, textBox.Text);
         e.Handled = true;
-    }
-
-    private async void SetReferenceImageButton_OnClick(object? sender, RoutedEventArgs e)
-    {
-        if (_viewModel is null || sender is not Button { DataContext: ImageAsset image })
-        {
-            return;
-        }
-
-        if (await _viewModel.SetReferenceImageAndRefreshAsync(image))
-        {
-            ComparisonStage.FitZoomToStage();
-        }
-    }
-
-    private async void SetCandidateImageButton_OnClick(object? sender, RoutedEventArgs e)
-    {
-        if (_viewModel is null || sender is not Button { DataContext: ImageAsset image })
-        {
-            return;
-        }
-
-        if (await _viewModel.SetCandidateImageAndRefreshAsync(image))
-        {
-            ComparisonStage.FitZoomToStage();
-        }
-    }
-
-    private async void DeleteImageButton_OnClick(object? sender, RoutedEventArgs e)
-    {
-        if (_viewModel is null || sender is not Button { DataContext: ImageAsset image })
-        {
-            return;
-        }
-
-        if (await _viewModel.DeleteImageAndRefreshAsync(image))
-        {
-            ComparisonStage.FitZoomToStage();
-        }
     }
 
     public async Task LoadBrowserDroppedFilesAsync(IReadOnlyList<string> fileNames, IReadOnlyList<byte[]> fileContents)
@@ -414,12 +325,6 @@ public partial class MainView : UserControl
         }
 
         await _viewModel.RefreshCurrentComparisonImagesAsync();
-        UpdateViewControls();
-        ComparisonStage.FitZoomToStage();
-    }
-
-    private void FitStageToCurrentComparison()
-    {
         UpdateViewControls();
         ComparisonStage.FitZoomToStage();
     }

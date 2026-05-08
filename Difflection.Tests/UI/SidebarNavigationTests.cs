@@ -346,6 +346,15 @@ public sealed class SidebarNavigationTests
 
     private static void Click(Button button)
     {
+        if (button.Command is { } command)
+        {
+            var parameter = button.CommandParameter;
+            if (command.CanExecute(parameter))
+            {
+                command.Execute(parameter);
+            }
+        }
+
         button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
     }
 

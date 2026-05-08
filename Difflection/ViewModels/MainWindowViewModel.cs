@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform.Storage;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using Difflection.Models;
 using Difflection.Monitoring;
 using Difflection.Storage;
@@ -201,6 +202,7 @@ public partial class MainWindowViewModel : ViewModelBase
         }
     }
 
+    [RelayCommand]
     public void BeginRenameProject(ProjectListItemViewModel projectRow)
     {
         ArgumentNullException.ThrowIfNull(projectRow);
@@ -228,6 +230,7 @@ public partial class MainWindowViewModel : ViewModelBase
         }
     }
 
+    [RelayCommand]
     public void BeginRenameComparison(ComparisonListItemViewModel comparisonRow)
     {
         ArgumentNullException.ThrowIfNull(comparisonRow);
@@ -507,6 +510,7 @@ public partial class MainWindowViewModel : ViewModelBase
         return project;
     }
 
+    [RelayCommand]
     public async Task<Project> AddProjectForInlineRenameAsync(CancellationToken cancellationToken = default)
     {
         var project = await AddProjectAsync(cancellationToken: cancellationToken);
@@ -542,6 +546,7 @@ public partial class MainWindowViewModel : ViewModelBase
         return true;
     }
 
+    [RelayCommand]
     public Task<bool> DeleteSelectedProjectAsync(CancellationToken cancellationToken = default)
     {
         return SelectedProject is null
@@ -573,6 +578,7 @@ public partial class MainWindowViewModel : ViewModelBase
         return comparison;
     }
 
+    [RelayCommand]
     public async Task<ComparisonSet> AddComparisonForInlineRenameAsync(CancellationToken cancellationToken = default)
     {
         var comparison = await AddComparisonAsync(cancellationToken: cancellationToken);
@@ -680,6 +686,7 @@ public partial class MainWindowViewModel : ViewModelBase
         return true;
     }
 
+    [RelayCommand]
     public Task<bool> DeleteSelectedComparisonAsync(CancellationToken cancellationToken = default)
     {
         return SelectedComparison is null
@@ -978,6 +985,7 @@ public partial class MainWindowViewModel : ViewModelBase
         return true;
     }
 
+    [RelayCommand]
     public async Task<bool> DeleteImageAndRefreshAsync(ImageAsset image, CancellationToken cancellationToken = default)
     {
         if (!await DeleteImageAsync(image, cancellationToken))
@@ -1024,6 +1032,7 @@ public partial class MainWindowViewModel : ViewModelBase
         return true;
     }
 
+    [RelayCommand]
     public async Task<bool> SetReferenceImageAndRefreshAsync(ImageAsset image, CancellationToken cancellationToken = default)
     {
         if (!await SetReferenceImageAsync(image, cancellationToken))
@@ -1057,6 +1066,7 @@ public partial class MainWindowViewModel : ViewModelBase
         return true;
     }
 
+    [RelayCommand]
     public async Task<bool> SetCandidateImageAndRefreshAsync(ImageAsset image, CancellationToken cancellationToken = default)
     {
         if (!await SetCandidateImageAsync(image, cancellationToken))
