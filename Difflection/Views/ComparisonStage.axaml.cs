@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Avalonia;
@@ -52,45 +51,23 @@ public partial class ComparisonStage : UserControl
             ]
         });
 
-        await LoadDroppedFilesAsync(null, files);
+        if (_viewModel is null || files.Count == 0)
+        {
+            return;
+        }
+
+        await _viewModel.AddFilesToCurrentComparisonAsync(files);
+        FitZoomToStage();
     }
 
     public async Task LoadBrowserDroppedFilesAsync(IReadOnlyList<string> fileNames, IReadOnlyList<byte[]> fileContents)
     {
-        if (_viewModel is null || fileNames.Count != fileContents.Count)
+        if (_viewModel is null)
         {
             return;
         }
 
-        var files = fileNames
-            .Zip(fileContents, (name, bytes) => (Name: name, Bytes: bytes))
-            .Take(2)
-            .ToArray();
-
-        if (files.Length == 0)
-        {
-            return;
-        }
-
-        await _viewModel.EnsureProjectAndComparisonAsync();
-
-        for (var index = 0; index < files.Length; index++)
-        {
-            using var addStream = new MemoryStream(files[index].Bytes, writable: false);
-            var image = await _viewModel.AddImageAsync(files[index].Name, addStream);
-
-            if (_viewModel.SelectedComparison?.ReferenceImageId == image.Id)
-            {
-                using var displayStream = new MemoryStream(files[index].Bytes, writable: false);
-                await _viewModel.LoadImageAsync(ImageSlot.Left, image.Label, displayStream);
-            }
-            else if (_viewModel.SelectedComparison?.CandidateImageId == image.Id)
-            {
-                using var displayStream = new MemoryStream(files[index].Bytes, writable: false);
-                await _viewModel.LoadImageAsync(ImageSlot.Right, image.Label, displayStream);
-            }
-        }
-
+        await _viewModel.AddBrowserFilesToCurrentComparisonAsync(fileNames, fileContents, maxFiles: 2);
         FitZoomToStage();
     }
 
@@ -112,22 +89,7 @@ public partial class ComparisonStage : UserControl
             return;
         }
 
-        await _viewModel.EnsureProjectAndComparisonAsync();
-
-        foreach (var file in files)
-        {
-            var image = await _viewModel.AddImageAsync(file);
-
-            if (_viewModel.SelectedComparison?.ReferenceImageId == image.Id)
-            {
-                await _viewModel.LoadImageAsync(ImageSlot.Left, file);
-            }
-            else if (_viewModel.SelectedComparison?.CandidateImageId == image.Id)
-            {
-                await _viewModel.LoadImageAsync(ImageSlot.Right, file);
-            }
-        }
-
+        await _viewModel.AddFilesToCurrentComparisonAsync(files);
         FitZoomToStage();
     }
 

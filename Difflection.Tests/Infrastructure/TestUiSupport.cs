@@ -79,6 +79,17 @@ internal static class TestUiSupport
         return proxy;
     }
 
+    internal static byte[] CreatePngBytes(int width = 48, int height = 48, SKColor? color = null)
+    {
+        using var bitmap = new SKBitmap(width, height);
+        using var canvas = new SKCanvas(bitmap);
+        canvas.Clear(color ?? SKColors.OrangeRed);
+
+        using var image = SKImage.FromBitmap(bitmap);
+        using var data = image.Encode(SKEncodedImageFormat.Png, 100);
+        return data.ToArray();
+    }
+
     internal static bool RulerZeroIsAlignedWithOrigin(Control originControl, PixelRuler topRuler, PixelRuler leftRuler, Visual relativeTo)
     {
         var origin = originControl.TranslatePoint(new Point(0, 0), relativeTo);

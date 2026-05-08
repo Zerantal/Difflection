@@ -259,7 +259,13 @@ public partial class MainView : UserControl
 
     public async Task LoadBrowserDroppedFilesAsync(IReadOnlyList<string> fileNames, IReadOnlyList<byte[]> fileContents)
     {
-        await ComparisonStage.LoadBrowserDroppedFilesAsync(fileNames, fileContents);
+        if (_viewModel is null)
+        {
+            return;
+        }
+
+        await _viewModel.AddBrowserFilesToCurrentComparisonAsync(fileNames, fileContents, maxFiles: 2);
+        ComparisonStage.FitZoomToStage();
     }
 
     private void MainEmptyStateOverlay_OnDragOver(object? sender, DragEventArgs e)
@@ -289,8 +295,8 @@ public partial class MainView : UserControl
         }
 
         await _viewModel.CommitActiveInlineRenamesAsync();
-        await ComparisonStage.LoadDroppedFilesAsync(null, files);
-        await RefreshStageForSelectedComparisonAsync();
+        await _viewModel.AddFilesToCurrentComparisonAsync(files, maxFiles: 2);
+        ComparisonStage.FitZoomToStage();
     }
 
     private void ZoomTextBox_OnLostFocus(object? sender, RoutedEventArgs e)
@@ -336,30 +342,12 @@ public partial class MainView : UserControl
             ]
         });
 
-        await AddFilesToCurrentComparisonAsync(files);
-    }
-
-    private async Task AddFilesToCurrentComparisonAsync(IEnumerable<IStorageFile> files)
-    {
-        if (_viewModel is null)
+        if (files.Count == 0)
         {
             return;
         }
 
-        var imageFiles = files.ToArray();
-        if (imageFiles.Length == 0)
-        {
-            return;
-        }
-
-        await _viewModel.EnsureProjectAndComparisonAsync();
-
-        foreach (var file in imageFiles)
-        {
-            await _viewModel.AddImageAsync(file);
-        }
-
-        await _viewModel.RefreshCurrentComparisonImagesAsync();
+        await _viewModel.AddFilesToCurrentComparisonAsync(files);
         ComparisonStage.FitZoomToStage();
     }
 

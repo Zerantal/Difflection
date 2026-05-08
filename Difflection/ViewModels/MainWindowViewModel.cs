@@ -734,6 +734,91 @@ public partial class MainWindowViewModel : ViewModelBase
         return await AddImageAsync(file.Name, stream, label: label, originalFileMetadata: metadata, cancellationToken: cancellationToken);
     }
 
+    public async Task<IReadOnlyList<ImageAsset>> AddFilesToCurrentComparisonAsync(
+        IEnumerable<IStorageFile> files,
+        int? maxFiles = null,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(files);
+
+        var imageFiles = maxFiles is null
+            ? files.ToArray()
+            : files.Take(maxFiles.Value).ToArray();
+
+        if (imageFiles.Length == 0)
+        {
+            return [];
+        }
+
+        await EnsureProjectAndComparisonAsync(cancellationToken);
+
+        var addedImages = new List<ImageAsset>(imageFiles.Length);
+        foreach (var file in imageFiles)
+        {
+            var image = await AddImageAsync(file, cancellationToken: cancellationToken);
+            addedImages.Add(image);
+
+            if (SelectedComparison?.ReferenceImageId == image.Id)
+            {
+                await LoadImageAsync(ImageSlot.Left, file);
+            }
+            else if (SelectedComparison?.CandidateImageId == image.Id)
+            {
+                await LoadImageAsync(ImageSlot.Right, file);
+            }
+        }
+
+        return addedImages;
+    }
+
+    public async Task<IReadOnlyList<ImageAsset>> AddBrowserFilesToCurrentComparisonAsync(
+        IReadOnlyList<string> fileNames,
+        IReadOnlyList<byte[]> fileContents,
+        int? maxFiles = null,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(fileNames);
+        ArgumentNullException.ThrowIfNull(fileContents);
+
+        if (fileNames.Count != fileContents.Count)
+        {
+            return [];
+        }
+
+        var files = fileNames
+            .Zip(fileContents, (name, bytes) => (Name: name, Bytes: bytes))
+            .Take(maxFiles ?? int.MaxValue)
+            .ToArray();
+
+        if (files.Length == 0)
+        {
+            return [];
+        }
+
+        await EnsureProjectAndComparisonAsync(cancellationToken);
+
+        var addedImages = new List<ImageAsset>(files.Length);
+        foreach (var file in files)
+        {
+            using var addStream = new MemoryStream(file.Bytes, writable: false);
+            var image = await AddImageAsync(file.Name, addStream, cancellationToken: cancellationToken);
+            addedImages.Add(image);
+
+            if (SelectedComparison?.ReferenceImageId == image.Id)
+            {
+                using var displayStream = new MemoryStream(file.Bytes, writable: false);
+                await LoadImageAsync(ImageSlot.Left, image.Label, displayStream);
+            }
+            else if (SelectedComparison?.CandidateImageId == image.Id)
+            {
+                using var displayStream = new MemoryStream(file.Bytes, writable: false);
+                await LoadImageAsync(ImageSlot.Right, image.Label, displayStream);
+            }
+        }
+
+        return addedImages;
+    }
+
     public async Task<bool> SetImageMonitoringAsync(
         ImageAsset image,
         ImageMonitoringRole monitoringRole,

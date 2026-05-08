@@ -220,6 +220,68 @@ public sealed class MainWindowViewModelTests
         Assert.Same(project, Assert.Single(storage.SavedProjects));
     }
 
+    [AvaloniaFact]
+    public async Task AddFilesToCurrentComparisonAsync_ensures_workspace_adds_files_and_loads_display_images()
+    {
+        var viewModel = new MainWindowViewModel();
+        var referenceFile = TestUiSupport.CreateStorageFile("reference-drop.png");
+        var candidateFile = TestUiSupport.CreateStorageFile("candidate-drop.png");
+
+        var addedImages = await viewModel.AddFilesToCurrentComparisonAsync(
+            [referenceFile, candidateFile],
+            cancellationToken: TestContext.Current.CancellationToken);
+
+        var project = Assert.Single(viewModel.Projects);
+        var comparison = Assert.Single(project.Comparisons);
+        Assert.Equal(2, addedImages.Count);
+        Assert.Equal(2, comparison.Images.Count);
+        Assert.Equal("reference-drop", comparison.Name);
+        Assert.Equal(comparison.Images[0].Id, comparison.ReferenceImageId);
+        Assert.Equal(comparison.Images[1].Id, comparison.CandidateImageId);
+        Assert.Equal("reference-drop.png", viewModel.LeftFileName);
+        Assert.Equal("candidate-drop.png", viewModel.RightFileName);
+        Assert.True(viewModel.HasBothImages);
+    }
+
+    [AvaloniaFact]
+    public async Task AddFilesToCurrentComparisonAsync_honors_max_file_count()
+    {
+        var viewModel = new MainWindowViewModel();
+
+        var addedImages = await viewModel.AddFilesToCurrentComparisonAsync(
+            [
+                TestUiSupport.CreateStorageFile("first.png"),
+                TestUiSupport.CreateStorageFile("second.png")
+            ],
+            maxFiles: 1,
+            cancellationToken: TestContext.Current.CancellationToken);
+
+        var comparison = Assert.Single(Assert.Single(viewModel.Projects).Comparisons);
+        Assert.Single(addedImages);
+        Assert.Single(comparison.Images);
+        Assert.Equal("first.png", viewModel.LeftFileName);
+        Assert.False(viewModel.HasRightImage);
+    }
+
+    [AvaloniaFact]
+    public async Task AddBrowserFilesToCurrentComparisonAsync_ensures_workspace_adds_files_and_loads_display_images()
+    {
+        var viewModel = new MainWindowViewModel();
+
+        var addedImages = await viewModel.AddBrowserFilesToCurrentComparisonAsync(
+            ["browser-reference.png", "browser-candidate.png"],
+            [TestUiSupport.CreatePngBytes(), TestUiSupport.CreatePngBytes()],
+            cancellationToken: TestContext.Current.CancellationToken);
+
+        var comparison = Assert.Single(Assert.Single(viewModel.Projects).Comparisons);
+        Assert.Equal(2, addedImages.Count);
+        Assert.Equal(2, comparison.Images.Count);
+        Assert.Equal("browser-reference", comparison.Name);
+        Assert.Equal("browser-reference", viewModel.LeftFileName);
+        Assert.Equal("browser-candidate", viewModel.RightFileName);
+        Assert.True(viewModel.HasBothImages);
+    }
+
     [Fact]
     public async Task AddImageAsync_renames_default_comparison_from_first_image_label()
     {
