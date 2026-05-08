@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -24,12 +25,14 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public MainWindowViewModel()
     {
+        ComparisonDisplay.PropertyChanged += OnComparisonDisplayPropertyChanged;
     }
 
     public MainWindowViewModel(IProjectStorage projectStorage)
     {
         ProjectStorage = projectStorage;
         _monitoredImageVersionCapture = new MonitoredImageVersionCapture(projectStorage);
+        ComparisonDisplay.PropertyChanged += OnComparisonDisplayPropertyChanged;
     }
 
     public ObservableCollection<Project> Projects { get; } = [];
@@ -37,6 +40,8 @@ public partial class MainWindowViewModel : ViewModelBase
     public ObservableCollection<ProjectListItemViewModel> ProjectRows { get; } = [];
 
     public ObservableCollection<ComparisonListItemViewModel> SelectedProjectComparisonRows { get; } = [];
+
+    public ComparisonDisplayViewModel ComparisonDisplay { get; } = new();
 
     public IProjectStorage? ProjectStorage { get; }
 
@@ -93,54 +98,55 @@ public partial class MainWindowViewModel : ViewModelBase
 
     [ObservableProperty]
     public partial string ZoomText { get; set; } = "100%";
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(SideBySideStageWidth))]
-    public partial double StageWidth { get; set; } = 920;
+    public double StageWidth
+    {
+        get => ComparisonDisplay.StageWidth;
+        set => ComparisonDisplay.StageWidth = value;
+    }
 
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(SideBySideStageHeight))]
-    public partial double StageHeight { get; set; } = 560;
+    public double StageHeight
+    {
+        get => ComparisonDisplay.StageHeight;
+        set => ComparisonDisplay.StageHeight = value;
+    }
 
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasLeftImage))]
-    [NotifyPropertyChangedFor(nameof(HasAnyImage))]
-    [NotifyPropertyChangedFor(nameof(HasBothImages))]
-    [NotifyPropertyChangedFor(nameof(CanUseSplitScreen))]
-    [NotifyPropertyChangedFor(nameof(LeftImageWidth))]
-    [NotifyPropertyChangedFor(nameof(LeftImageHeight))]
-    [NotifyPropertyChangedFor(nameof(SideBySideStageWidth))]
-    [NotifyPropertyChangedFor(nameof(SideBySideStageHeight))]
-    [NotifyPropertyChangedFor(nameof(ShowMainEmptyState))]
-    public partial Bitmap? LeftImage { get; set; }
+    public Bitmap? LeftImage
+    {
+        get => ComparisonDisplay.LeftImage;
+        set => ComparisonDisplay.LeftImage = value;
+    }
 
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasRightImage))]
-    [NotifyPropertyChangedFor(nameof(HasAnyImage))]
-    [NotifyPropertyChangedFor(nameof(HasBothImages))]
-    [NotifyPropertyChangedFor(nameof(CanUseSplitScreen))]
-    [NotifyPropertyChangedFor(nameof(RightImageWidth))]
-    [NotifyPropertyChangedFor(nameof(RightImageHeight))]
-    [NotifyPropertyChangedFor(nameof(SideBySideStageWidth))]
-    [NotifyPropertyChangedFor(nameof(SideBySideStageHeight))]
-    [NotifyPropertyChangedFor(nameof(ShowMainEmptyState))]
-    public partial Bitmap? RightImage { get; set; }
+    public Bitmap? RightImage
+    {
+        get => ComparisonDisplay.RightImage;
+        set => ComparisonDisplay.RightImage = value;
+    }
 
-    [ObservableProperty]
-    public partial string LeftFileName { get; set; } = "Reference image";
+    public string LeftFileName
+    {
+        get => ComparisonDisplay.LeftFileName;
+        set => ComparisonDisplay.LeftFileName = value;
+    }
 
-    [ObservableProperty]
-    public partial string RightFileName { get; set; } = "Candidate image";
+    public string RightFileName
+    {
+        get => ComparisonDisplay.RightFileName;
+        set => ComparisonDisplay.RightFileName = value;
+    }
 
-    [ObservableProperty]
-    public partial string DifferenceStatusText { get; set; } = "Load two images to compare";
+    public string DifferenceStatusText
+    {
+        get => ComparisonDisplay.DifferenceStatusText;
+        set => ComparisonDisplay.DifferenceStatusText = value;
+    }
 
-    public bool HasLeftImage => LeftImage is not null;
+    public bool HasLeftImage => ComparisonDisplay.HasLeftImage;
 
-    public bool HasRightImage => RightImage is not null;
+    public bool HasRightImage => ComparisonDisplay.HasRightImage;
 
-    public bool HasAnyImage => HasLeftImage || HasRightImage;
+    public bool HasAnyImage => ComparisonDisplay.HasAnyImage;
 
-    public bool HasBothImages => HasLeftImage && HasRightImage;
+    public bool HasBothImages => ComparisonDisplay.HasBothImages;
 
     public bool HasSelectedProject => SelectedProject is not null;
 
@@ -435,13 +441,13 @@ public partial class MainWindowViewModel : ViewModelBase
             && SelectedComparison.Images.Contains(image);
     }
 
-    public double LeftImageWidth => LeftImage?.PixelSize.Width ?? StageWidth;
+    public double LeftImageWidth => ComparisonDisplay.LeftImageWidth;
 
-    public double LeftImageHeight => LeftImage?.PixelSize.Height ?? StageHeight;
+    public double LeftImageHeight => ComparisonDisplay.LeftImageHeight;
 
-    public double RightImageWidth => RightImage?.PixelSize.Width ?? StageWidth;
+    public double RightImageWidth => ComparisonDisplay.RightImageWidth;
 
-    public double RightImageHeight => RightImage?.PixelSize.Height ?? StageHeight;
+    public double RightImageHeight => ComparisonDisplay.RightImageHeight;
 
     public bool IsSideBySideView => SelectedViewMode == ComparisonViewMode.SideBySide;
 
@@ -455,21 +461,9 @@ public partial class MainWindowViewModel : ViewModelBase
         _ => "Side-by-side"
     };
 
-    public double SideBySideStageWidth => HasBothImages
-        ? LeftImageWidth + 16 + RightImageWidth
-        : HasLeftImage
-            ? LeftImageWidth
-            : HasRightImage
-                ? RightImageWidth
-                : StageWidth;
+    public double SideBySideStageWidth => ComparisonDisplay.SideBySideStageWidth;
 
-    public double SideBySideStageHeight => HasBothImages
-        ? Math.Max(LeftImageHeight, RightImageHeight)
-        : HasLeftImage
-            ? LeftImageHeight
-            : HasRightImage
-                ? RightImageHeight
-                : StageHeight;
+    public double SideBySideStageHeight => ComparisonDisplay.SideBySideStageHeight;
 
     public async Task LoadProjectsAsync(CancellationToken cancellationToken = default)
     {
@@ -905,55 +899,12 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public async Task<bool> LoadImageAssetAsync(ImageSlot slot, ImageAsset image, CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(image);
-
-        if (ProjectStorage is null)
-        {
-            return false;
-        }
-
-        await using var stream = await ProjectStorage.LoadImageAsync(image, cancellationToken);
-        var bitmap = await CreateBitmapAsync(stream);
-
-        switch (slot)
-        {
-            case ImageSlot.Left:
-                LeftImage = bitmap;
-                LeftFileName = GetDisplayName(image);
-                break;
-            case ImageSlot.Right:
-                RightImage = bitmap;
-                RightFileName = GetDisplayName(image);
-                break;
-            default:
-                bitmap.Dispose();
-                throw new ArgumentOutOfRangeException(nameof(slot), slot, null);
-        }
-
-        return true;
+        return await ComparisonDisplay.LoadImageAssetAsync(slot, image, ProjectStorage, cancellationToken);
     }
 
     public async Task RefreshCurrentComparisonImagesAsync(CancellationToken cancellationToken = default)
     {
-        if (SelectedComparison?.ReferenceImage is { } reference)
-        {
-            await LoadImageAssetAsync(ImageSlot.Left, reference, cancellationToken);
-        }
-        else
-        {
-            LeftImage = null;
-            LeftFileName = "Reference image";
-        }
-
-        if (SelectedComparison?.CandidateImage is { } candidate)
-        {
-            await LoadImageAssetAsync(ImageSlot.Right, candidate, cancellationToken);
-        }
-        else
-        {
-            RightImage = null;
-            RightFileName = "Candidate image";
-        }
+        await ComparisonDisplay.RefreshCurrentComparisonImagesAsync(SelectedComparison, ProjectStorage, cancellationToken);
     }
 
     public async Task<bool> DeleteImageAsync(ImageAsset image, CancellationToken cancellationToken = default)
@@ -1119,83 +1070,22 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public async Task LoadImageAsync(ImageSlot slot, IStorageFile file)
     {
-        await using var stream = await file.OpenReadAsync();
-        var bitmap = await CreateBitmapAsync(stream);
-
-        switch (slot)
-        {
-            case ImageSlot.Left:
-                LeftImage = bitmap;
-                LeftFileName = file.Name;
-                break;
-            case ImageSlot.Right:
-                RightImage = bitmap;
-                RightFileName = file.Name;
-                break;
-            default:
-                bitmap.Dispose();
-                throw new ArgumentOutOfRangeException(nameof(slot), slot, null);
-        }
+        await ComparisonDisplay.LoadImageAsync(slot, file);
     }
 
     public async Task LoadImageAsync(ImageSlot slot, string filePath)
     {
-        await using var stream = File.OpenRead(filePath);
-        var bitmap = await CreateBitmapAsync(stream);
-
-        switch (slot)
-        {
-            case ImageSlot.Left:
-                LeftImage = bitmap;
-                LeftFileName = Path.GetFileName(filePath);
-                break;
-            case ImageSlot.Right:
-                RightImage = bitmap;
-                RightFileName = Path.GetFileName(filePath);
-                break;
-            default:
-                bitmap.Dispose();
-                throw new ArgumentOutOfRangeException(nameof(slot), slot, null);
-        }
+        await ComparisonDisplay.LoadImageAsync(slot, filePath);
     }
 
     public async Task LoadImageAsync(ImageSlot slot, string fileName, Stream stream)
     {
-        var bitmap = await CreateBitmapAsync(stream);
-
-        switch (slot)
-        {
-            case ImageSlot.Left:
-                LeftImage = bitmap;
-                LeftFileName = Path.GetFileName(fileName);
-                break;
-            case ImageSlot.Right:
-                RightImage = bitmap;
-                RightFileName = Path.GetFileName(fileName);
-                break;
-            default:
-                bitmap.Dispose();
-                throw new ArgumentOutOfRangeException(nameof(slot), slot, null);
-        }
+        await ComparisonDisplay.LoadImageAsync(slot, fileName, stream);
     }
 
     public void DisposeImages()
     {
-        LeftImage = null;
-        RightImage = null;
-    }
-
-    private static async Task<Bitmap> CreateBitmapAsync(Stream stream)
-    {
-        if (OperatingSystem.IsBrowser() || !stream.CanSeek)
-        {
-            await using var buffer = new MemoryStream();
-            await stream.CopyToAsync(buffer);
-            buffer.Position = 0;
-            return new Bitmap(buffer);
-        }
-
-        return new Bitmap(stream);
+        ComparisonDisplay.DisposeImages();
     }
 
     private static string NormalizeName(string? name, string fallback)
@@ -1207,11 +1097,6 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         var fileName = Path.GetFileName(sourceName?.Trim());
         return string.IsNullOrWhiteSpace(fileName) ? "image" : fileName;
-    }
-
-    private static string GetDisplayName(ImageAsset image)
-    {
-        return string.IsNullOrWhiteSpace(image.Label) ? image.SourceName : image.Label;
     }
 
     private Task SaveProjectAsync(Project project, CancellationToken cancellationToken)
@@ -1246,6 +1131,29 @@ public partial class MainWindowViewModel : ViewModelBase
         OnPropertyChanged(nameof(ShowMainEmptyState));
         OnPropertyChanged(nameof(MainEmptyStateTitle));
         OnPropertyChanged(nameof(MainEmptyStateMessage));
+    }
+
+    private void OnComparisonDisplayPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (string.IsNullOrEmpty(e.PropertyName))
+        {
+            return;
+        }
+
+        OnPropertyChanged(e.PropertyName);
+
+        if (e.PropertyName is nameof(ComparisonDisplayViewModel.LeftImage)
+            or nameof(ComparisonDisplayViewModel.RightImage)
+            or nameof(ComparisonDisplayViewModel.HasBothImages))
+        {
+            OnPropertyChanged(nameof(CanUseSplitScreen));
+            OnPropertyChanged(nameof(ShowMainEmptyState));
+
+            if (!CanUseSplitScreen && IsSplitScreenView)
+            {
+                SelectSideBySideView();
+            }
+        }
     }
 
     private void RefreshProjectRows()
@@ -1318,49 +1226,6 @@ public partial class MainWindowViewModel : ViewModelBase
         OnPropertyChanged(nameof(SelectedComparisonName));
         OnPropertyChanged(nameof(SelectedProjectComparisons));
         OnPropertyChanged(nameof(WorkspaceContextTitle));
-    }
-
-    private void UpdateStageSize()
-    {
-        var leftWidth = LeftImage?.PixelSize.Width ?? 0;
-        var rightWidth = RightImage?.PixelSize.Width ?? 0;
-        var leftHeight = LeftImage?.PixelSize.Height ?? 0;
-        var rightHeight = RightImage?.PixelSize.Height ?? 0;
-
-        StageWidth = Math.Max(920, Math.Max(leftWidth, rightWidth));
-        StageHeight = Math.Max(560, Math.Max(leftHeight, rightHeight));
-    }
-
-    private void UpdateDifferenceStatus()
-    {
-        DifferenceStatusText = ImageDifferenceMetric.Compare(LeftImage, RightImage)?.ToStatusText()
-            ?? "Load two images to compare";
-    }
-
-    // ReSharper disable once UnusedParameterInPartialMethod
-    partial void OnLeftImageChanged(Bitmap? oldValue, Bitmap? newValue)
-    {
-        oldValue?.Dispose();
-        UpdateStageSize();
-        UpdateDifferenceStatus();
-
-        if (!CanUseSplitScreen && IsSplitScreenView)
-        {
-            SelectSideBySideView();
-        }
-    }
-
-    // ReSharper disable once UnusedParameterInPartialMethod
-    partial void OnRightImageChanged(Bitmap? oldValue, Bitmap? newValue)
-    {
-        oldValue?.Dispose();
-        UpdateStageSize();
-        UpdateDifferenceStatus();
-
-        if (!CanUseSplitScreen && IsSplitScreenView)
-        {
-            SelectSideBySideView();
-        }
     }
 
     partial void OnZoomScaleChanged(double value)
@@ -1436,10 +1301,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
     private void ClearDisplayedComparisonImages()
     {
-        LeftImage = null;
-        RightImage = null;
-        LeftFileName = "Reference image";
-        RightFileName = "Candidate image";
+        ComparisonDisplay.Clear();
     }
 }
 

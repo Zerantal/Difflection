@@ -296,7 +296,7 @@
                                 <Border.ContextMenu>
                                     <ContextMenu>
                                         <MenuItem Header="Rename"
-                                                  Command="{Binding #Root.DataContext.BeginRenameProjectCommand}"
+                                                  Command="{Binding #Root.((vm:MainWindowViewModel)DataContext).BeginRenameProjectCommand}"
                                                   CommandParameter="{Binding}" />
                                     </ContextMenu>
                                 </Border.ContextMenu>
@@ -355,7 +355,7 @@
                                 <Border.ContextMenu>
                                     <ContextMenu>
                                         <MenuItem Header="Rename"
-                                                  Command="{Binding #Root.DataContext.BeginRenameComparisonCommand}"
+                                                  Command="{Binding #Root.((vm:MainWindowViewModel)DataContext).BeginRenameComparisonCommand}"
                                                   CommandParameter="{Binding}" />
                                     </ContextMenu>
                                 </Border.ContextMenu>
@@ -519,17 +519,17 @@
                                 <Button Grid.Column="2"
                                         Classes="imageActionButton"
                                         Content="Reference"
-                                        Command="{Binding #Root.DataContext.SetReferenceImageAndRefreshCommand}"
+                                        Command="{Binding #Root.((vm:MainWindowViewModel)DataContext).SetReferenceImageAndRefreshCommand}"
                                         CommandParameter="{Binding}" />
                                 <Button Grid.Column="3"
                                         Classes="imageActionButton"
                                         Content="Candidate"
-                                        Command="{Binding #Root.DataContext.SetCandidateImageAndRefreshCommand}"
+                                        Command="{Binding #Root.((vm:MainWindowViewModel)DataContext).SetCandidateImageAndRefreshCommand}"
                                         CommandParameter="{Binding}" />
                                 <Button Grid.Column="4"
                                         Classes="imageActionButton"
                                         Content="Remove"
-                                        Command="{Binding #Root.DataContext.DeleteImageAndRefreshCommand}"
+                                        Command="{Binding #Root.((vm:MainWindowViewModel)DataContext).DeleteImageAndRefreshCommand}"
                                         CommandParameter="{Binding}" />
                             </Grid>
                         </DataTemplate>

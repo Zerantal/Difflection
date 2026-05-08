@@ -251,3 +251,146 @@ Suggested improvements:
 5. Keep code-behind focused on view adapters.
 
    Long-term, `MainView.axaml.cs` should mostly handle Avalonia-specific adapters: focus, pointer/keyboard events, file picker integration, and comparison-stage coordination. Business rules and UI state transitions should be owned by the view model.
+
+## MainWindowViewModel Refactor
+
+`MainWindowViewModel` has become the central coordinator for too many concerns. It currently owns workspace navigation, sidebar row state, persistence coordination, image-set editing, transient bitmap display state, comparison tools, monitoring/version capture, empty-state text, and the command surface for the whole main view.
+
+The goal of this refactor should be to split the class along stable responsibility boundaries, reduce observable state synchronization, and make each part easier to test in isolation.
+
+Recommended extraction candidates:
+
+1. Extract comparison display state first.
+
+   Create a `ComparisonDisplayViewModel` for transient rendered comparison state:
+
+   - `LeftImage`
+   - `RightImage`
+   - `LeftFileName`
+   - `RightFileName`
+   - `DifferenceStatusText`
+   - `StageWidth`
+   - `StageHeight`
+   - image bitmap loading
+   - `RefreshCurrentComparisonImagesAsync`
+   - bitmap disposal
+   - `ImageDifferenceMetric` usage
+
+   This is the safest first split because it mostly concerns display-only bitmap state, not persisted workspace structure.
+
+2. Extract workspace navigation and sidebar state.
+
+   Create a `WorkspaceNavigatorViewModel` or `ProjectWorkspaceViewModel` for project/comparison navigation:
+
+   - `Projects`
+   - `ProjectRows`
+   - `SelectedProjectRow`
+   - `SelectedProjectComparisonRows`
+   - `SelectedComparisonRow`
+   - project add/delete/rename
+   - comparison add/delete/rename
+   - inline rename state
+   - row refresh and selection repair
+
+   This boundary is strong because row view models already exist and are explicitly sidebar-facing.
+
+3. Extract comparison image-set operations.
+
+   Create a `ComparisonImageSetViewModel` or image-set workflow service for image domain operations:
+
+   - add image
+   - add files/browser files to current comparison
+   - delete image
+   - label image
+   - set reference image
+   - set candidate image
+   - default comparison name from first image
+   - reference/candidate role repair interactions
+
+   This should own image-set workflow rules while the parent VM supplies or references the current project/comparison context.
+
+4. Extract comparison tool state.
+
+   Create a small `ComparisonToolStateViewModel` for comparison mode and zoom state:
+
+   - `SelectedViewMode`
+   - `IsSideBySideView`
+   - `IsSplitScreenView`
+   - `CanUseSplitScreen`
+   - `CurrentViewTitle`
+   - `ZoomScale`
+   - `ZoomText`
+   - `SplitPercentageText`
+   - `TrySetZoomText`
+   - view-mode selection methods
+
+   This is smaller than the other extractions, but it removes a cluster of unrelated observable state from the main workspace VM.
+
+5. Extract workspace status and empty-state presentation.
+
+   Move derived UI copy and visibility policy into a presenter or small VM:
+
+   - `WorkspaceContextTitle`
+   - `WorkspaceContextDetail`
+   - `WorkspaceActionHint`
+   - `ShowWorkspaceActionHint`
+   - `ShowMainEmptyState`
+   - `MainEmptyStateTitle`
+   - `MainEmptyStateMessage`
+   - `ShowProjectsEmptyState`
+   - `ShowComparisonsEmptyState`
+
+   This keeps UI wording and empty-state policy out of the stateful workspace coordinator.
+
+Observable state simplification opportunities:
+
+1. Prefer row selection as the primary UI selection state.
+
+   The VM currently exposes both domain selection and row selection:
+
+   - `SelectedProject`
+   - `SelectedProjectRow`
+   - `SelectedComparison`
+   - `SelectedComparisonRow`
+
+   Long-term, prefer making row selection primary for the UI and exposing domain objects as derived state:
+
+   ```csharp
+   public Project? SelectedProject => SelectedProjectRow?.Project;
+   public ComparisonSet? SelectedComparison => SelectedComparisonRow?.Comparison;
+   ```
+
+   This would remove much of the bidirectional synchronization in the selection partial methods.
+
+2. Replace left/right display fields with pane view models.
+
+   Consider replacing:
+
+   - `LeftImage`
+   - `RightImage`
+   - `LeftFileName`
+   - `RightFileName`
+
+   with:
+
+   ```csharp
+   ComparisonPaneViewModel ReferencePane
+   ComparisonPaneViewModel CandidatePane
+   ```
+
+   Each pane can own its bitmap, display name, empty state, dimensions, and disposal. This should reduce `HasLeftImage`, `HasRightImage`, width/height, and stage-size notification churn.
+
+3. Centralize notification groups.
+
+   The class currently has many `NotifyPropertyChangedFor` attributes plus manual `OnPropertyChanged` clusters. After extraction, each child VM should own its own notification graph. The parent should avoid broadcasting broad UI-state changes except when child references or workspace selection changes.
+
+Suggested implementation order:
+
+1. ~~Extract `ComparisonDisplayViewModel`.~~
+2. Extract `WorkspaceNavigatorViewModel`.
+3. Extract image-set operations into a child VM or workflow service.
+4. Simplify selected row/domain state.
+5. Extract comparison tool state.
+6. Extract empty-state/status presentation.
+
+Avoid doing this as one large rewrite. Each extraction should preserve behavior, run the full test suite, and leave snapshot updates for explicit visual review.
