@@ -27,9 +27,9 @@ public sealed partial class ComparisonStageTests
             var leftPane = TestUiSupport.GetSideBySideLeftPane(stage);
             var scrollViewer = leftPane.ActiveScrollViewer;
 
-            viewModel.TrySetZoomText("200%");
+            viewModel.ToolState.TrySetZoomText("200%");
             Dispatcher.UIThread.RunJobs();
-            await TestUiSupport.WaitForAsync(() => viewModel.ZoomScale > 1.5);
+            await TestUiSupport.WaitForAsync(() => viewModel.ToolState.ZoomScale > 1.5);
             await TestUiSupport.WaitForAsync(() => scrollViewer.Extent.Width > scrollViewer.Bounds.Width || scrollViewer.Extent.Height > scrollViewer.Bounds.Height);
 
             var before = scrollViewer.Offset;
@@ -66,9 +66,9 @@ public sealed partial class ComparisonStageTests
             var leftPane = TestUiSupport.GetSideBySideLeftPane(stage);
             var rightPane = TestUiSupport.GetSideBySideRightPane(stage);
 
-            viewModel.TrySetZoomText("200%");
+            viewModel.ToolState.TrySetZoomText("200%");
             Dispatcher.UIThread.RunJobs();
-            await TestUiSupport.WaitForAsync(() => viewModel.ZoomScale > 1.5);
+            await TestUiSupport.WaitForAsync(() => viewModel.ToolState.ZoomScale > 1.5);
 
             var leftBefore = leftPane.ActiveScrollViewer.Offset;
             var rightBefore = rightPane.ActiveScrollViewer.Offset;
@@ -107,9 +107,9 @@ public sealed partial class ComparisonStageTests
             var leftPane = TestUiSupport.GetSideBySideLeftPane(stage);
             var scrollViewer = leftPane.ActiveScrollViewer;
 
-            await TestUiSupport.WaitForAsync(() => scrollViewer.Bounds is { Width: > 0, Height: > 0 } && viewModel.ZoomScale > 0);
+            await TestUiSupport.WaitForAsync(() => scrollViewer.Bounds is { Width: > 0, Height: > 0 } && viewModel.ToolState.ZoomScale > 0);
 
-            var leftOnlyZoom = viewModel.ZoomScale;
+            var leftOnlyZoom = viewModel.ToolState.ZoomScale;
 
             await viewModel.LoadImageAsync(ImageSlot.Right, TestUiSupport.CreateStorageFile("right.png", 800, 1200));
             Dispatcher.UIThread.RunJobs();
@@ -121,7 +121,7 @@ public sealed partial class ComparisonStageTests
                 var expectedZoom = Math.Min(
                     scrollViewer.Bounds.Width / Math.Max(1, targetWidth),
                     scrollViewer.Bounds.Height / Math.Max(1, targetHeight));
-                return Math.Abs(viewModel.ZoomScale - expectedZoom) < 0.01;
+                return Math.Abs(viewModel.ToolState.ZoomScale - expectedZoom) < 0.01;
             });
 
             var targetWidth = Math.Max(viewModel.LeftImageWidth, viewModel.RightImageWidth);
@@ -130,8 +130,8 @@ public sealed partial class ComparisonStageTests
                 scrollViewer.Bounds.Width / Math.Max(1, targetWidth),
                 scrollViewer.Bounds.Height / Math.Max(1, targetHeight));
 
-            Assert.InRange(Math.Abs(viewModel.ZoomScale - expectedZoom), 0, 0.01);
-            Assert.NotEqual(leftOnlyZoom, viewModel.ZoomScale);
+            Assert.InRange(Math.Abs(viewModel.ToolState.ZoomScale - expectedZoom), 0, 0.01);
+            Assert.NotEqual(leftOnlyZoom, viewModel.ToolState.ZoomScale);
         }
         finally
         {
@@ -153,7 +153,7 @@ public sealed partial class ComparisonStageTests
             var pane = TestUiSupport.GetSplitPane(TestUiSupport.GetComparisonStage(window));
             var divider = pane.FindControl<Border>("SplitDivider") ?? throw new InvalidOperationException("SplitDivider not found.");
             var dragSurface = pane.FindControl<Border>("SplitDragSurface") ?? throw new InvalidOperationException("SplitDragSurface not found.");
-            var initialSplitText = viewModel.SplitPercentageText;
+            var initialSplitText = viewModel.ToolState.SplitPercentageText;
 
             await TestUiSupport.WaitForAsync(() => divider.Bounds.Width > 0
                 && dragSurface.Bounds.Width > 0
@@ -168,12 +168,12 @@ public sealed partial class ComparisonStageTests
             Dispatcher.UIThread.RunJobs();
 
             await TestUiSupport.WaitForAsync(() => Math.Abs(divider.Bounds.X - before) > 5);
-            await TestUiSupport.WaitForAsync(() => viewModel.SplitPercentageText != initialSplitText);
+            await TestUiSupport.WaitForAsync(() => viewModel.ToolState.SplitPercentageText != initialSplitText);
 
             Assert.True(Math.Abs(divider.Bounds.X - before) > 5);
-            Assert.NotEqual(initialSplitText, viewModel.SplitPercentageText);
+            Assert.NotEqual(initialSplitText, viewModel.ToolState.SplitPercentageText);
 
-            var parts = viewModel.SplitPercentageText.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            var parts = viewModel.ToolState.SplitPercentageText.Split(' ', StringSplitOptions.RemoveEmptyEntries);
             Assert.Equal(3, parts.Length);
             Assert.True(int.TryParse(parts[0], out var leftPercent));
             Assert.True(int.TryParse(parts[2], out var rightPercent));
@@ -198,13 +198,13 @@ public sealed partial class ComparisonStageTests
         {
             _ = TestUiSupport.GetComparisonStage(window);
 
-            var before = viewModel.ZoomScale;
+            var before = viewModel.ToolState.ZoomScale;
             window.MouseWheel(new Point(500, 350), new Vector(0, 1), RawInputModifiers.Control);
             Dispatcher.UIThread.RunJobs();
 
-            await TestUiSupport.WaitForAsync(() => viewModel.ZoomScale > before);
+            await TestUiSupport.WaitForAsync(() => viewModel.ToolState.ZoomScale > before);
 
-            Assert.True(viewModel.ZoomScale > before);
+            Assert.True(viewModel.ToolState.ZoomScale > before);
         }
         finally
         {

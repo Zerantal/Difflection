@@ -264,7 +264,8 @@
                 Background="#171717"
                 BorderBrush="#303030"
                 BorderThickness="0,0,1,0"
-                Padding="12">
+                Padding="12"
+                DataContext="{Binding Workspace}">
             <Grid RowDefinitions="Auto,*,16,Auto,*" RowSpacing="8">
                 <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="6">
                     <TextBlock Classes="sidebarHeading"
@@ -281,7 +282,7 @@
                             Classes="sidebarIconButton"
                             Content="-"
                             ToolTip.Tip="Delete selected project"
-                            IsEnabled="{Binding Workspace.CanDeleteSelectedProject}"
+                            IsEnabled="{Binding CanDeleteSelectedProject}"
                             Command="{Binding DeleteSelectedProjectCommand}" />
                 </Grid>
 
@@ -289,14 +290,14 @@
                          Grid.Row="1"
                          Classes="sidebarList"
                          ItemsSource="{Binding ProjectRows}"
-                         SelectedItem="{Binding Workspace.SelectedProjectRow, Mode=TwoWay}">
+                         SelectedItem="{Binding SelectedProjectRow, Mode=TwoWay}">
                     <ListBox.ItemTemplate>
                         <DataTemplate x:DataType="vm:ProjectListItemViewModel">
                             <Border Background="Transparent">
                                 <Border.ContextMenu>
                                     <ContextMenu>
                                         <MenuItem Header="Rename"
-                                                  Command="{Binding #Root.((vm:MainWindowViewModel)DataContext).BeginRenameProjectCommand}"
+                                                  Command="{Binding $parent[Grid].((vm:WorkspaceNavigatorViewModel)DataContext).BeginRenameProjectCommand}"
                                                   CommandParameter="{Binding}" />
                                     </ContextMenu>
                                 </Border.ContextMenu>
@@ -320,7 +321,7 @@
                 <TextBlock Grid.Row="1"
                            Classes="sidebarEmptyText"
                            Text="No projects yet."
-                           IsVisible="{Binding WorkspaceStatus.ShowProjectsEmptyState}" />
+                           IsVisible="{Binding #Root.((vm:MainWindowViewModel)DataContext).WorkspaceStatus.ShowProjectsEmptyState}" />
 
                 <Border Grid.Row="2" Height="1" Background="#303030" VerticalAlignment="Center" />
 
@@ -333,14 +334,14 @@
                             Classes="sidebarIconButton"
                             Content="+"
                             ToolTip.Tip="Add comparison"
-                            IsEnabled="{Binding Workspace.CanAddComparison}"
+                            IsEnabled="{Binding CanAddComparison}"
                             Command="{Binding AddComparisonForInlineRenameCommand}" />
                     <Button x:Name="DeleteComparisonButton"
                             Grid.Column="2"
                             Classes="sidebarIconButton"
                             Content="-"
                             ToolTip.Tip="Delete selected comparison"
-                            IsEnabled="{Binding Workspace.CanDeleteSelectedComparison}"
+                            IsEnabled="{Binding CanDeleteSelectedComparison}"
                             Command="{Binding DeleteSelectedComparisonCommand}" />
                 </Grid>
 
@@ -348,14 +349,14 @@
                          Grid.Row="4"
                          Classes="sidebarList"
                          ItemsSource="{Binding SelectedProjectComparisonRows}"
-                         SelectedItem="{Binding Workspace.SelectedComparisonRow, Mode=TwoWay}">
+                         SelectedItem="{Binding SelectedComparisonRow, Mode=TwoWay}">
                     <ListBox.ItemTemplate>
                         <DataTemplate x:DataType="vm:ComparisonListItemViewModel">
                             <Border Background="Transparent">
                                 <Border.ContextMenu>
                                     <ContextMenu>
                                         <MenuItem Header="Rename"
-                                                  Command="{Binding #Root.((vm:MainWindowViewModel)DataContext).BeginRenameComparisonCommand}"
+                                                  Command="{Binding $parent[Grid].((vm:WorkspaceNavigatorViewModel)DataContext).BeginRenameComparisonCommand}"
                                                   CommandParameter="{Binding}" />
                                     </ContextMenu>
                                 </Border.ContextMenu>
@@ -379,7 +380,7 @@
                 <TextBlock Grid.Row="4"
                            Classes="sidebarEmptyText"
                            Text="No comparisons in this project."
-                           IsVisible="{Binding WorkspaceStatus.ShowComparisonsEmptyState}" />
+                           IsVisible="{Binding #Root.((vm:MainWindowViewModel)DataContext).WorkspaceStatus.ShowComparisonsEmptyState}" />
             </Grid>
         </Border>
 
@@ -519,17 +520,17 @@
                                 <Button Grid.Column="2"
                                         Classes="imageActionButton"
                                         Content="Reference"
-                                        Command="{Binding #Root.((vm:MainWindowViewModel)DataContext).SetReferenceImageAndRefreshCommand}"
+                                        Command="{Binding #Root.((vm:MainWindowViewModel)DataContext).ImageSet.SetReferenceImageAndRefreshCommand}"
                                         CommandParameter="{Binding}" />
                                 <Button Grid.Column="3"
                                         Classes="imageActionButton"
                                         Content="Candidate"
-                                        Command="{Binding #Root.((vm:MainWindowViewModel)DataContext).SetCandidateImageAndRefreshCommand}"
+                                        Command="{Binding #Root.((vm:MainWindowViewModel)DataContext).ImageSet.SetCandidateImageAndRefreshCommand}"
                                         CommandParameter="{Binding}" />
                                 <Button Grid.Column="4"
                                         Classes="imageActionButton"
                                         Content="Remove"
-                                        Command="{Binding #Root.((vm:MainWindowViewModel)DataContext).DeleteImageAndRefreshCommand}"
+                                        Command="{Binding #Root.((vm:MainWindowViewModel)DataContext).ImageSet.DeleteImageAndRefreshCommand}"
                                         CommandParameter="{Binding}" />
                             </Grid>
                         </DataTemplate>

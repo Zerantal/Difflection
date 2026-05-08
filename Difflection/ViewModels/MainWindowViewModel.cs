@@ -7,7 +7,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform.Storage;
-using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Difflection.Models;
 using Difflection.Monitoring;
@@ -61,12 +60,6 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public IProjectStorage? ProjectStorage { get; }
 
-    public ComparisonViewMode SelectedViewMode
-    {
-        get => ToolState.SelectedViewMode;
-        set => ToolState.SelectedViewMode = value;
-    }
-
     public Project? SelectedProject
     {
         get => Workspace.SelectedProject;
@@ -89,35 +82,6 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         get => Workspace.SelectedComparisonRow;
         set => Workspace.SelectedComparisonRow = value;
-    }
-
-    public string SplitPercentageText
-    {
-        get => ToolState.SplitPercentageText;
-        set => ToolState.SplitPercentageText = value;
-    }
-
-    public double ZoomScale
-    {
-        get => ToolState.ZoomScale;
-        set => ToolState.ZoomScale = value;
-    }
-
-    public string ZoomText
-    {
-        get => ToolState.ZoomText;
-        set => ToolState.ZoomText = value;
-    }
-    public double StageWidth
-    {
-        get => ComparisonDisplay.StageWidth;
-        set => ComparisonDisplay.StageWidth = value;
-    }
-
-    public double StageHeight
-    {
-        get => ComparisonDisplay.StageHeight;
-        set => ComparisonDisplay.StageHeight = value;
     }
 
     public Bitmap? LeftImage
@@ -154,84 +118,11 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public bool HasRightImage => ComparisonDisplay.HasRightImage;
 
-    public bool HasAnyImage => ComparisonDisplay.HasAnyImage;
-
     public bool HasBothImages => ComparisonDisplay.HasBothImages;
-
-    public bool HasProjects => Workspace.HasProjects;
 
     public bool ShowProjectsEmptyState => WorkspaceStatus.ShowProjectsEmptyState;
 
     public bool ShowComparisonsEmptyState => WorkspaceStatus.ShowComparisonsEmptyState;
-
-    public bool CanDeleteSelectedProject => Workspace.CanDeleteSelectedProject;
-
-    public bool CanAddComparison => Workspace.CanAddComparison;
-
-    public bool CanDeleteSelectedComparison => Workspace.CanDeleteSelectedComparison;
-
-    public string SelectedProjectName
-    {
-        get => Workspace.SelectedProjectName;
-        set => Workspace.SelectedProjectName = value;
-    }
-
-    public string SelectedComparisonName
-    {
-        get => Workspace.SelectedComparisonName;
-        set => Workspace.SelectedComparisonName = value;
-    }
-
-    public IReadOnlyList<ComparisonSet> SelectedProjectComparisons => Workspace.SelectedProjectComparisons;
-
-    public IReadOnlyList<ImageAsset> SelectedComparisonImages => Workspace.SelectedComparisonImages;
-
-    public void BeginRenameProject(Project project)
-    {
-        Workspace.BeginRenameProject(project);
-    }
-
-    [RelayCommand]
-    public void BeginRenameProject(ProjectListItemViewModel projectRow)
-    {
-        Workspace.BeginRenameProject(projectRow);
-    }
-
-    public void BeginRenameComparison(ComparisonSet comparison)
-    {
-        Workspace.BeginRenameComparison(comparison);
-    }
-
-    [RelayCommand]
-    public void BeginRenameComparison(ComparisonListItemViewModel comparisonRow)
-    {
-        Workspace.BeginRenameComparison(comparisonRow);
-    }
-
-    public async Task CommitProjectRenameAsync(ProjectListItemViewModel row, CancellationToken cancellationToken = default)
-    {
-        await Workspace.CommitProjectRenameAsync(row, cancellationToken);
-    }
-
-    public async Task CommitComparisonRenameAsync(ComparisonListItemViewModel row, CancellationToken cancellationToken = default)
-    {
-        await Workspace.CommitComparisonRenameAsync(row, cancellationToken);
-    }
-
-    public void CancelProjectRename(ProjectListItemViewModel row)
-    {
-        WorkspaceNavigatorViewModel.CancelProjectRename(row);
-    }
-
-    public void CancelComparisonRename(ComparisonListItemViewModel row)
-    {
-        WorkspaceNavigatorViewModel.CancelComparisonRename(row);
-    }
-
-    public async Task CommitActiveInlineRenamesAsync(CancellationToken cancellationToken = default)
-    {
-        await Workspace.CommitActiveInlineRenamesAsync(cancellationToken);
-    }
 
     public string SelectedComparisonImageCountText => Workspace.SelectedComparisonImageCountText;
 
@@ -241,13 +132,9 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public string WorkspaceActionHint => WorkspaceStatus.WorkspaceActionHint;
 
-    public bool ShowWorkspaceActionHint => WorkspaceStatus.ShowWorkspaceActionHint;
-
     public bool ShowMainEmptyState => WorkspaceStatus.ShowMainEmptyState;
 
     public string MainEmptyStateTitle => WorkspaceStatus.MainEmptyStateTitle;
-
-    public string MainEmptyStateMessage => WorkspaceStatus.MainEmptyStateMessage;
 
     public bool CanSetReferenceImage(ImageAsset? image)
     {
@@ -267,18 +154,6 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public double RightImageHeight => ComparisonDisplay.RightImageHeight;
 
-    public bool IsSideBySideView => ToolState.IsSideBySideView;
-
-    public bool IsSplitScreenView => ToolState.IsSplitScreenView;
-
-    public bool CanUseSplitScreen => ToolState.CanUseSplitScreen;
-
-    public string CurrentViewTitle => ToolState.CurrentViewTitle;
-
-    public double SideBySideStageWidth => ComparisonDisplay.SideBySideStageWidth;
-
-    public double SideBySideStageHeight => ComparisonDisplay.SideBySideStageHeight;
-
     public async Task LoadProjectsAsync(CancellationToken cancellationToken = default)
     {
         await Workspace.LoadProjectsAsync(cancellationToken);
@@ -288,17 +163,8 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         return await Workspace.AddProjectAsync(name, cancellationToken);
     }
-
-    [RelayCommand]
-    public async Task<Project> AddProjectForInlineRenameAsync(CancellationToken cancellationToken = default)
-    {
-        return await Workspace.AddProjectForInlineRenameAsync(cancellationToken);
-    }
-
-    public async Task<bool> DeleteProjectAsync(Project project, CancellationToken cancellationToken = default)
-    {
-        return await Workspace.DeleteProjectAsync(project, cancellationToken);
-    }
+    
+    
 
     [RelayCommand]
     public Task<bool> DeleteSelectedProjectAsync(CancellationToken cancellationToken = default)
@@ -311,17 +177,6 @@ public partial class MainWindowViewModel : ViewModelBase
         return await Workspace.AddComparisonAsync(name, cancellationToken);
     }
 
-    [RelayCommand]
-    public async Task<ComparisonSet> AddComparisonForInlineRenameAsync(CancellationToken cancellationToken = default)
-    {
-        return await Workspace.AddComparisonForInlineRenameAsync(cancellationToken);
-    }
-
-    public async Task EnsureProjectAndComparisonAsync(CancellationToken cancellationToken = default)
-    {
-        await Workspace.EnsureProjectAndComparisonAsync(cancellationToken);
-    }
-
     public async Task RenameSelectedProjectAsync(string? name, CancellationToken cancellationToken = default)
     {
         await Workspace.RenameSelectedProjectAsync(name, cancellationToken);
@@ -330,21 +185,6 @@ public partial class MainWindowViewModel : ViewModelBase
     public async Task RenameSelectedComparisonAsync(string? name, CancellationToken cancellationToken = default)
     {
         await Workspace.RenameSelectedComparisonAsync(name, cancellationToken);
-    }
-
-    public async Task RenameProjectAsync(Project project, string? name, CancellationToken cancellationToken = default)
-    {
-        await Workspace.RenameProjectAsync(project, name, cancellationToken);
-    }
-
-    public async Task RenameComparisonAsync(ComparisonSet comparison, string? name, CancellationToken cancellationToken = default)
-    {
-        await Workspace.RenameComparisonAsync(comparison, name, cancellationToken);
-    }
-
-    public async Task<bool> DeleteComparisonAsync(ComparisonSet comparison, CancellationToken cancellationToken = default)
-    {
-        return await Workspace.DeleteComparisonAsync(comparison, cancellationToken);
     }
 
     [RelayCommand]
@@ -378,14 +218,6 @@ public partial class MainWindowViewModel : ViewModelBase
         CancellationToken cancellationToken = default)
     {
         return await ImageSet.AddFilesToCurrentComparisonAsync(files, maxFiles, cancellationToken);
-    }
-
-    public async Task<IReadOnlyList<ImageAsset>> AddFilesToCurrentComparisonAfterCommittingRenamesAsync(
-        IEnumerable<IStorageFile> files,
-        int? maxFiles = null,
-        CancellationToken cancellationToken = default)
-    {
-        return await ImageSet.AddFilesToCurrentComparisonAfterCommittingRenamesAsync(files, maxFiles, cancellationToken);
     }
 
     public async Task<IReadOnlyList<ImageAsset>> AddBrowserFilesToCurrentComparisonAsync(
@@ -453,11 +285,6 @@ public partial class MainWindowViewModel : ViewModelBase
         return version;
     }
 
-    public async Task<bool> LoadImageAssetAsync(ImageSlot slot, ImageAsset image, CancellationToken cancellationToken = default)
-    {
-        return await ComparisonDisplay.LoadImageAssetAsync(slot, image, ProjectStorage, cancellationToken);
-    }
-
     public async Task RefreshCurrentComparisonImagesAsync(CancellationToken cancellationToken = default)
     {
         await ComparisonDisplay.RefreshCurrentComparisonImagesAsync(SelectedComparison, ProjectStorage, cancellationToken);
@@ -466,12 +293,6 @@ public partial class MainWindowViewModel : ViewModelBase
     public async Task<bool> DeleteImageAsync(ImageAsset image, CancellationToken cancellationToken = default)
     {
         return await ImageSet.DeleteImageAsync(image, cancellationToken);
-    }
-
-    [RelayCommand]
-    public async Task<bool> DeleteImageAndRefreshAsync(ImageAsset image, CancellationToken cancellationToken = default)
-    {
-        return await ImageSet.DeleteImageAndRefreshAsync(image, cancellationToken);
     }
 
     public async Task<bool> LabelImageAsync(ImageAsset image, string? label, CancellationToken cancellationToken = default)
@@ -484,36 +305,9 @@ public partial class MainWindowViewModel : ViewModelBase
         return await ImageSet.SetReferenceImageAsync(image, cancellationToken);
     }
 
-    [RelayCommand]
-    public async Task<bool> SetReferenceImageAndRefreshAsync(ImageAsset image, CancellationToken cancellationToken = default)
-    {
-        return await ImageSet.SetReferenceImageAndRefreshAsync(image, cancellationToken);
-    }
-
     public async Task<bool> SetCandidateImageAsync(ImageAsset image, CancellationToken cancellationToken = default)
     {
         return await ImageSet.SetCandidateImageAsync(image, cancellationToken);
-    }
-
-    [RelayCommand]
-    public async Task<bool> SetCandidateImageAndRefreshAsync(ImageAsset image, CancellationToken cancellationToken = default)
-    {
-        return await ImageSet.SetCandidateImageAndRefreshAsync(image, cancellationToken);
-    }
-
-    public void SetZoomScale(double zoomScale)
-    {
-        ToolState.SetZoomScale(zoomScale);
-    }
-
-    public bool TrySetZoomText(string? text)
-    {
-        return ToolState.TrySetZoomText(text);
-    }
-
-    public void SelectSideBySideView()
-    {
-        ToolState.SelectSideBySideView();
     }
 
     public void SelectSplitScreenView()
@@ -529,16 +323,6 @@ public partial class MainWindowViewModel : ViewModelBase
     public async Task LoadImageAsync(ImageSlot slot, string filePath)
     {
         await ComparisonDisplay.LoadImageAsync(slot, filePath);
-    }
-
-    public async Task LoadImageAsync(ImageSlot slot, string fileName, Stream stream)
-    {
-        await ComparisonDisplay.LoadImageAsync(slot, fileName, stream);
-    }
-
-    public void DisposeImages()
-    {
-        ComparisonDisplay.DisposeImages();
     }
 
     private Task SaveProjectAsync(Project project, CancellationToken cancellationToken)

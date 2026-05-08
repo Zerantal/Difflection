@@ -58,7 +58,7 @@ public sealed class MainWindowSnapshotTests
     {
         var viewModel = new MainWindowViewModel();
         await LoadFixtureImagesAsync(viewModel);
-        viewModel.TrySetZoomText("50%");
+        viewModel.ToolState.TrySetZoomText("50%");
 
         var window = TestUiSupport.CreateWindow(viewModel);
         try
@@ -142,7 +142,7 @@ public sealed class MainWindowSnapshotTests
         await AddFixtureImageAsync(viewModel, "reference.png", "Approved Header", new SKColor(34, 89, 165), new SKColor(249, 115, 22));
         await AddFixtureImageAsync(viewModel, "candidate.png", "Current Header", new SKColor(92, 42, 145), new SKColor(14, 165, 233));
         await viewModel.RefreshCurrentComparisonImagesAsync();
-        viewModel.TrySetZoomText("50%");
+        viewModel.ToolState.TrySetZoomText("50%");
 
         var window = TestUiSupport.CreateWindow(viewModel);
         try
