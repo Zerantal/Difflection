@@ -199,9 +199,9 @@ Recommended UI polish sequence:
    - ~~Delete action.~~
    - ~~Monitoring status or action, when available.~~
 
-4. Move destructive project and comparison actions out of tiny minus buttons.
+4. ~~Move destructive project and comparison actions out of tiny minus buttons.~~
 
-   The current add/delete sidebar controls are functional but too terse for destructive actions, and they currently perform deletion without an explicit confirmation surface. Keep add actions easily available, but move delete and other row-specific actions into contextual menus or explicit row actions with confirmation. This reduces accidental data loss and gives the sidebar more room to breathe.
+   ~~The current add/delete sidebar controls are functional but too terse for destructive actions, and they currently perform deletion without an explicit confirmation surface. Keep add actions easily available, but move delete and other row-specific actions into contextual menus or explicit row actions with confirmation. This reduces accidental data loss and gives the sidebar more room to breathe.~~
 
 5. Make sidebar list rows richer.
 

@@ -35,6 +35,31 @@ public partial class MainView : UserControl
 
     }
 
+    public Func<string, string, Task<bool>> ConfirmDestructiveActionAsync { get; set; } = ConfirmationDialogService.ShowAsync;
+
+    private void SidebarItem_OnContextRequested(object? sender, ContextRequestedEventArgs e)
+    {
+        if (sender is not Control { ContextMenu: { Items: { } items } } control || control.DataContext is null)
+        {
+            return;
+        }
+
+        foreach (var menuItem in items.OfType<MenuItem>())
+        {
+            menuItem.CommandParameter = control.DataContext;
+
+            if (string.Equals(menuItem.Header?.ToString(), "Rename", StringComparison.Ordinal))
+            {
+                menuItem.Command = control.DataContext switch
+                {
+                    ProjectListItemViewModel => _viewModel?.Workspace.BeginRenameProjectCommand,
+                    ComparisonListItemViewModel => _viewModel?.Workspace.BeginRenameComparisonCommand,
+                    _ => menuItem.Command
+                };
+            }
+        }
+    }
+
     private void SideBySideViewTab_OnPointerPressed(object? sender, PointerPressedEventArgs e)
     {
         _viewModel?.ToolState.SelectSideBySideView();
@@ -60,7 +85,7 @@ public partial class MainView : UserControl
     {
         if (_viewModel is not null && sender is TextBox { DataContext: ProjectListItemViewModel row } && row.IsEditing)
         {
-        await _viewModel.Workspace.CommitProjectRenameAsync(row);
+            await _viewModel.Workspace.CommitProjectRenameAsync(row);
         }
     }
 
@@ -87,7 +112,7 @@ public partial class MainView : UserControl
     {
         if (_viewModel is not null && sender is TextBox { DataContext: ComparisonListItemViewModel row } && row.IsEditing)
         {
-        await _viewModel.Workspace.CommitComparisonRenameAsync(row);
+            await _viewModel.Workspace.CommitComparisonRenameAsync(row);
         }
     }
 
@@ -112,7 +137,7 @@ public partial class MainView : UserControl
 
     private async void RefreshProjectSourcesMenuItem_OnClick(object? sender, RoutedEventArgs e)
     {
-        if (_viewModel is null || sender is not MenuItem { DataContext: ProjectListItemViewModel row })
+        if (_viewModel is null || sender is not MenuItem { CommandParameter: ProjectListItemViewModel row })
         {
             return;
         }
@@ -123,12 +148,52 @@ public partial class MainView : UserControl
 
     private async void RefreshComparisonSourcesMenuItem_OnClick(object? sender, RoutedEventArgs e)
     {
-        if (_viewModel is null || sender is not MenuItem { DataContext: ComparisonListItemViewModel row })
+        if (_viewModel is null || sender is not MenuItem { CommandParameter: ComparisonListItemViewModel row })
         {
             return;
         }
 
         await _viewModel.RefreshComparisonSourceImagesAsync(row.Comparison);
+        RestartImageChangeMonitor();
+    }
+
+    private async void DeleteProjectMenuItem_OnClick(object? sender, RoutedEventArgs e)
+    {
+        if (_viewModel is null || sender is not MenuItem { CommandParameter: ProjectListItemViewModel row })
+        {
+            return;
+        }
+
+        var confirmed = await ConfirmDestructiveActionAsync(
+            "Delete project?",
+            $"Delete project \"{row.Name}\" and all of its comparisons and images?");
+
+        if (!confirmed)
+        {
+            return;
+        }
+
+        await _viewModel.Workspace.DeleteProjectAsync(row.Project);
+        RestartImageChangeMonitor();
+    }
+
+    private async void DeleteComparisonMenuItem_OnClick(object? sender, RoutedEventArgs e)
+    {
+        if (_viewModel is null || sender is not MenuItem { CommandParameter: ComparisonListItemViewModel row })
+        {
+            return;
+        }
+
+        var confirmed = await ConfirmDestructiveActionAsync(
+            "Delete comparison?",
+            $"Delete comparison \"{row.Name}\" and all images in its image set?");
+
+        if (!confirmed)
+        {
+            return;
+        }
+
+        await _viewModel.Workspace.DeleteComparisonAsync(row.Comparison);
         RestartImageChangeMonitor();
     }
 
@@ -442,4 +507,5 @@ public partial class MainView : UserControl
             await RefreshCurrentComparisonAndFitStageAsync();
         }
     }
+
 }

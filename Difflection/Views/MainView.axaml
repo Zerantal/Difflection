@@ -281,7 +281,7 @@
                 Padding="12"
                 DataContext="{Binding Workspace}">
             <Grid RowDefinitions="Auto,*,16,Auto,*" RowSpacing="8">
-                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="6">
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
                     <TextBlock Classes="sidebarHeading"
                                Text="PROJECTS"
                                VerticalAlignment="Center" />
@@ -291,13 +291,6 @@
                             Content="+"
                             ToolTip.Tip="Add project"
                             Command="{Binding AddProjectForInlineRenameCommand}" />
-                    <Button x:Name="DeleteProjectButton"
-                            Grid.Column="2"
-                            Classes="sidebarIconButton"
-                            Content="-"
-                            ToolTip.Tip="Delete selected project"
-                            IsEnabled="{Binding CanDeleteSelectedProject}"
-                            Command="{Binding DeleteSelectedProjectCommand}" />
                 </Grid>
 
                 <ListBox x:Name="ProjectsList"
@@ -307,14 +300,15 @@
                          SelectedItem="{Binding SelectedProjectRow, Mode=TwoWay}">
                     <ListBox.ItemTemplate>
                         <DataTemplate x:DataType="vm:ProjectListItemViewModel">
-                            <Border Background="Transparent">
+                            <Border Background="Transparent"
+                                    ContextRequested="SidebarItem_OnContextRequested">
                                 <Border.ContextMenu>
                                     <ContextMenu>
                                         <MenuItem Header="Refresh source images"
                                                   Click="RefreshProjectSourcesMenuItem_OnClick" />
-                                        <MenuItem Header="Rename"
-                                                  Command="{Binding $parent[Grid].((vm:WorkspaceNavigatorViewModel)DataContext).BeginRenameProjectCommand}"
-                                                  CommandParameter="{Binding}" />
+                                        <MenuItem Header="Rename" />
+                                        <MenuItem Header="Delete"
+                                                  Click="DeleteProjectMenuItem_OnClick" />
                                     </ContextMenu>
                                 </Border.ContextMenu>
                                 <Grid>
@@ -341,7 +335,7 @@
 
                 <Border Grid.Row="2" Height="1" Background="#303030" VerticalAlignment="Center" />
 
-                <Grid Grid.Row="3" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="6">
+                <Grid Grid.Row="3" ColumnDefinitions="*,Auto" ColumnSpacing="6">
                     <TextBlock Classes="sidebarHeading"
                                Text="COMPARISONS"
                                VerticalAlignment="Center" />
@@ -352,13 +346,6 @@
                             ToolTip.Tip="Add comparison"
                             IsEnabled="{Binding CanAddComparison}"
                             Command="{Binding AddComparisonForInlineRenameCommand}" />
-                    <Button x:Name="DeleteComparisonButton"
-                            Grid.Column="2"
-                            Classes="sidebarIconButton"
-                            Content="-"
-                            ToolTip.Tip="Delete selected comparison"
-                            IsEnabled="{Binding CanDeleteSelectedComparison}"
-                            Command="{Binding DeleteSelectedComparisonCommand}" />
                 </Grid>
 
                 <ListBox x:Name="ComparisonsList"
@@ -368,14 +355,15 @@
                          SelectedItem="{Binding SelectedComparisonRow, Mode=TwoWay}">
                     <ListBox.ItemTemplate>
                         <DataTemplate x:DataType="vm:ComparisonListItemViewModel">
-                            <Border Background="Transparent">
+                            <Border Background="Transparent"
+                                    ContextRequested="SidebarItem_OnContextRequested">
                                 <Border.ContextMenu>
                                     <ContextMenu>
                                         <MenuItem Header="Refresh source images"
                                                   Click="RefreshComparisonSourcesMenuItem_OnClick" />
-                                        <MenuItem Header="Rename"
-                                                  Command="{Binding $parent[Grid].((vm:WorkspaceNavigatorViewModel)DataContext).BeginRenameComparisonCommand}"
-                                                  CommandParameter="{Binding}" />
+                                        <MenuItem Header="Rename" />
+                                        <MenuItem Header="Delete"
+                                                  Click="DeleteComparisonMenuItem_OnClick" />
                                     </ContextMenu>
                                 </Border.ContextMenu>
                                 <Grid>

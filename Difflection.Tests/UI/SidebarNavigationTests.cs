@@ -122,6 +122,67 @@ public sealed class SidebarNavigationTests
     }
 
     [AvaloniaFact]
+    public async Task Rename_context_menu_items_begin_inline_rename_for_project_and_comparison()
+    {
+        var project = new Project { Name = "Project" };
+        var comparison = new ComparisonSet { Name = "Comparison" };
+        project.Comparisons.Add(comparison);
+        var viewModel = new MainWindowViewModel(new FakeProjectStorage(project));
+
+        var window = TestUiSupport.CreateWindow(viewModel);
+        try
+        {
+            var mainView = TestUiSupport.GetMainView(window);
+            var projectsList = GetControl<ListBox>(mainView, "ProjectsList");
+            var comparisonsList = GetControl<ListBox>(mainView, "ComparisonsList");
+
+            await TestUiSupport.WaitForAsync(() => projectsList.ItemCount == 1 && comparisonsList.ItemCount == 1);
+
+            Click(GetContextMenuItem(projectsList, viewModel.Workspace.SelectedProjectRow!, "Rename"));
+            await TestUiSupport.WaitForAsync(() => viewModel.Workspace.SelectedProjectRow?.IsEditing == true);
+            WorkspaceNavigatorViewModel.CancelProjectRename(viewModel.Workspace.SelectedProjectRow!);
+
+            Click(GetContextMenuItem(comparisonsList, viewModel.Workspace.SelectedComparisonRow!, "Rename"));
+            await TestUiSupport.WaitForAsync(() => viewModel.Workspace.SelectedComparisonRow?.IsEditing == true);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task Sidebar_context_menu_items_receive_their_project_or_comparison_row()
+    {
+        var project = new Project { Name = "Project" };
+        var comparison = new ComparisonSet { Name = "Comparison" };
+        project.Comparisons.Add(comparison);
+        var viewModel = new MainWindowViewModel(new FakeProjectStorage(project));
+
+        var window = TestUiSupport.CreateWindow(viewModel);
+        try
+        {
+            var mainView = TestUiSupport.GetMainView(window);
+            var projectsList = GetControl<ListBox>(mainView, "ProjectsList");
+            var comparisonsList = GetControl<ListBox>(mainView, "ComparisonsList");
+
+            await TestUiSupport.WaitForAsync(() => projectsList.ItemCount == 1 && comparisonsList.ItemCount == 1);
+
+            GetContextMenuItem(projectsList, viewModel.Workspace.SelectedProjectRow!, "Refresh source images");
+            GetContextMenuItem(projectsList, viewModel.Workspace.SelectedProjectRow!, "Rename");
+            GetContextMenuItem(projectsList, viewModel.Workspace.SelectedProjectRow!, "Delete");
+
+            GetContextMenuItem(comparisonsList, viewModel.Workspace.SelectedComparisonRow!, "Refresh source images");
+            GetContextMenuItem(comparisonsList, viewModel.Workspace.SelectedComparisonRow!, "Rename");
+            GetContextMenuItem(comparisonsList, viewModel.Workspace.SelectedComparisonRow!, "Delete");
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
     public async Task Remove_image_button_removes_image_and_refreshes_current_display()
     {
         var storage = new FakeProjectStorage();
@@ -228,7 +289,7 @@ public sealed class SidebarNavigationTests
     }
 
     [AvaloniaFact]
-    public async Task Comparison_buttons_follow_selected_project_and_selected_comparison_state()
+    public async Task Comparison_add_button_follows_selected_project_state()
     {
         var storage = new FakeProjectStorage();
         var viewModel = new MainWindowViewModel(storage);
@@ -238,11 +299,9 @@ public sealed class SidebarNavigationTests
         {
             var mainView = TestUiSupport.GetMainView(window);
             var addComparisonButton = GetControl<Button>(mainView, "AddComparisonButton");
-            var deleteComparisonButton = GetControl<Button>(mainView, "DeleteComparisonButton");
             var comparisonsList = GetControl<ListBox>(mainView, "ComparisonsList");
 
             Assert.False(addComparisonButton.IsEffectivelyEnabled);
-            Assert.False(deleteComparisonButton.IsEffectivelyEnabled);
 
             Click(GetControl<Button>(mainView, "AddProjectButton"));
             await TestUiSupport.WaitForAsync(() => addComparisonButton.IsEffectivelyEnabled);
@@ -253,7 +312,6 @@ public sealed class SidebarNavigationTests
             var comparison = Assert.Single(viewModel.Workspace.SelectedProject!.Comparisons);
             Assert.Equal("Untitled Comparison", comparison.Name);
             Assert.Same(comparison, viewModel.Workspace.SelectedComparison);
-            Assert.True(deleteComparisonButton.IsEffectivelyEnabled);
         }
         finally
         {
@@ -297,7 +355,7 @@ public sealed class SidebarNavigationTests
     }
 
     [AvaloniaFact]
-    public async Task Delete_buttons_remove_selected_items_and_repair_selection()
+    public async Task Delete_context_menu_items_confirm_remove_selected_items_and_repair_selection()
     {
         var first = new Project { Name = "First" };
         var second = new Project { Name = "Second" };
@@ -312,25 +370,59 @@ public sealed class SidebarNavigationTests
         try
         {
             var mainView = TestUiSupport.GetMainView(window);
+            mainView.ConfirmDestructiveActionAsync = (_, _) => Task.FromResult(true);
             var projectsList = GetControl<ListBox>(mainView, "ProjectsList");
             var comparisonsList = GetControl<ListBox>(mainView, "ComparisonsList");
 
             await TestUiSupport.WaitForAsync(() => projectsList.ItemCount == 2 && comparisonsList.ItemCount == 2);
 
-            Click(GetControl<Button>(mainView, "DeleteComparisonButton"));
+            Click(GetContextMenuItem(comparisonsList, viewModel.Workspace.SelectedComparisonRow!, "Delete"));
             await TestUiSupport.WaitForAsync(() => comparisonsList.ItemCount == 1);
 
             Assert.DoesNotContain(firstComparison, first.Comparisons);
             Assert.Same(secondComparison, viewModel.Workspace.SelectedComparison);
             Assert.Same(first, Assert.Single(storage.SavedProjects));
 
-            Click(GetControl<Button>(mainView, "DeleteProjectButton"));
+            Click(GetContextMenuItem(projectsList, viewModel.Workspace.SelectedProjectRow!, "Delete"));
             await TestUiSupport.WaitForAsync(() => projectsList.ItemCount == 1);
 
             Assert.DoesNotContain(first, viewModel.Workspace.Projects);
             Assert.Same(second, viewModel.Workspace.SelectedProject);
             Assert.Null(viewModel.Workspace.SelectedComparison);
             Assert.Contains(first.Id, storage.DeletedProjectIds);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task Delete_context_menu_cancel_leaves_project_and_comparison_unchanged()
+    {
+        var project = new Project { Name = "Project" };
+        var comparison = new ComparisonSet { Name = "Comparison" };
+        project.Comparisons.Add(comparison);
+        var storage = new FakeProjectStorage(project);
+        var viewModel = new MainWindowViewModel(storage);
+
+        var window = TestUiSupport.CreateWindow(viewModel);
+        try
+        {
+            var mainView = TestUiSupport.GetMainView(window);
+            mainView.ConfirmDestructiveActionAsync = (_, _) => Task.FromResult(false);
+            var projectsList = GetControl<ListBox>(mainView, "ProjectsList");
+            var comparisonsList = GetControl<ListBox>(mainView, "ComparisonsList");
+
+            await TestUiSupport.WaitForAsync(() => projectsList.ItemCount == 1 && comparisonsList.ItemCount == 1);
+
+            Click(GetContextMenuItem(comparisonsList, viewModel.Workspace.SelectedComparisonRow!, "Delete"));
+            Click(GetContextMenuItem(projectsList, viewModel.Workspace.SelectedProjectRow!, "Delete"));
+
+            Assert.Single(project.Comparisons);
+            Assert.Single(viewModel.Workspace.Projects);
+            Assert.Empty(storage.SavedProjects);
+            Assert.Empty(storage.DeletedProjectIds);
         }
         finally
         {
@@ -356,6 +448,20 @@ public sealed class SidebarNavigationTests
         }
 
         button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+    }
+
+    private static void Click(MenuItem menuItem)
+    {
+        if (menuItem.Command is { } command)
+        {
+            var parameter = menuItem.CommandParameter;
+            if (command.CanExecute(parameter))
+            {
+                command.Execute(parameter);
+            }
+        }
+
+        menuItem.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
     }
 
     private static void LoseFocus(TextBox textBox)
@@ -395,6 +501,36 @@ public sealed class SidebarNavigationTests
             .OfType<Button>()
             .FirstOrDefault(button => string.Equals(button.Content?.ToString(), content, StringComparison.Ordinal))
             ?? throw new InvalidOperationException($"Image action button '{content}' not found.");
+    }
+
+    private static MenuItem GetContextMenuItem(ItemsControl list, object item, string header)
+    {
+        var border = list.ContainerFromItem(item)
+            ?.GetVisualDescendants()
+            .OfType<Border>()
+            .FirstOrDefault(border => border.ContextMenu is not null)
+            ?? throw new InvalidOperationException("Context menu owner not found.");
+
+        border.RaiseEvent(new ContextRequestedEventArgs
+        {
+            RoutedEvent = InputElement.ContextRequestedEvent
+        });
+
+        var contextMenu = border.ContextMenu
+            ?? throw new InvalidOperationException("Context menu not found.");
+
+        var menuItem = contextMenu.Items
+            .OfType<MenuItem>()
+            .FirstOrDefault(menuItem => string.Equals(menuItem.Header?.ToString(), header, StringComparison.Ordinal))
+            ?? throw new InvalidOperationException($"Context menu item '{header}' not found.");
+
+        Assert.Same(item, menuItem.CommandParameter);
+        if (string.Equals(header, "Rename", StringComparison.Ordinal))
+        {
+            Assert.NotNull(menuItem.Command);
+        }
+
+        return menuItem;
     }
 
     private sealed class FakeProjectStorage(params Project[] projects) : IProjectStorage
