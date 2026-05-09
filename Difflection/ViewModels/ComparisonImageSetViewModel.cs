@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -12,26 +14,43 @@ using Difflection.Storage;
 
 namespace Difflection.ViewModels;
 
-public partial class ComparisonImageSetViewModel(
-    WorkspaceNavigatorViewModel workspace,
-    ComparisonDisplayViewModel comparisonDisplay,
-    IProjectStorage? projectStorage) : ViewModelBase
+public partial class ComparisonImageSetViewModel : ViewModelBase
 {
+    private readonly WorkspaceNavigatorViewModel _workspace;
+    private readonly ComparisonDisplayViewModel _comparisonDisplay;
+    private readonly IProjectStorage? _projectStorage;
+    private bool _suppressWorkspaceImageRefresh;
+
+    public ComparisonImageSetViewModel(
+        WorkspaceNavigatorViewModel workspace,
+        ComparisonDisplayViewModel comparisonDisplay,
+        IProjectStorage? projectStorage)
+    {
+        _workspace = workspace;
+        _comparisonDisplay = comparisonDisplay;
+        _projectStorage = projectStorage;
+
+        _workspace.PropertyChanged += OnWorkspacePropertyChanged;
+        _ = RefreshImageRowsAsync();
+    }
+
     public event EventHandler? ImageSetChanged;
+
+    public ObservableCollection<ComparisonImageSetItemViewModel> ImageRows { get; } = [];
 
     public bool CanSetReferenceImage(ImageAsset? image)
     {
-        return workspace.SelectedComparison is not null
+        return _workspace.SelectedComparison is not null
             && image is not null
-            && workspace.SelectedComparison.Images.Contains(image);
+            && _workspace.SelectedComparison.Images.Contains(image);
     }
 
     public bool CanSetCandidateImage(ImageAsset? image)
     {
-        return workspace.SelectedComparison is not null
+        return _workspace.SelectedComparison is not null
             && image is not null
-            && workspace.SelectedComparison.Images.Count >= 2
-            && workspace.SelectedComparison.Images.Contains(image);
+            && _workspace.SelectedComparison.Images.Count >= 2
+            && _workspace.SelectedComparison.Images.Contains(image);
     }
 
     public async Task<ImageAsset> AddImageAsync(
@@ -42,12 +61,12 @@ public partial class ComparisonImageSetViewModel(
         ImageSourceMetadata? originalFileMetadata = null,
         CancellationToken cancellationToken = default)
     {
-        if (workspace.SelectedProject is null)
+        if (_workspace.SelectedProject is null)
         {
             throw new InvalidOperationException("A project must be selected before adding an image.");
         }
 
-        if (workspace.SelectedComparison is null)
+        if (_workspace.SelectedComparison is null)
         {
             throw new InvalidOperationException("A comparison must be selected before adding an image.");
         }
@@ -64,22 +83,22 @@ public partial class ComparisonImageSetViewModel(
             OriginalFileMetadata = originalFileMetadata
         };
 
-        if (projectStorage is not null)
+        if (_projectStorage is not null)
         {
-            await projectStorage.SaveImageAsync(
-                workspace.SelectedProject.Id,
-                workspace.SelectedComparison.Id,
+            await _projectStorage.SaveImageAsync(
+                _workspace.SelectedProject.Id,
+                _workspace.SelectedComparison.Id,
                 image,
                 content,
                 cancellationToken);
         }
 
-        workspace.RenameDefaultComparisonFromFirstImage(workspace.SelectedComparison, image.Label);
-        workspace.SelectedComparison.AddImage(image);
-        workspace.SelectedProject.UpdatedAt = DateTimeOffset.UtcNow;
-        NotifySelectedComparisonImagesChanged();
+        _workspace.RenameDefaultComparisonFromFirstImage(_workspace.SelectedComparison, image.Label);
+        _workspace.SelectedComparison.AddImage(image);
+        _workspace.SelectedProject.UpdatedAt = DateTimeOffset.UtcNow;
+        await NotifySelectedComparisonImagesChangedAsync(cancellationToken);
 
-        await SaveProjectAsync(workspace.SelectedProject, cancellationToken);
+        await SaveProjectAsync(_workspace.SelectedProject, cancellationToken);
         return image;
     }
 
@@ -111,7 +130,7 @@ public partial class ComparisonImageSetViewModel(
             return [];
         }
 
-        await workspace.EnsureProjectAndComparisonAsync(cancellationToken);
+        await _workspace.EnsureProjectAndComparisonAsync(cancellationToken);
 
         var addedImages = new List<ImageAsset>(imageFiles.Length);
         foreach (var file in imageFiles)
@@ -119,13 +138,13 @@ public partial class ComparisonImageSetViewModel(
             var image = await AddImageAsync(file, cancellationToken: cancellationToken);
             addedImages.Add(image);
 
-            if (workspace.SelectedComparison?.ReferenceImageId == image.Id)
+            if (_workspace.SelectedComparison?.ReferenceImageId == image.Id)
             {
-                await comparisonDisplay.LoadImageAsync(ImageSlot.Left, file);
+                await _comparisonDisplay.LoadImageAsync(ImageSlot.Left, file);
             }
-            else if (workspace.SelectedComparison?.CandidateImageId == image.Id)
+            else if (_workspace.SelectedComparison?.CandidateImageId == image.Id)
             {
-                await comparisonDisplay.LoadImageAsync(ImageSlot.Right, file);
+                await _comparisonDisplay.LoadImageAsync(ImageSlot.Right, file);
             }
         }
 
@@ -137,7 +156,7 @@ public partial class ComparisonImageSetViewModel(
         int? maxFiles = null,
         CancellationToken cancellationToken = default)
     {
-        await workspace.CommitActiveInlineRenamesAsync(cancellationToken);
+        await _workspace.CommitActiveInlineRenamesAsync(cancellationToken);
         return await AddFilesToCurrentComparisonAsync(files, maxFiles, cancellationToken);
     }
 
@@ -165,7 +184,7 @@ public partial class ComparisonImageSetViewModel(
             return [];
         }
 
-        await workspace.EnsureProjectAndComparisonAsync(cancellationToken);
+        await _workspace.EnsureProjectAndComparisonAsync(cancellationToken);
 
         var addedImages = new List<ImageAsset>(files.Length);
         foreach (var file in files)
@@ -174,15 +193,15 @@ public partial class ComparisonImageSetViewModel(
             var image = await AddImageAsync(file.Name, addStream, cancellationToken: cancellationToken);
             addedImages.Add(image);
 
-            if (workspace.SelectedComparison?.ReferenceImageId == image.Id)
+            if (_workspace.SelectedComparison?.ReferenceImageId == image.Id)
             {
                 using var displayStream = new MemoryStream(file.Bytes, writable: false);
-                await comparisonDisplay.LoadImageAsync(ImageSlot.Left, image.Label, displayStream);
+                await _comparisonDisplay.LoadImageAsync(ImageSlot.Left, image.Label, displayStream);
             }
-            else if (workspace.SelectedComparison?.CandidateImageId == image.Id)
+            else if (_workspace.SelectedComparison?.CandidateImageId == image.Id)
             {
                 using var displayStream = new MemoryStream(file.Bytes, writable: false);
-                await comparisonDisplay.LoadImageAsync(ImageSlot.Right, image.Label, displayStream);
+                await _comparisonDisplay.LoadImageAsync(ImageSlot.Right, image.Label, displayStream);
             }
         }
 
@@ -193,26 +212,26 @@ public partial class ComparisonImageSetViewModel(
     {
         ArgumentNullException.ThrowIfNull(image);
 
-        if (workspace.SelectedProject is null || workspace.SelectedComparison is null)
+        if (_workspace.SelectedProject is null || _workspace.SelectedComparison is null)
         {
             return false;
         }
 
-        var removed = workspace.SelectedComparison.RemoveImage(image.Id);
+        var removed = _workspace.SelectedComparison.RemoveImage(image.Id);
 
         if (!removed)
         {
             return false;
         }
 
-        workspace.SelectedProject.UpdatedAt = DateTimeOffset.UtcNow;
-        NotifySelectedComparisonImagesChanged();
+        _workspace.SelectedProject.UpdatedAt = DateTimeOffset.UtcNow;
+        await NotifySelectedComparisonImagesChangedAsync(cancellationToken);
 
-        await SaveProjectAsync(workspace.SelectedProject, cancellationToken);
+        await SaveProjectAsync(_workspace.SelectedProject, cancellationToken);
 
-        if (projectStorage is not null)
+        if (_projectStorage is not null)
         {
-            await projectStorage.DeleteImageAsync(image, cancellationToken);
+            await _projectStorage.DeleteImageAsync(image, cancellationToken);
         }
 
         return true;
@@ -226,7 +245,7 @@ public partial class ComparisonImageSetViewModel(
             return false;
         }
 
-        await comparisonDisplay.RefreshCurrentComparisonImagesAsync(workspace.SelectedComparison, projectStorage, cancellationToken);
+        await _comparisonDisplay.RefreshCurrentComparisonImagesAsync(_workspace.SelectedComparison, _projectStorage, cancellationToken);
         return true;
     }
 
@@ -234,17 +253,17 @@ public partial class ComparisonImageSetViewModel(
     {
         ArgumentNullException.ThrowIfNull(image);
 
-        if (workspace.SelectedProject is null || workspace.SelectedComparison is null || !workspace.SelectedComparison.Images.Contains(image))
+        if (_workspace.SelectedProject is null || _workspace.SelectedComparison is null || !_workspace.SelectedComparison.Images.Contains(image))
         {
             return false;
         }
 
         image.Label = NormalizeName(label, image.SourceName);
-        workspace.SelectedComparison.UpdatedAt = DateTimeOffset.UtcNow;
-        workspace.SelectedProject.UpdatedAt = DateTimeOffset.UtcNow;
-        NotifySelectedComparisonImagesChanged();
+        _workspace.SelectedComparison.UpdatedAt = DateTimeOffset.UtcNow;
+        _workspace.SelectedProject.UpdatedAt = DateTimeOffset.UtcNow;
+        await NotifySelectedComparisonImagesChangedAsync(cancellationToken);
 
-        await SaveProjectAsync(workspace.SelectedProject, cancellationToken);
+        await SaveProjectAsync(_workspace.SelectedProject, cancellationToken);
         return true;
     }
 
@@ -252,16 +271,16 @@ public partial class ComparisonImageSetViewModel(
     {
         ArgumentNullException.ThrowIfNull(image);
 
-        if (workspace.SelectedProject is null || workspace.SelectedComparison is null || !workspace.SelectedComparison.Images.Contains(image))
+        if (_workspace.SelectedProject is null || _workspace.SelectedComparison is null || !_workspace.SelectedComparison.Images.Contains(image))
         {
             return false;
         }
 
-        workspace.SelectedComparison.SetReferenceImage(image.Id);
-        workspace.SelectedProject.UpdatedAt = DateTimeOffset.UtcNow;
-        NotifySelectedComparisonImagesChanged();
+        _workspace.SelectedComparison.SetReferenceImage(image.Id);
+        _workspace.SelectedProject.UpdatedAt = DateTimeOffset.UtcNow;
+        await NotifySelectedComparisonImagesChangedAsync(cancellationToken);
 
-        await SaveProjectAsync(workspace.SelectedProject, cancellationToken);
+        await SaveProjectAsync(_workspace.SelectedProject, cancellationToken);
         return true;
     }
 
@@ -273,7 +292,7 @@ public partial class ComparisonImageSetViewModel(
             return false;
         }
 
-        await comparisonDisplay.RefreshCurrentComparisonImagesAsync(workspace.SelectedComparison, projectStorage, cancellationToken);
+        await _comparisonDisplay.RefreshCurrentComparisonImagesAsync(_workspace.SelectedComparison, _projectStorage, cancellationToken);
         return true;
     }
 
@@ -281,21 +300,21 @@ public partial class ComparisonImageSetViewModel(
     {
         ArgumentNullException.ThrowIfNull(image);
 
-        if (workspace.SelectedProject is null || workspace.SelectedComparison is null || !workspace.SelectedComparison.Images.Contains(image))
+        if (_workspace.SelectedProject is null || _workspace.SelectedComparison is null || !_workspace.SelectedComparison.Images.Contains(image))
         {
             return false;
         }
 
-        if (workspace.SelectedComparison.Images.Count < 2)
+        if (_workspace.SelectedComparison.Images.Count < 2)
         {
             throw new InvalidOperationException("Setting a candidate image requires at least two images in the comparison.");
         }
 
-        workspace.SelectedComparison.SetCandidateImage(image.Id);
-        workspace.SelectedProject.UpdatedAt = DateTimeOffset.UtcNow;
-        NotifySelectedComparisonImagesChanged();
+        _workspace.SelectedComparison.SetCandidateImage(image.Id);
+        _workspace.SelectedProject.UpdatedAt = DateTimeOffset.UtcNow;
+        await NotifySelectedComparisonImagesChangedAsync(cancellationToken);
 
-        await SaveProjectAsync(workspace.SelectedProject, cancellationToken);
+        await SaveProjectAsync(_workspace.SelectedProject, cancellationToken);
         return true;
     }
 
@@ -307,8 +326,31 @@ public partial class ComparisonImageSetViewModel(
             return false;
         }
 
-        await comparisonDisplay.RefreshCurrentComparisonImagesAsync(workspace.SelectedComparison, projectStorage, cancellationToken);
+        await _comparisonDisplay.RefreshCurrentComparisonImagesAsync(_workspace.SelectedComparison, _projectStorage, cancellationToken);
         return true;
+    }
+
+    public async Task RefreshImageRowsAsync(CancellationToken cancellationToken = default)
+    {
+        ClearImageRows();
+
+        if (_workspace.SelectedComparison is not { } comparison)
+        {
+            return;
+        }
+
+        foreach (var image in comparison.Images)
+        {
+            var row = new ComparisonImageSetItemViewModel(image, comparison);
+            ImageRows.Add(row);
+
+            if (_projectStorage is not null)
+            {
+                await row.LoadThumbnailAsync(_projectStorage, cancellationToken);
+            }
+        }
+
+        OnPropertyChanged(nameof(ImageRows));
     }
 
     private static string NormalizeName(string? name, string fallback)
@@ -324,12 +366,41 @@ public partial class ComparisonImageSetViewModel(
 
     private Task SaveProjectAsync(Project project, CancellationToken cancellationToken)
     {
-        return projectStorage?.SaveProjectAsync(project, cancellationToken) ?? Task.CompletedTask;
+        return _projectStorage?.SaveProjectAsync(project, cancellationToken) ?? Task.CompletedTask;
     }
 
-    private void NotifySelectedComparisonImagesChanged()
+    private async Task NotifySelectedComparisonImagesChangedAsync(CancellationToken cancellationToken)
     {
-        workspace.NotifySelectedComparisonImagesChanged();
+        try
+        {
+            _suppressWorkspaceImageRefresh = true;
+            _workspace.NotifySelectedComparisonImagesChanged();
+        }
+        finally
+        {
+            _suppressWorkspaceImageRefresh = false;
+        }
+
+        await RefreshImageRowsAsync(cancellationToken);
         ImageSetChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void OnWorkspacePropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(WorkspaceNavigatorViewModel.SelectedComparison)
+            || e.PropertyName is nameof(WorkspaceNavigatorViewModel.SelectedComparisonImages) && !_suppressWorkspaceImageRefresh)
+        {
+            _ = RefreshImageRowsAsync();
+        }
+    }
+
+    private void ClearImageRows()
+    {
+        foreach (var row in ImageRows)
+        {
+            row.Dispose();
+        }
+
+        ImageRows.Clear();
     }
 }

@@ -385,7 +385,12 @@ public sealed class SidebarNavigationTests
 
     private static Button GetImageActionButton(ItemsControl list, ImageAsset image, string content)
     {
-        return list.ContainerFromItem(image)
+        var row = list.Items
+            .OfType<ComparisonImageSetItemViewModel>()
+            .FirstOrDefault(item => ReferenceEquals(item.Image, image))
+            ?? throw new InvalidOperationException($"Image row for '{image.SourceName}' not found.");
+
+        return list.ContainerFromItem(row)
             ?.GetVisualDescendants()
             .OfType<Button>()
             .FirstOrDefault(button => string.Equals(button.Content?.ToString(), content, StringComparison.Ordinal))

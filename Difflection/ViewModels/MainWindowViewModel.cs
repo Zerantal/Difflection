@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Media.Imaging;
@@ -53,25 +55,25 @@ public class MainWindowViewModel : ViewModelBase
     public Bitmap? LeftImage
     {
         get => ComparisonDisplay.LeftImage;
-        set => ComparisonDisplay.LeftImage = value;
+        private set => ComparisonDisplay.LeftImage = value;
     }
 
     public Bitmap? RightImage
     {
         get => ComparisonDisplay.RightImage;
-        set => ComparisonDisplay.RightImage = value;
+        private set => ComparisonDisplay.RightImage = value;
     }
 
     public string LeftFileName
     {
         get => ComparisonDisplay.LeftFileName;
-        set => ComparisonDisplay.LeftFileName = value;
+        private set => ComparisonDisplay.LeftFileName = value;
     }
 
     public string RightFileName
     {
         get => ComparisonDisplay.RightFileName;
-        set => ComparisonDisplay.RightFileName = value;
+        private set => ComparisonDisplay.RightFileName = value;
     }
 
     public string DifferenceStatusText
@@ -145,6 +147,102 @@ public class MainWindowViewModel : ViewModelBase
         await ComparisonDisplay.RefreshCurrentComparisonImagesAsync(Workspace.SelectedComparison, ProjectStorage, cancellationToken);
 
         return version;
+    }
+
+    public async Task<int> RefreshProjectSourceImagesAsync(
+        Project project,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(project);
+
+        if (_monitoredImageVersionCapture is null || !Workspace.Projects.Contains(project))
+        {
+            return 0;
+        }
+
+        var capturedCount = 0;
+        foreach (var comparison in project.Comparisons.ToArray())
+        {
+            capturedCount += await RefreshComparisonSourceImagesAsync(project, comparison, cancellationToken);
+        }
+
+        return capturedCount;
+    }
+
+    public Task<int> RefreshComparisonSourceImagesAsync(
+        ComparisonSet comparison,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(comparison);
+
+        if (Workspace.SelectedProject is null || !Workspace.SelectedProject.Comparisons.Contains(comparison))
+        {
+            return Task.FromResult(0);
+        }
+
+        return RefreshComparisonSourceImagesAsync(Workspace.SelectedProject, comparison, cancellationToken);
+    }
+
+    private async Task<int> RefreshComparisonSourceImagesAsync(
+        Project project,
+        ComparisonSet comparison,
+        CancellationToken cancellationToken)
+    {
+        if (_monitoredImageVersionCapture is null)
+        {
+            return 0;
+        }
+
+        var roleImages = GetCurrentRoleImages(comparison);
+        var capturedCount = 0;
+
+        foreach (var (image, role) in roleImages)
+        {
+            var version = await _monitoredImageVersionCapture.RefreshCurrentRoleImageAsync(
+                project,
+                comparison,
+                image,
+                role,
+                cancellationToken);
+
+            if (version is not null)
+            {
+                capturedCount++;
+            }
+        }
+
+        if (capturedCount == 0)
+        {
+            return 0;
+        }
+
+        Workspace.NotifySelectedComparisonImagesChanged();
+        WorkspaceStatus.NotifyImageStateChanged();
+
+        if (ReferenceEquals(project, Workspace.SelectedProject) && ReferenceEquals(comparison, Workspace.SelectedComparison))
+        {
+            await ImageSet.RefreshImageRowsAsync(cancellationToken);
+            await ComparisonDisplay.RefreshCurrentComparisonImagesAsync(Workspace.SelectedComparison, ProjectStorage, cancellationToken);
+        }
+
+        return capturedCount;
+    }
+
+    private static IReadOnlyList<(ImageAsset Image, ImageMonitoringRole Role)> GetCurrentRoleImages(ComparisonSet comparison)
+    {
+        List<(ImageAsset Image, ImageMonitoringRole Role)> roleImages = [];
+
+        if (comparison.ReferenceImage is { } reference)
+        {
+            roleImages.Add((reference, ImageMonitoringRole.Reference));
+        }
+
+        if (comparison.CandidateImage is { } candidate && roleImages.All(item => item.Image.Id != candidate.Id))
+        {
+            roleImages.Add((candidate, ImageMonitoringRole.Candidate));
+        }
+
+        return roleImages;
     }
 
     private Task SaveProjectAsync(Project project, CancellationToken cancellationToken)

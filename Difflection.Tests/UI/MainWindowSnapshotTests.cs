@@ -142,9 +142,9 @@ public sealed class MainWindowSnapshotTests
         await AddFixtureImageAsync(viewModel, "reference.png", "Approved Header", new SKColor(34, 89, 165), new SKColor(249, 115, 22));
         await AddFixtureImageAsync(viewModel, "candidate.png", "Current Header", new SKColor(92, 42, 145), new SKColor(14, 165, 233));
         await viewModel.ComparisonDisplay.RefreshCurrentComparisonImagesAsync(viewModel.Workspace.SelectedComparison, viewModel.ProjectStorage);
-        viewModel.ToolState.TrySetZoomText("50%");
 
         var window = TestUiSupport.CreateWindow(viewModel);
+        viewModel.ToolState.TrySetZoomText("50%");
         try
         {
             AssertSnapshot(window, "main-window-workspace-side-by-side-image-set");

@@ -187,17 +187,17 @@ Recommended UI polish sequence:
 
    ~~This matters because the app is now project-oriented, not just a drag-two-images comparison surface.~~
 
-3. Rework the image set area around images as primary objects.
+3. ~~Rework the image set area around images as primary objects.~~
 
-   This remains the largest visible gap. The current UI still combines duplicated reference/candidate summary cards with a table-style image list. The image set should be the authoritative place where images are managed. Reference and candidate should be roles assigned to images, not separate fixed slots. Replace the summary cards plus list with a thumbnail strip or grid where each image card shows:
+   ~~This remains the largest visible gap. The current UI still combines duplicated reference/candidate summary cards with a table-style image list. The image set should be the authoritative place where images are managed. Reference and candidate should be roles assigned to images, not separate fixed slots. Replace the summary cards plus list with a thumbnail strip or grid where each image card shows:~~
 
-   - Thumbnail.
-   - Label and source name.
-   - Reference and candidate role badges.
-   - Set as Reference action.
-   - Set as Candidate action.
-   - Delete action.
-   - Monitoring status or action, when available.
+   - ~~Thumbnail.~~
+   - ~~Label and source name.~~
+   - ~~Reference and candidate role badges.~~
+   - ~~Set as Reference action.~~
+   - ~~Set as Candidate action.~~
+   - ~~Delete action.~~
+   - ~~Monitoring status or action, when available.~~
 
 4. Move destructive project and comparison actions out of tiny minus buttons.
 

@@ -11,7 +11,6 @@ using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using Difflection.Infrastructure;
-using Difflection.Models;
 using Difflection.Monitoring;
 using Difflection.ViewModels;
 using JetBrains.Annotations;
@@ -111,6 +110,28 @@ public partial class MainView : UserControl
         }
     }
 
+    private async void RefreshProjectSourcesMenuItem_OnClick(object? sender, RoutedEventArgs e)
+    {
+        if (_viewModel is null || sender is not MenuItem { DataContext: ProjectListItemViewModel row })
+        {
+            return;
+        }
+
+        await _viewModel.RefreshProjectSourceImagesAsync(row.Project);
+        RestartImageChangeMonitor();
+    }
+
+    private async void RefreshComparisonSourcesMenuItem_OnClick(object? sender, RoutedEventArgs e)
+    {
+        if (_viewModel is null || sender is not MenuItem { DataContext: ComparisonListItemViewModel row })
+        {
+            return;
+        }
+
+        await _viewModel.RefreshComparisonSourceImagesAsync(row.Comparison);
+        RestartImageChangeMonitor();
+    }
+
     private void InlineNameTextBox_OnAttachedToVisualTree(object? sender, VisualTreeAttachmentEventArgs e)
     {
         FocusInlineNameEditor(sender as TextBox);
@@ -146,20 +167,20 @@ public partial class MainView : UserControl
 
     private async void ImageLabelTextBox_OnLostFocus(object? sender, RoutedEventArgs e)
     {
-        if (_viewModel is not null && sender is TextBox { DataContext: ImageAsset image } textBox)
+        if (_viewModel is not null && sender is TextBox { DataContext: ComparisonImageSetItemViewModel row } textBox)
         {
-            await _viewModel.ImageSet.LabelImageAsync(image, textBox.Text);
+            await _viewModel.ImageSet.LabelImageAsync(row.Image, textBox.Text);
         }
     }
 
     private async void ImageLabelTextBox_OnKeyDown(object? sender, KeyEventArgs e)
     {
-        if (e.Key != Key.Enter || _viewModel is null || sender is not TextBox { DataContext: ImageAsset image } textBox)
+        if (e.Key != Key.Enter || _viewModel is null || sender is not TextBox { DataContext: ComparisonImageSetItemViewModel row } textBox)
         {
             return;
         }
 
-        await _viewModel.ImageSet.LabelImageAsync(image, textBox.Text);
+        await _viewModel.ImageSet.LabelImageAsync(row.Image, textBox.Text);
         e.Handled = true;
     }
 

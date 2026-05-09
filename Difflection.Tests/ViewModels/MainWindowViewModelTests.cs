@@ -632,6 +632,98 @@ public sealed class MainWindowViewModelTests
         Assert.Empty(storage.SavedProjects);
     }
 
+    [AvaloniaFact]
+    public async Task RefreshComparisonSourceImagesAsync_adds_new_versions_for_changed_current_roles()
+    {
+        var storage = new FakeProjectStorage();
+        var viewModel = new MainWindowViewModel(storage);
+        await viewModel.Workspace.AddProjectAsync("Project", TestContext.Current.CancellationToken);
+        var comparison = await viewModel.Workspace.AddComparisonAsync("Comparison", TestContext.Current.CancellationToken);
+        var referenceFile = TestUiSupport.CreateStorageFile("refresh-reference.png");
+        var candidateFile = TestUiSupport.CreateStorageFile("refresh-candidate.png");
+        var reference = await viewModel.ImageSet.AddImageAsync(referenceFile, cancellationToken: TestContext.Current.CancellationToken);
+        var candidate = await viewModel.ImageSet.AddImageAsync(candidateFile, cancellationToken: TestContext.Current.CancellationToken);
+        var previousReferenceModifiedAt = reference.OriginalFileMetadata?.LastModifiedAt ?? DateTimeOffset.UtcNow;
+        var previousCandidateModifiedAt = candidate.OriginalFileMetadata?.LastModifiedAt ?? DateTimeOffset.UtcNow;
+        storage.SavedProjects.Clear();
+
+        WriteFixtureImage(referenceFile.Path.LocalPath, SKColors.DarkGreen);
+        File.SetLastWriteTimeUtc(referenceFile.Path.LocalPath, previousReferenceModifiedAt.UtcDateTime.AddSeconds(5));
+        WriteFixtureImage(candidateFile.Path.LocalPath, SKColors.Purple);
+        File.SetLastWriteTimeUtc(candidateFile.Path.LocalPath, previousCandidateModifiedAt.UtcDateTime.AddSeconds(5));
+
+        var capturedCount = await viewModel.RefreshComparisonSourceImagesAsync(comparison, TestContext.Current.CancellationToken);
+
+        Assert.Equal(2, capturedCount);
+        Assert.Equal(4, comparison.Images.Count);
+        Assert.NotEqual(reference.Id, comparison.ReferenceImageId);
+        Assert.NotEqual(candidate.Id, comparison.CandidateImageId);
+        Assert.Equal(reference.Id, comparison.ReferenceImage?.PreviousVersionImageId);
+        Assert.Equal(candidate.Id, comparison.CandidateImage?.PreviousVersionImageId);
+        Assert.Equal(ImageMonitoringRole.None, comparison.ReferenceImage?.MonitoringRole);
+        Assert.Equal(ImageMonitoringRole.None, comparison.CandidateImage?.MonitoringRole);
+        Assert.NotEmpty(storage.SavedProjects);
+        Assert.All(storage.SavedProjects, savedProject => Assert.Same(viewModel.Workspace.SelectedProject, savedProject));
+    }
+
+    [AvaloniaFact]
+    public async Task RefreshComparisonSourceImagesAsync_ignores_non_current_and_not_newer_sources()
+    {
+        var storage = new FakeProjectStorage();
+        var viewModel = new MainWindowViewModel(storage);
+        await viewModel.Workspace.AddProjectAsync("Project", TestContext.Current.CancellationToken);
+        var comparison = await viewModel.Workspace.AddComparisonAsync("Comparison", TestContext.Current.CancellationToken);
+        var referenceFile = TestUiSupport.CreateStorageFile("refresh-not-newer-reference.png");
+        var candidateFile = TestUiSupport.CreateStorageFile("refresh-not-newer-candidate.png");
+        var alternateFile = TestUiSupport.CreateStorageFile("refresh-alternate.png");
+        var reference = await viewModel.ImageSet.AddImageAsync(referenceFile, cancellationToken: TestContext.Current.CancellationToken);
+        var candidate = await viewModel.ImageSet.AddImageAsync(candidateFile, cancellationToken: TestContext.Current.CancellationToken);
+        var alternate = await viewModel.ImageSet.AddImageAsync(alternateFile, cancellationToken: TestContext.Current.CancellationToken);
+        var referenceModifiedAt = reference.OriginalFileMetadata?.LastModifiedAt ?? DateTimeOffset.UtcNow;
+        var alternateModifiedAt = alternate.OriginalFileMetadata?.LastModifiedAt ?? DateTimeOffset.UtcNow;
+        storage.SavedProjects.Clear();
+
+        WriteFixtureImage(referenceFile.Path.LocalPath, SKColors.DarkGreen);
+        File.SetLastWriteTimeUtc(referenceFile.Path.LocalPath, referenceModifiedAt.UtcDateTime);
+        WriteFixtureImage(alternateFile.Path.LocalPath, SKColors.Purple);
+        File.SetLastWriteTimeUtc(alternateFile.Path.LocalPath, alternateModifiedAt.UtcDateTime.AddSeconds(5));
+
+        var capturedCount = await viewModel.RefreshComparisonSourceImagesAsync(comparison, TestContext.Current.CancellationToken);
+
+        Assert.Equal(0, capturedCount);
+        Assert.Equal(3, comparison.Images.Count);
+        Assert.Equal(reference.Id, comparison.ReferenceImageId);
+        Assert.Equal(candidate.Id, comparison.CandidateImageId);
+        Assert.Empty(storage.SavedProjects);
+    }
+
+    [AvaloniaFact]
+    public async Task RefreshProjectSourceImagesAsync_refreshes_current_roles_across_project_comparisons()
+    {
+        var storage = new FakeProjectStorage();
+        var viewModel = new MainWindowViewModel(storage);
+        var project = await viewModel.Workspace.AddProjectAsync("Project", TestContext.Current.CancellationToken);
+        var first = await viewModel.Workspace.AddComparisonAsync("First", TestContext.Current.CancellationToken);
+        var firstFile = TestUiSupport.CreateStorageFile("refresh-project-first.png");
+        var firstReference = await viewModel.ImageSet.AddImageAsync(firstFile, cancellationToken: TestContext.Current.CancellationToken);
+        var firstModifiedAt = firstReference.OriginalFileMetadata?.LastModifiedAt ?? DateTimeOffset.UtcNow;
+        var second = await viewModel.Workspace.AddComparisonAsync("Second", TestContext.Current.CancellationToken);
+        var secondFile = TestUiSupport.CreateStorageFile("refresh-project-second.png");
+        var secondReference = await viewModel.ImageSet.AddImageAsync(secondFile, cancellationToken: TestContext.Current.CancellationToken);
+        var secondModifiedAt = secondReference.OriginalFileMetadata?.LastModifiedAt ?? DateTimeOffset.UtcNow;
+
+        WriteFixtureImage(firstFile.Path.LocalPath, SKColors.DarkGreen);
+        File.SetLastWriteTimeUtc(firstFile.Path.LocalPath, firstModifiedAt.UtcDateTime.AddSeconds(5));
+        WriteFixtureImage(secondFile.Path.LocalPath, SKColors.Purple);
+        File.SetLastWriteTimeUtc(secondFile.Path.LocalPath, secondModifiedAt.UtcDateTime.AddSeconds(5));
+
+        var capturedCount = await viewModel.RefreshProjectSourceImagesAsync(project, TestContext.Current.CancellationToken);
+
+        Assert.Equal(2, capturedCount);
+        Assert.Equal(firstReference.Id, first.ReferenceImage?.PreviousVersionImageId);
+        Assert.Equal(secondReference.Id, second.ReferenceImage?.PreviousVersionImageId);
+    }
+
     private sealed class FakeProjectStorage(params Project[] projects) : IProjectStorage
     {
         private readonly List<Project> _projects = [..projects];
