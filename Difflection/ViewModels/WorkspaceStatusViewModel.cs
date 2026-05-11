@@ -107,7 +107,7 @@ public class WorkspaceStatusViewModel(
 
             if (workspace.SelectedProject is null)
             {
-                return "Select a project from the sidebar.";
+                return "Select a project from the project selector.";
             }
 
             if (workspace.SelectedComparison is null)

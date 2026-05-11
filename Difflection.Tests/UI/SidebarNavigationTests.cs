@@ -32,14 +32,14 @@ public sealed class SidebarNavigationTests
         try
         {
             var mainView = TestUiSupport.GetMainView(window);
-            var projectsList = GetControl<ListBox>(mainView, "ProjectsList");
+            var projectsSelector = GetControl<ComboBox>(mainView, "ProjectsSelector");
             var comparisonsList = GetControl<ListBox>(mainView, "ComparisonsList");
 
-            await TestUiSupport.WaitForAsync(() => projectsList.ItemCount == 2);
+            await TestUiSupport.WaitForAsync(() => projectsSelector.ItemCount == 2);
 
             Assert.Same(first, viewModel.Workspace.SelectedProject);
             Assert.Same(firstComparison, viewModel.Workspace.SelectedComparison);
-            Assert.Equal(0, projectsList.SelectedIndex);
+            Assert.Equal(0, projectsSelector.SelectedIndex);
             Assert.Equal(0, comparisonsList.SelectedIndex);
             Assert.Equal(1, comparisonsList.ItemCount);
         }
@@ -59,16 +59,16 @@ public sealed class SidebarNavigationTests
         try
         {
             var mainView = TestUiSupport.GetMainView(window);
-            var projectsList = GetControl<ListBox>(mainView, "ProjectsList");
+            var projectsSelector = GetControl<ComboBox>(mainView, "ProjectsSelector");
 
             Click(GetControl<Button>(mainView, "AddProjectButton"));
 
-            await TestUiSupport.WaitForAsync(() => projectsList.ItemCount == 1);
+            await TestUiSupport.WaitForAsync(() => projectsSelector.ItemCount == 1);
 
             var project = Assert.Single(viewModel.Workspace.Projects);
             Assert.Equal("Untitled Project", project.Name);
             Assert.Same(project, viewModel.Workspace.SelectedProject);
-            Assert.Same(viewModel.Workspace.SelectedProjectRow, projectsList.SelectedItem);
+            Assert.Same(viewModel.Workspace.SelectedProjectRow, projectsSelector.SelectedItem);
             Assert.Same(project, Assert.Single(storage.SavedProjects));
         }
         finally
@@ -89,9 +89,8 @@ public sealed class SidebarNavigationTests
             var mainView = TestUiSupport.GetMainView(window);
 
             Click(GetControl<Button>(mainView, "AddProjectButton"));
-            var projectsList = GetControl<ListBox>(mainView, "ProjectsList");
             var projectRow = viewModel.Workspace.SelectedProjectRow!;
-            var projectNameTextBox = await WaitForInlineNameTextBoxAsync(projectsList, projectRow);
+            var projectNameTextBox = await WaitForProjectNameTextBoxAsync(mainView, projectRow);
             await TestUiSupport.WaitForAsync(() => projectRow.IsEditing);
             projectNameTextBox.Text = "  Client Work  ";
             LoseFocus(projectNameTextBox);
@@ -133,12 +132,11 @@ public sealed class SidebarNavigationTests
         try
         {
             var mainView = TestUiSupport.GetMainView(window);
-            var projectsList = GetControl<ListBox>(mainView, "ProjectsList");
             var comparisonsList = GetControl<ListBox>(mainView, "ComparisonsList");
 
-            await TestUiSupport.WaitForAsync(() => projectsList.ItemCount == 1 && comparisonsList.ItemCount == 1);
+            await TestUiSupport.WaitForAsync(() => comparisonsList.ItemCount == 1);
 
-            Click(GetContextMenuItem(projectsList, viewModel.Workspace.SelectedProjectRow!, "Rename"));
+            Click(GetControl<Button>(mainView, "EditProjectButton"));
             await TestUiSupport.WaitForAsync(() => viewModel.Workspace.SelectedProjectRow?.IsEditing == true);
             WorkspaceNavigatorViewModel.CancelProjectRename(viewModel.Workspace.SelectedProjectRow!);
 
@@ -163,14 +161,9 @@ public sealed class SidebarNavigationTests
         try
         {
             var mainView = TestUiSupport.GetMainView(window);
-            var projectsList = GetControl<ListBox>(mainView, "ProjectsList");
             var comparisonsList = GetControl<ListBox>(mainView, "ComparisonsList");
 
-            await TestUiSupport.WaitForAsync(() => projectsList.ItemCount == 1 && comparisonsList.ItemCount == 1);
-
-            GetContextMenuItem(projectsList, viewModel.Workspace.SelectedProjectRow!, "Refresh source images");
-            GetContextMenuItem(projectsList, viewModel.Workspace.SelectedProjectRow!, "Rename");
-            GetContextMenuItem(projectsList, viewModel.Workspace.SelectedProjectRow!, "Delete");
+            await TestUiSupport.WaitForAsync(() => comparisonsList.ItemCount == 1);
 
             GetContextMenuItem(comparisonsList, viewModel.Workspace.SelectedComparisonRow!, "Refresh source images");
             GetContextMenuItem(comparisonsList, viewModel.Workspace.SelectedComparisonRow!, "Rename");
@@ -202,7 +195,7 @@ public sealed class SidebarNavigationTests
 
             await TestUiSupport.WaitForAsync(() => imagesList.ItemCount == 2);
 
-            Click(GetImageActionButton(imagesList, reference, "Remove"));
+            Click(GetImageActionButton(imagesList, reference, "Remove image"));
 
             await TestUiSupport.WaitForAsync(() => imagesList.ItemCount == 1 && viewModel.LeftFileName == candidate.Label);
 
@@ -320,7 +313,7 @@ public sealed class SidebarNavigationTests
     }
 
     [AvaloniaFact]
-    public async Task Selecting_project_in_sidebar_updates_comparison_list_and_selected_comparison()
+    public async Task Selecting_project_in_selector_updates_comparison_list_and_selected_comparison()
     {
         var first = new Project { Name = "First" };
         first.Comparisons.Add(new ComparisonSet { Name = "First A" });
@@ -334,18 +327,18 @@ public sealed class SidebarNavigationTests
         try
         {
             var mainView = TestUiSupport.GetMainView(window);
-            var projectsList = GetControl<ListBox>(mainView, "ProjectsList");
+            var projectsSelector = GetControl<ComboBox>(mainView, "ProjectsSelector");
             var comparisonsList = GetControl<ListBox>(mainView, "ComparisonsList");
 
-            await TestUiSupport.WaitForAsync(() => projectsList.ItemCount == 2);
+            await TestUiSupport.WaitForAsync(() => projectsSelector.ItemCount == 2);
 
-            projectsList.SelectedItem = viewModel.Workspace.ProjectRows.Single(row => ReferenceEquals(row.Project, second));
+            projectsSelector.SelectedItem = viewModel.Workspace.ProjectRows.Single(row => ReferenceEquals(row.Project, second));
 
             await TestUiSupport.WaitForAsync(() => ReferenceEquals(viewModel.Workspace.SelectedProject, second)
                 && ReferenceEquals(viewModel.Workspace.SelectedComparison, secondComparison)
                 && comparisonsList.ItemCount == 2);
 
-            Assert.Same(viewModel.Workspace.SelectedProjectRow, projectsList.SelectedItem);
+            Assert.Same(viewModel.Workspace.SelectedProjectRow, projectsSelector.SelectedItem);
             Assert.Equal(2, comparisonsList.ItemCount);
         }
         finally
@@ -355,7 +348,7 @@ public sealed class SidebarNavigationTests
     }
 
     [AvaloniaFact]
-    public async Task Delete_context_menu_items_confirm_remove_selected_items_and_repair_selection()
+    public async Task Delete_actions_confirm_remove_selected_items_and_repair_selection()
     {
         var first = new Project { Name = "First" };
         var second = new Project { Name = "Second" };
@@ -371,10 +364,10 @@ public sealed class SidebarNavigationTests
         {
             var mainView = TestUiSupport.GetMainView(window);
             mainView.ConfirmDestructiveActionAsync = (_, _) => Task.FromResult(true);
-            var projectsList = GetControl<ListBox>(mainView, "ProjectsList");
+            var projectsSelector = GetControl<ComboBox>(mainView, "ProjectsSelector");
             var comparisonsList = GetControl<ListBox>(mainView, "ComparisonsList");
 
-            await TestUiSupport.WaitForAsync(() => projectsList.ItemCount == 2 && comparisonsList.ItemCount == 2);
+            await TestUiSupport.WaitForAsync(() => projectsSelector.ItemCount == 2 && comparisonsList.ItemCount == 2);
 
             Click(GetContextMenuItem(comparisonsList, viewModel.Workspace.SelectedComparisonRow!, "Delete"));
             await TestUiSupport.WaitForAsync(() => comparisonsList.ItemCount == 1);
@@ -383,8 +376,8 @@ public sealed class SidebarNavigationTests
             Assert.Same(secondComparison, viewModel.Workspace.SelectedComparison);
             Assert.Same(first, Assert.Single(storage.SavedProjects));
 
-            Click(GetContextMenuItem(projectsList, viewModel.Workspace.SelectedProjectRow!, "Delete"));
-            await TestUiSupport.WaitForAsync(() => projectsList.ItemCount == 1);
+            Click(GetControl<Button>(mainView, "DeleteProjectButton"));
+            await TestUiSupport.WaitForAsync(() => projectsSelector.ItemCount == 1);
 
             Assert.DoesNotContain(first, viewModel.Workspace.Projects);
             Assert.Same(second, viewModel.Workspace.SelectedProject);
@@ -411,13 +404,13 @@ public sealed class SidebarNavigationTests
         {
             var mainView = TestUiSupport.GetMainView(window);
             mainView.ConfirmDestructiveActionAsync = (_, _) => Task.FromResult(false);
-            var projectsList = GetControl<ListBox>(mainView, "ProjectsList");
+            var projectsSelector = GetControl<ComboBox>(mainView, "ProjectsSelector");
             var comparisonsList = GetControl<ListBox>(mainView, "ComparisonsList");
 
-            await TestUiSupport.WaitForAsync(() => projectsList.ItemCount == 1 && comparisonsList.ItemCount == 1);
+            await TestUiSupport.WaitForAsync(() => projectsSelector.ItemCount == 1 && comparisonsList.ItemCount == 1);
 
             Click(GetContextMenuItem(comparisonsList, viewModel.Workspace.SelectedComparisonRow!, "Delete"));
-            Click(GetContextMenuItem(projectsList, viewModel.Workspace.SelectedProjectRow!, "Delete"));
+            Click(GetControl<Button>(mainView, "DeleteProjectButton"));
 
             Assert.Single(project.Comparisons);
             Assert.Single(viewModel.Workspace.Projects);
@@ -481,6 +474,19 @@ public sealed class SidebarNavigationTests
         return textBox!;
     }
 
+    private static async Task<TextBox> WaitForProjectNameTextBoxAsync(Control root, ProjectListItemViewModel row)
+    {
+        TextBox? textBox = null;
+        await TestUiSupport.WaitForAsync(() =>
+        {
+            textBox = root.FindControl<TextBox>("ProjectNameTextBox");
+            return textBox is { IsVisible: true, DataContext: ProjectListItemViewModel textBoxRow }
+                && ReferenceEquals(textBoxRow, row);
+        });
+
+        return textBox!;
+    }
+
     private static TextBox? FindInlineNameTextBox(ItemsControl list, object item)
     {
         return list.ContainerFromItem(item)
@@ -489,7 +495,7 @@ public sealed class SidebarNavigationTests
             .FirstOrDefault();
     }
 
-    private static Button GetImageActionButton(ItemsControl list, ImageAsset image, string content)
+    private static Button GetImageActionButton(ItemsControl list, ImageAsset image, string tooltip)
     {
         var row = list.Items
             .OfType<ComparisonImageSetItemViewModel>()
@@ -499,8 +505,8 @@ public sealed class SidebarNavigationTests
         return list.ContainerFromItem(row)
             ?.GetVisualDescendants()
             .OfType<Button>()
-            .FirstOrDefault(button => string.Equals(button.Content?.ToString(), content, StringComparison.Ordinal))
-            ?? throw new InvalidOperationException($"Image action button '{content}' not found.");
+            .FirstOrDefault(button => string.Equals(ToolTip.GetTip(button)?.ToString(), tooltip, StringComparison.Ordinal))
+            ?? throw new InvalidOperationException($"Image action button '{tooltip}' not found.");
     }
 
     private static MenuItem GetContextMenuItem(ItemsControl list, object item, string header)

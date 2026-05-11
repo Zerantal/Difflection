@@ -21,8 +21,40 @@
                 Background="#050505">
             <Grid x:Name="SideBySideSurface"
                   ClipToBounds="True"
+                  RowDefinitions="Auto,*"
                   ColumnDefinitions="*,16,*">
+                <Border Grid.Row="0"
+                        Grid.Column="0"
+                        Background="#101010E0"
+                        CornerRadius="4"
+                        Margin="8,8,8,0"
+                        Padding="8,2"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Top"
+                        IsHitTestVisible="False">
+                    <TextBlock Text="Baseline"
+                               Foreground="#F3F4F6"
+                               FontSize="11"
+                               FontWeight="SemiBold" />
+                </Border>
+
+                <Border Grid.Row="0"
+                        Grid.Column="2"
+                        Background="#101010E0"
+                        CornerRadius="4"
+                        Margin="8,8,8,0"
+                        Padding="8,2"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Top"
+                        IsHitTestVisible="False">
+                    <TextBlock Text="Candidate"
+                               Foreground="#F3F4F6"
+                               FontSize="11"
+                               FontWeight="SemiBold" />
+                </Border>
+
                 <views:RuledImagePane x:Name="SideBySideLeftPane"
+                                      Grid.Row="1"
                                       Grid.Column="0"
                                       SurfaceWidth="{Binding ComparisonDisplay.LeftImageWidth}"
                                       SurfaceHeight="{Binding ComparisonDisplay.LeftImageHeight}"
@@ -30,12 +62,14 @@
                                       ZoomScale="{Binding ToolState.ZoomScale}" />
 
                 <Border x:Name="SideBySideGutter"
+                        Grid.Row="1"
                         Grid.Column="1"
                         Width="16"
                         Background="#101010"
                         IsVisible="{Binding ComparisonDisplay.HasBothImages}" />
 
                 <views:RuledImagePane x:Name="SideBySideRightPane"
+                                      Grid.Row="1"
                                       Grid.Column="2"
                                       SurfaceWidth="{Binding ComparisonDisplay.RightImageWidth}"
                                       SurfaceHeight="{Binding ComparisonDisplay.RightImageHeight}"
@@ -44,6 +78,7 @@
                                       IsVisible="{Binding ComparisonDisplay.HasBothImages}" />
 
                 <Border x:Name="SideBySideDropOverlay"
+                        Grid.Row="1"
                         Grid.Column="0"
                         Grid.ColumnSpan="3"
                         Background="Transparent"

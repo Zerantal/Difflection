@@ -339,7 +339,9 @@ public partial class ComparisonImageSetViewModel : ViewModelBase
             return;
         }
 
-        foreach (var image in comparison.Images)
+        foreach (var image in comparison.Images
+                     .OrderByDescending(image => image.AddedAt)
+                     .ThenByDescending(image => image.SourceName, StringComparer.Ordinal))
         {
             var row = new ComparisonImageSetItemViewModel(image, comparison);
             ImageRows.Add(row);

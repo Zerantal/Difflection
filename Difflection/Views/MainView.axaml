@@ -2,6 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Difflection.ViewModels"
              xmlns:views="using:Difflection.Views"
+             xmlns:fi="using:FluentIcons.Avalonia"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
@@ -9,7 +10,6 @@
              x:Name="Root"
              x:DataType="vm:MainWindowViewModel"
              Background="#181818">
-
     <Design.DataContext>
         <vm:MainWindowViewModel />
     </Design.DataContext>
@@ -48,6 +48,34 @@
         <Style Selector="Button.sidebarIconButton:disabled">
             <Setter Property="Opacity" Value="0.45" />
         </Style>
+        <Style Selector="Button.headerIconButton">
+            <Setter Property="Background" Value="#262626" />
+            <Setter Property="Foreground" Value="#E5E7EB" />
+            <Setter Property="BorderBrush" Value="#444444" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="Width" Value="30" />
+            <Setter Property="Height" Value="30" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+        <Style Selector="Button.headerIconButton:disabled">
+            <Setter Property="Opacity" Value="0.45" />
+        </Style>
+        <Style Selector="Button.imageActionIconButton">
+            <Setter Property="Background" Value="#262626" />
+            <Setter Property="Foreground" Value="#E5E7EB" />
+            <Setter Property="BorderBrush" Value="#444444" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="Width" Value="28" />
+            <Setter Property="Height" Value="28" />
+        </Style>
+        <Style Selector="Button.imageActionIconButton:disabled">
+            <Setter Property="Opacity" Value="0.45" />
+        </Style>
         <Style Selector="Border.viewTab">
             <Setter Property="Padding" Value="0,0,0,7" />
             <Setter Property="Cursor" Value="Hand" />
@@ -63,6 +91,16 @@
             <Setter Property="BorderThickness" Value="0" />
             <Setter Property="Padding" Value="0" />
         </Style>
+        <Style Selector="ComboBox.projectSelector">
+            <Setter Property="Background" Value="#101010" />
+            <Setter Property="Foreground" Value="#F3F4F6" />
+            <Setter Property="BorderBrush" Value="#3A3A3A" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="Padding" Value="8,5" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+        </Style>
         <Style Selector="ListBoxItem">
             <Setter Property="Padding" Value="8,7" />
             <Setter Property="Margin" Value="0,1" />
@@ -75,6 +113,11 @@
         </Style>
         <Style Selector="ListBoxItem:selected /template/ ContentPresenter">
             <Setter Property="Background" Value="#3A2A1F" />
+        </Style>
+        <Style Selector="ListBox#ComparisonImagesList ListBoxItem">
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Margin" Value="0" />
+            <Setter Property="BorderThickness" Value="0" />
         </Style>
         <Style Selector="TextBlock.sidebarItemText">
             <Setter Property="Foreground" Value="#E5E7EB" />
@@ -144,9 +187,8 @@
             <Setter Property="BorderBrush" Value="#383838" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="CornerRadius" Value="6" />
-            <Setter Property="Padding" Value="8" />
-            <Setter Property="Width" Value="320" />
-            <Setter Property="MinHeight" Value="159" />
+            <Setter Property="Padding" Value="10" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
         </Style>
         <Style Selector="Border.roleBadge">
             <Setter Property="Background" Value="#2B2B2B" />
@@ -172,6 +214,29 @@
             <Setter Property="Foreground" Value="#8C939D" />
             <Setter Property="FontSize" Value="11" />
             <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        </Style>
+        <Style Selector="TextBlock.imageVersionText">
+            <Setter Property="Foreground" Value="#F97316" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        </Style>
+        <Style Selector="TextBlock.imageSetHeaderText">
+            <Setter Property="Foreground" Value="#9AA1AB" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="LetterSpacing" Value="0.4" />
+        </Style>
+        <Style Selector="Border.imageSetHeader">
+            <Setter Property="Background" Value="#151515" />
+            <Setter Property="BorderBrush" Value="#2A2A2A" />
+            <Setter Property="BorderThickness" Value="0,0,0,1" />
+            <Setter Property="Padding" Value="6,6,6,8" />
+        </Style>
+        <Style Selector="Border.imageSetRow">
+            <Setter Property="BorderBrush" Value="#2A2A2A" />
+            <Setter Property="BorderThickness" Value="0,0,0,1" />
+            <Setter Property="Padding" Value="6,8" />
         </Style>
         <Style Selector="TextBlock.workspaceContextTitle">
             <Setter Property="Foreground" Value="#F3F4F6" />
@@ -222,7 +287,8 @@
             </Grid>
         </Border>
 
-        <Border Grid.Row="1" Grid.ColumnSpan="2" Grid.Column="0" Background="#2B2B2B" BorderBrush="#363636" BorderThickness="0,0,0,1">
+        <Border Grid.Row="1" Grid.ColumnSpan="2" Grid.Column="0" Background="#2B2B2B" BorderBrush="#363636"
+                BorderThickness="0,0,0,1">
             <Grid ColumnDefinitions="Auto,*" Margin="20,0">
                 <StackPanel Orientation="Horizontal"
                             VerticalAlignment="Bottom"
@@ -263,9 +329,13 @@
                             HorizontalAlignment="Right"
                             VerticalAlignment="Center"
                             Spacing="10">
-                    <Button Classes="toolbarPrimary"
-                            Content="Add media"
-                            Click="AddMediaButton_OnClick" />
+                    <Button Classes="headerIconButton"
+                            ToolTip.Tip="Add images to comparison"
+                            Click="AddMediaButton_OnClick">
+                        <fi:FluentIcon Icon="Add"
+                                       IconVariant="Regular"
+                                       IconSize="Size16" />
+                    </Button>
                     <Button Classes="toolbarSecondary"
                             Content="Settings" />
                 </StackPanel>
@@ -280,54 +350,36 @@
                 BorderThickness="0,0,1,0"
                 Padding="12"
                 DataContext="{Binding Workspace}">
-            <Grid RowDefinitions="Auto,*,16,Auto,*" RowSpacing="8">
+            <Grid RowDefinitions="Auto,Auto,16,Auto,*" RowSpacing="8">
                 <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
                     <TextBlock Classes="sidebarHeading"
-                               Text="PROJECTS"
+                               Text="PROJECT"
                                VerticalAlignment="Center" />
                     <Button x:Name="AddProjectButton"
                             Grid.Column="1"
                             Classes="sidebarIconButton"
-                            Content="+"
                             ToolTip.Tip="Add project"
-                            Command="{Binding AddProjectForInlineRenameCommand}" />
+                            Command="{Binding AddProjectForInlineRenameCommand}">
+                        <fi:FluentIcon Icon="Add"
+                                       IconVariant="Regular"
+                                       IconSize="Size16" />
+                    </Button>
                 </Grid>
 
-                <ListBox x:Name="ProjectsList"
-                         Grid.Row="1"
-                         Classes="sidebarList"
-                         ItemsSource="{Binding ProjectRows}"
-                         SelectedItem="{Binding SelectedProjectRow, Mode=TwoWay}">
-                    <ListBox.ItemTemplate>
+                <ComboBox x:Name="ProjectsSelector"
+                          Grid.Row="1"
+                          Classes="projectSelector"
+                          ItemsSource="{Binding ProjectRows}"
+                          SelectedItem="{Binding SelectedProjectRow, Mode=TwoWay}"
+                          IsEnabled="{Binding HasProjects}"
+                          IsVisible="{Binding HasProjects}">
+                    <ComboBox.ItemTemplate>
                         <DataTemplate x:DataType="vm:ProjectListItemViewModel">
-                            <Border Background="Transparent"
-                                    ContextRequested="SidebarItem_OnContextRequested">
-                                <Border.ContextMenu>
-                                    <ContextMenu>
-                                        <MenuItem Header="Refresh source images"
-                                                  Click="RefreshProjectSourcesMenuItem_OnClick" />
-                                        <MenuItem Header="Rename" />
-                                        <MenuItem Header="Delete"
-                                                  Click="DeleteProjectMenuItem_OnClick" />
-                                    </ContextMenu>
-                                </Border.ContextMenu>
-                                <Grid>
-                                    <TextBlock Classes="sidebarItemText"
-                                               Text="{Binding Name}"
-                                               VerticalAlignment="Center"
-                                               IsVisible="{Binding IsNotEditing}" />
-                                    <TextBox Classes="sidebarInlineName editing"
-                                             Text="{Binding DraftName, Mode=TwoWay}"
-                                             IsVisible="{Binding IsEditing}"
-                                             AttachedToVisualTree="InlineNameTextBox_OnAttachedToVisualTree"
-                                             PropertyChanged="InlineNameTextBox_OnPropertyChanged"
-                                             LostFocus="ProjectListNameTextBox_OnLostFocus"
-                                             KeyDown="ProjectListNameTextBox_OnKeyDown" />
-                                </Grid>
-                            </Border>
+                            <TextBlock Text="{Binding Name}"
+                                       TextTrimming="CharacterEllipsis" />
                         </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
                 <TextBlock Grid.Row="1"
                            Classes="sidebarEmptyText"
                            Text="No projects yet."
@@ -342,10 +394,13 @@
                     <Button x:Name="AddComparisonButton"
                             Grid.Column="1"
                             Classes="sidebarIconButton"
-                            Content="+"
                             ToolTip.Tip="Add comparison"
                             IsEnabled="{Binding CanAddComparison}"
-                            Command="{Binding AddComparisonForInlineRenameCommand}" />
+                            Command="{Binding AddComparisonForInlineRenameCommand}">
+                        <fi:FluentIcon Icon="Add"
+                                       IconVariant="Regular"
+                                       IconSize="Size16" />
+                    </Button>
                 </Grid>
 
                 <ListBox x:Name="ComparisonsList"
@@ -393,12 +448,66 @@
         <Border Grid.Row="2" Grid.Column="1" Background="#101010" Padding="24">
             <Grid RowDefinitions="Auto,*" RowSpacing="12">
                 <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="12">
-                    <StackPanel Spacing="4"
-                                VerticalAlignment="Center">
-                        <TextBlock Classes="workspaceContextTitle"
-                                   Text="{Binding WorkspaceStatus.WorkspaceContextTitle}" />
+                    <StackPanel Spacing="6"
+                                VerticalAlignment="Center"
+                                DataContext="{Binding Workspace}">
+                        <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,*" ColumnSpacing="8">
+                            <TextBlock Classes="workspaceContextTitle"
+                                       Text="{Binding SelectedProjectName}"
+                                       VerticalAlignment="Center"
+                                       IsVisible="{Binding SelectedProjectRow.IsNotEditing}" />
+                            <TextBlock Classes="workspaceContextTitle"
+                                       Text="No project selected"
+                                       VerticalAlignment="Center"
+                                       IsVisible="{Binding ShowProjectsEmptyState}" />
+                            <TextBox x:Name="ProjectNameTextBox"
+                                     Classes="nameEditor"
+                                     MinWidth="260"
+                                     DataContext="{Binding SelectedProjectRow}"
+                                     Text="{Binding DraftName, Mode=TwoWay}"
+                                     IsVisible="{Binding IsEditing}"
+                                     AttachedToVisualTree="InlineNameTextBox_OnAttachedToVisualTree"
+                                     PropertyChanged="InlineNameTextBox_OnPropertyChanged"
+                                     LostFocus="ProjectListNameTextBox_OnLostFocus"
+                                     KeyDown="ProjectListNameTextBox_OnKeyDown" />
+                            <Button x:Name="EditProjectButton"
+                                    Grid.Column="1"
+                                    Classes="headerIconButton"
+                                    ToolTip.Tip="Rename project"
+                                    IsEnabled="{Binding HasSelectedProject}"
+                                    IsVisible="{Binding SelectedProjectRow.IsNotEditing}"
+                                    Command="{Binding BeginRenameProjectCommand}"
+                                    CommandParameter="{Binding SelectedProjectRow}">
+                                <fi:FluentIcon Icon="Edit"
+                                               IconVariant="Regular"
+                                               IconSize="Size16" />
+                            </Button>
+                            <Button x:Name="DeleteProjectButton"
+                                    Grid.Column="2"
+                                    Classes="headerIconButton"
+                                    ToolTip.Tip="Delete project"
+                                    IsEnabled="{Binding CanDeleteSelectedProject}"
+                                    IsVisible="{Binding SelectedProjectRow.IsNotEditing}"
+                                    Click="DeleteSelectedProjectButton_OnClick">
+                                <fi:FluentIcon Icon="Delete"
+                                               IconVariant="Regular"
+                                               IconSize="Size16" />
+                            </Button>
+                            <Button x:Name="RefreshProjectSourcesButton"
+                                    Grid.Column="3"
+                                    Classes="headerIconButton"
+                                    ToolTip.Tip="Refresh project source images"
+                                    IsEnabled="{Binding HasSelectedProject}"
+                                    IsVisible="{Binding SelectedProjectRow.IsNotEditing}"
+                                    Click="RefreshSelectedProjectSourcesButton_OnClick">
+                                <fi:FluentIcon Icon="ArrowClockwise"
+                                               IconVariant="Regular"
+                                               IconSize="Size16" />
+                            </Button>
+                        </Grid>
                         <StackPanel Orientation="Horizontal"
-                                    Spacing="12">
+                                    Spacing="12"
+                                    DataContext="{Binding #Root.((vm:MainWindowViewModel)DataContext)}">
                             <TextBlock Classes="workspaceContextDetail"
                                        Text="{Binding WorkspaceStatus.WorkspaceContextDetail}" />
                             <TextBlock Classes="workspaceContextDetail"
@@ -458,38 +567,38 @@
             </Grid>
         </Border>
 
-        <Border Grid.Row="3" Grid.Column="1" Background="#161616" BorderBrush="#2B2B2B" BorderThickness="0,1,0,0" Padding="18,12">
-            <Grid RowDefinitions="Auto,Auto,Auto" RowSpacing="10">
-                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
-                    <TextBlock Classes="sidebarHeading"
-                               Text="IMAGE SET"
-                               VerticalAlignment="Center" />
-                    <Button x:Name="AddImageToSetButton"
-                            Grid.Column="1"
-                            Classes="toolbarSecondary"
-                            Content="Add image"
-                            Click="AddMediaButton_OnClick" />
-                </Grid>
+        <Border Grid.Row="3" Grid.Column="1" Background="#161616" BorderBrush="#2B2B2B" BorderThickness="0,1,0,0"
+                Padding="18,12">
+            <Grid RowDefinitions="Auto,*,Auto" RowSpacing="10">
+                <Border Classes="imageSetHeader">
+                    <Grid ColumnDefinitions="76,88,*,Auto" ColumnSpacing="12">
+                        <TextBlock Classes="imageSetHeaderText"
+                                   Text="Preview" />
+                        <TextBlock Grid.Column="1"
+                                   Classes="imageSetHeaderText"
+                                   Text="Version" />
+                        <TextBlock Grid.Column="2"
+                                   Classes="imageSetHeaderText"
+                                   Text="Label" />
+                        <TextBlock Grid.Column="3"
+                                   Classes="imageSetHeaderText"
+                                   Text="Actions"
+                                   HorizontalAlignment="Right" />
+                    </Grid>
+                </Border>
 
                 <ListBox x:Name="ComparisonImagesList"
                          Grid.Row="1"
                          Classes="sidebarList"
-                         MaxHeight="197"
-                         ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                          ScrollViewer.VerticalScrollBarVisibility="Auto"
                          ItemsSource="{Binding ImageSet.ImageRows}">
-                    <ListBox.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <StackPanel Orientation="Horizontal" />
-                        </ItemsPanelTemplate>
-                    </ListBox.ItemsPanel>
                     <ListBox.ItemTemplate>
                         <DataTemplate x:DataType="vm:ComparisonImageSetItemViewModel">
-                            <Border Classes="imageSetCard" Margin="0,0,10,10">
-                                <Grid ColumnDefinitions="76,*"
-                                      RowDefinitions="Auto,Auto"
-                                      ColumnSpacing="10"
-                                      RowSpacing="7">
+                            <Border Classes="imageSetRow">
+                                <Grid ColumnDefinitions="76,88,*,Auto"
+                                      ColumnSpacing="12"
+                                      VerticalAlignment="Center">
                                     <Border Background="#0A0A0A"
                                             BorderBrush="#282828"
                                             BorderThickness="1"
@@ -497,7 +606,7 @@
                                             ClipToBounds="True"
                                             Width="76"
                                             Height="58"
-                                            VerticalAlignment="Top">
+                                            VerticalAlignment="Center">
                                         <Grid>
                                             <Image Source="{Binding Thumbnail}"
                                                    Stretch="UniformToFill"
@@ -512,51 +621,54 @@
                                         </Grid>
                                     </Border>
 
-                                    <StackPanel Grid.Row="0" Grid.Column="1" Spacing="4">
-                                        <TextBox Classes="inlineImageLabel"
-                                                 Text="{Binding Label, Mode=TwoWay}"
-                                                 LostFocus="ImageLabelTextBox_OnLostFocus"
-                                                 KeyDown="ImageLabelTextBox_OnKeyDown" />
-                                        <TextBlock Classes="imageSourceText"
-                                                   Text="{Binding SourceName}" />
-                                    </StackPanel>
+                                    <TextBlock Grid.Column="1"
+                                               Classes="imageVersionText"
+                                               Text="{Binding VersionText}"
+                                               VerticalAlignment="Center" />
 
-                                    <StackPanel Grid.Row="1" Grid.Column="0"
-                                                Orientation="Horizontal"
-                                                Spacing="6">
-                                        <Border Classes="roleBadge referenceBadge"
-                                                IsVisible="{Binding IsReference}">
-                                            <TextBlock Classes="roleBadgeText" Text="REFERENCE" />
-                                        </Border>
-                                        <Border Classes="roleBadge candidateBadge"
-                                                IsVisible="{Binding IsCandidate}">
-                                            <TextBlock Classes="roleBadgeText" Text="CANDIDATE" />
-                                        </Border>
-                                        <Border Classes="roleBadge"
-                                                IsVisible="{Binding HasMonitoring}">
-                                            <TextBlock Classes="roleBadgeText" Text="{Binding MonitoringText}" />
-                                        </Border>
-                                    </StackPanel>
+                                    <TextBox Grid.Column="2"
+                                             Classes="inlineImageLabel"
+                                             Text="{Binding Label, Mode=TwoWay}"
+                                             LostFocus="ImageLabelTextBox_OnLostFocus"
+                                             KeyDown="ImageLabelTextBox_OnKeyDown" />
 
-                                    <StackPanel Grid.Row="1"
-                                                Grid.Column="1"
+                                    <StackPanel Grid.Column="3"
                                                 Orientation="Horizontal"
                                                 HorizontalAlignment="Right"
+                                                VerticalAlignment="Center"
                                                 Spacing="6">
-                                        <Button Classes="imageActionButton"
-                                                Content="Reference"
+                                        <Button Classes="imageActionIconButton"
+                                                ToolTip.Tip="Set as baseline"
                                                 IsEnabled="{Binding CanSetReference}"
+                                                Background="{Binding BaselineButtonBackground}"
+                                                BorderBrush="{Binding BaselineButtonBorderBrush}"
+                                                Foreground="{Binding BaselineButtonForeground}"
                                                 Command="{Binding #Root.((vm:MainWindowViewModel)DataContext).ImageSet.SetReferenceImageAndRefreshCommand}"
-                                                CommandParameter="{Binding Image}" />
-                                        <Button Classes="imageActionButton"
-                                                Content="Candidate"
+                                                CommandParameter="{Binding Image}">
+                                            <fi:FluentIcon Icon="Bookmark"
+                                                           IconVariant="Regular"
+                                                           IconSize="Size16" />
+                                        </Button>
+                                        <Button Classes="imageActionIconButton"
+                                                ToolTip.Tip="Set as candidate"
                                                 IsEnabled="{Binding CanSetCandidate}"
+                                                Background="{Binding CandidateButtonBackground}"
+                                                BorderBrush="{Binding CandidateButtonBorderBrush}"
+                                                Foreground="{Binding CandidateButtonForeground}"
                                                 Command="{Binding #Root.((vm:MainWindowViewModel)DataContext).ImageSet.SetCandidateImageAndRefreshCommand}"
-                                                CommandParameter="{Binding Image}" />
-                                        <Button Classes="imageActionButton"
-                                                Content="Remove"
+                                                CommandParameter="{Binding Image}">
+                                            <fi:FluentIcon Icon="Star"
+                                                           IconVariant="Regular"
+                                                           IconSize="Size16" />
+                                        </Button>
+                                        <Button Classes="imageActionIconButton"
+                                                ToolTip.Tip="Remove image"
                                                 Command="{Binding #Root.((vm:MainWindowViewModel)DataContext).ImageSet.DeleteImageAndRefreshCommand}"
-                                                CommandParameter="{Binding Image}" />
+                                                CommandParameter="{Binding Image}">
+                                            <fi:FluentIcon Icon="Delete"
+                                                           IconVariant="Regular"
+                                                           IconSize="Size16" />
+                                        </Button>
                                     </StackPanel>
                                 </Grid>
                             </Border>

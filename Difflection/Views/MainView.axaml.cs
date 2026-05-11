@@ -146,6 +146,17 @@ public partial class MainView : UserControl
         RestartImageChangeMonitor();
     }
 
+    private async void RefreshSelectedProjectSourcesButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        if (_viewModel?.Workspace.SelectedProject is null)
+        {
+            return;
+        }
+
+        await _viewModel.RefreshProjectSourceImagesAsync(_viewModel.Workspace.SelectedProject);
+        RestartImageChangeMonitor();
+    }
+
     private async void RefreshComparisonSourcesMenuItem_OnClick(object? sender, RoutedEventArgs e)
     {
         if (_viewModel is null || sender is not MenuItem { CommandParameter: ComparisonListItemViewModel row })
@@ -160,6 +171,26 @@ public partial class MainView : UserControl
     private async void DeleteProjectMenuItem_OnClick(object? sender, RoutedEventArgs e)
     {
         if (_viewModel is null || sender is not MenuItem { CommandParameter: ProjectListItemViewModel row })
+        {
+            return;
+        }
+
+        var confirmed = await ConfirmDestructiveActionAsync(
+            "Delete project?",
+            $"Delete project \"{row.Name}\" and all of its comparisons and images?");
+
+        if (!confirmed)
+        {
+            return;
+        }
+
+        await _viewModel.Workspace.DeleteProjectAsync(row.Project);
+        RestartImageChangeMonitor();
+    }
+
+    private async void DeleteSelectedProjectButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        if (_viewModel?.Workspace.SelectedProjectRow is not { } row)
         {
             return;
         }

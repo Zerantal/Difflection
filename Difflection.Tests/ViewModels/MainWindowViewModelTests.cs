@@ -563,6 +563,47 @@ public sealed class MainWindowViewModelTests
         Assert.False(viewModel.ImageSet.CanSetCandidateImage(null));
     }
 
+    [Fact]
+    public async Task RefreshImageRowsAsync_sorts_images_by_added_date_descending_and_shows_version_chain()
+    {
+        var viewModel = new MainWindowViewModel(new FakeProjectStorage());
+        await viewModel.Workspace.AddProjectAsync("Project", TestContext.Current.CancellationToken);
+        await viewModel.Workspace.AddComparisonAsync("Comparison", TestContext.Current.CancellationToken);
+        var comparison = viewModel.Workspace.SelectedComparison!;
+
+        var oldest = new ImageAsset
+        {
+            Label = "Oldest",
+            SourceName = "oldest.png",
+            AddedAt = DateTimeOffset.UnixEpoch.AddDays(1)
+        };
+        var middle = new ImageAsset
+        {
+            Label = "Middle",
+            SourceName = "middle.png",
+            AddedAt = DateTimeOffset.UnixEpoch.AddDays(2),
+            PreviousVersionImageId = oldest.Id
+        };
+        var newest = new ImageAsset
+        {
+            Label = "Newest",
+            SourceName = "newest.png",
+            AddedAt = DateTimeOffset.UnixEpoch.AddDays(3),
+            PreviousVersionImageId = middle.Id
+        };
+
+        comparison.AddImage(oldest);
+        comparison.AddImage(middle);
+        comparison.AddImage(newest);
+
+        await viewModel.ImageSet.RefreshImageRowsAsync();
+
+        Assert.Equal(new[] { newest.Id, middle.Id, oldest.Id }, viewModel.ImageSet.ImageRows.Select(row => row.Id));
+        Assert.Equal("Version 3", viewModel.ImageSet.ImageRows[0].VersionText);
+        Assert.Equal("Version 2", viewModel.ImageSet.ImageRows[1].VersionText);
+        Assert.Equal("Version 1", viewModel.ImageSet.ImageRows[2].VersionText);
+    }
+
     [AvaloniaFact]
     public async Task CaptureMonitoredImageChangeAsync_adds_new_reference_version()
     {
