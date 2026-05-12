@@ -9,6 +9,7 @@
              x:Class="Difflection.Views.MainView"
              x:Name="Root"
              x:DataType="vm:MainWindowViewModel"
+             SizeChanged="MainView_OnSizeChanged"
              Background="#181818">
     <Design.DataContext>
         <vm:MainWindowViewModel />
@@ -76,9 +77,18 @@
         <Style Selector="Button.imageActionIconButton:disabled">
             <Setter Property="Opacity" Value="0.45" />
         </Style>
-        <Style Selector="Border.viewTab">
-            <Setter Property="Padding" Value="0,0,0,7" />
-            <Setter Property="Cursor" Value="Hand" />
+        <Style Selector="Button.viewModeButton">
+            <Setter Property="Background" Value="#262626" />
+            <Setter Property="Foreground" Value="#A8AFB8" />
+            <Setter Property="BorderBrush" Value="#444444" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="9,7" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+        <Style Selector="Button.viewModeButton:disabled">
+            <Setter Property="Opacity" Value="0.58" />
         </Style>
         <Style Selector="TextBlock.sidebarHeading">
             <Setter Property="Foreground" Value="#9AA1AB" />
@@ -177,10 +187,20 @@
             <Setter Property="Padding" Value="8,5" />
             <Setter Property="FontSize" Value="12" />
         </Style>
-        <Style Selector="TextBlock.viewTabText">
-            <Setter Property="Foreground" Value="#A8AFB8" />
-            <Setter Property="FontSize" Value="16" />
-            <Setter Property="FontWeight" Value="SemiBold" />
+        <Style Selector="Border.toolbarSeparator">
+            <Setter Property="Width" Value="1" />
+            <Setter Property="Height" Value="28" />
+            <Setter Property="Background" Value="#3A3A3A" />
+            <Setter Property="Margin" Value="2,0" />
+        </Style>
+        <Style Selector="TextBox.toolbarZoomBox">
+            <Setter Property="Background" Value="#101010" />
+            <Setter Property="Foreground" Value="#F3F4F6" />
+            <Setter Property="BorderBrush" Value="#3A3A3A" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="Padding" Value="7,4" />
+            <Setter Property="FontSize" Value="13" />
         </Style>
         <Style Selector="Border.imageSetCard">
             <Setter Property="Background" Value="#121212" />
@@ -270,8 +290,8 @@
         </Style>
     </UserControl.Styles>
 
-    <Grid RowDefinitions="34,60,*,Auto" ColumnDefinitions="260,*" Background="#181818">
-        <Border Grid.Row="0" Grid.ColumnSpan="2" Background="#222222" BorderBrush="#353535" BorderThickness="0,0,0,1">
+    <Grid x:Name="RootGrid" RowDefinitions="34,60,*,Auto" ColumnDefinitions="260,5,*" Background="#181818">
+        <Border Grid.Row="0" Grid.ColumnSpan="3" Background="#222222" BorderBrush="#353535" BorderThickness="0,0,0,1">
             <Grid ColumnDefinitions="Auto,*" Margin="14,0">
                 <TextBlock Text="Difflection"
                            FontSize="14"
@@ -287,48 +307,28 @@
             </Grid>
         </Border>
 
-        <Border Grid.Row="1" Grid.ColumnSpan="2" Grid.Column="0" Background="#2B2B2B" BorderBrush="#363636"
-                BorderThickness="0,0,0,1">
-            <Grid ColumnDefinitions="Auto,*" Margin="20,0">
-                <StackPanel Orientation="Horizontal"
-                            VerticalAlignment="Bottom"
-                            Spacing="28">
-                    <Border x:Name="SideBySideViewTab"
-                            Classes="viewTab"
-                            PointerPressed="SideBySideViewTab_OnPointerPressed">
-                        <Grid RowDefinitions="*,2" RowSpacing="6">
-                            <TextBlock x:Name="SideBySideViewTabText"
-                                       Classes="viewTabText"
-                                       Text="Side-by-side"
-                                       VerticalAlignment="Center" />
-                            <Border x:Name="SideBySideViewTabUnderline"
-                                    Grid.Row="1"
-                                    Height="2"
-                                    Background="#F97316" />
-                        </Grid>
-                    </Border>
-                    <Border x:Name="SplitScreenViewTab"
-                            Classes="viewTab"
-                            IsEnabled="{Binding ToolState.CanUseSplitScreen}"
-                            PointerPressed="SplitScreenViewTab_OnPointerPressed">
-                        <Grid RowDefinitions="*,2" RowSpacing="6">
-                            <TextBlock x:Name="SplitScreenViewTabText"
-                                       Classes="viewTabText"
-                                       Text="Split screen"
-                                       VerticalAlignment="Center" />
-                            <Border x:Name="SplitScreenViewTabUnderline"
-                                    Grid.Row="1"
-                                    Height="2"
-                                    Background="#F97316" />
-                        </Grid>
-                    </Border>
-                </StackPanel>
+        <Border Grid.Row="1"
+                Grid.Column="0"
+                Background="#171717"
+                BorderBrush="#303030"
+                BorderThickness="0,0,1,1" />
 
-                <StackPanel Grid.Column="1"
-                            Orientation="Horizontal"
-                            HorizontalAlignment="Right"
+        <Border Grid.Row="1" Grid.Column="2" Background="#202020" BorderBrush="#363636"
+                BorderThickness="0,0,0,1">
+            <Grid ColumnDefinitions="Auto,*" Margin="12,0" DataContext="{Binding}">
+                <StackPanel Orientation="Horizontal"
                             VerticalAlignment="Center"
-                            Spacing="10">
+                            Spacing="6">
+                    <Button x:Name="SideBySideViewButton"
+                            Classes="viewModeButton"
+                            Content="Side-by-side"
+                            Click="SideBySideViewButton_OnClick" />
+                    <Button x:Name="SplitScreenViewButton"
+                            Classes="viewModeButton"
+                            Content="Split screen"
+                            IsEnabled="{Binding ToolState.CanUseSplitScreen}"
+                            Click="SplitScreenViewButton_OnClick" />
+                    <Border Classes="toolbarSeparator" />
                     <Button Classes="headerIconButton"
                             ToolTip.Tip="Add images to comparison"
                             Click="AddMediaButton_OnClick">
@@ -336,11 +336,73 @@
                                        IconVariant="Regular"
                                        IconSize="Size16" />
                     </Button>
-                    <Button Classes="toolbarSecondary"
-                            Content="Settings" />
+                    <Button Classes="headerIconButton"
+                            ToolTip.Tip="Refresh source images for selected comparison"
+                            IsEnabled="{Binding Workspace.HasSelectedComparison}"
+                            Click="RefreshSelectedComparisonSourcesButton_OnClick">
+                        <fi:FluentIcon Icon="ImageArrowCounterclockwise"
+                                       IconVariant="Regular"
+                                       IconSize="Size16" />
+                    </Button>
+                </StackPanel>
+
+                <StackPanel Grid.Column="1"
+                            Orientation="Horizontal"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center"
+                            Spacing="6">
+                    <TextBlock Text="{Binding ToolState.SplitPercentageText}"
+                               IsVisible="{Binding ToolState.IsSplitScreenView}"
+                               Foreground="#BFC4CC"
+                               FontSize="13"
+                               FontWeight="SemiBold"
+                               VerticalAlignment="Center" />
+                    <TextBox x:Name="ZoomTextBox"
+                             Classes="toolbarZoomBox"
+                             Width="64"
+                             ToolTip.Tip="Zoom percentage"
+                             Text="{Binding ToolState.ZoomText, Mode=TwoWay}"
+                             HorizontalContentAlignment="Center"
+                             VerticalContentAlignment="Center"
+                             VerticalAlignment="Center"
+                             LostFocus="ZoomTextBox_OnLostFocus"
+                             KeyDown="ZoomTextBox_OnKeyDown" />
+                    <Button Classes="headerIconButton"
+                            ToolTip.Tip="Fit images to stage"
+                            IsEnabled="{Binding ComparisonDisplay.HasAnyImage}"
+                            Click="FitZoomButton_OnClick">
+                        <fi:FluentIcon Icon="AutoFitWidth"
+                                       IconVariant="Regular"
+                                       IconSize="Size16" />
+                    </Button>
+                    <Button Classes="headerIconButton"
+                            ToolTip.Tip="Actual size"
+                            IsEnabled="{Binding ComparisonDisplay.HasAnyImage}"
+                            Click="ActualSizeZoomButton_OnClick">
+                        <fi:FluentIcon Icon="FullScreenMaximize"
+                                       IconVariant="Regular"
+                                       IconSize="Size16" />
+                    </Button>
+                    <Button Classes="headerIconButton"
+                            ToolTip.Tip="Settings">
+                        <fi:FluentIcon Icon="AppsSettings"
+                                       IconVariant="Regular"
+                                       IconSize="Size16" />
+                    </Button>
                 </StackPanel>
             </Grid>
         </Border>
+
+        <GridSplitter Grid.Row="1"
+                      Grid.RowSpan="3"
+                      Grid.Column="1"
+                      Background="#3A3A3A"
+                      BorderBrush="#4A4A4A"
+                      BorderThickness="1,0"
+                      ResizeDirection="Columns"
+                      ResizeBehavior="PreviousAndNext"
+                      HorizontalAlignment="Stretch"
+                      VerticalAlignment="Stretch" />
 
         <Border Grid.Row="2"
                 Grid.RowSpan="2"
@@ -445,9 +507,9 @@
             </Grid>
         </Border>
 
-        <Border Grid.Row="2" Grid.Column="1" Background="#101010" Padding="24">
+        <Border Grid.Row="2" Grid.Column="2" Background="#101010" Padding="24">
             <Grid RowDefinitions="Auto,*" RowSpacing="12">
-                <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="12">
+                <Grid ColumnDefinitions="*" ColumnSpacing="12">
                     <StackPanel Spacing="6"
                                 VerticalAlignment="Center"
                                 DataContext="{Binding Workspace}">
@@ -496,11 +558,11 @@
                             <Button x:Name="RefreshProjectSourcesButton"
                                     Grid.Column="3"
                                     Classes="headerIconButton"
-                                    ToolTip.Tip="Refresh project source images"
+                                    ToolTip.Tip="Refresh all source images in project"
                                     IsEnabled="{Binding HasSelectedProject}"
                                     IsVisible="{Binding SelectedProjectRow.IsNotEditing}"
                                     Click="RefreshSelectedProjectSourcesButton_OnClick">
-                                <fi:FluentIcon Icon="ArrowClockwise"
+                                <fi:FluentIcon Icon="FolderSync"
                                                IconVariant="Regular"
                                                IconSize="Size16" />
                             </Button>
@@ -515,28 +577,6 @@
                                        IsVisible="{Binding WorkspaceStatus.ShowWorkspaceActionHint}" />
                         </StackPanel>
                     </StackPanel>
-                    <TextBlock Grid.Column="1"
-                               Text="{Binding ToolState.SplitPercentageText}"
-                               IsVisible="{Binding ToolState.IsSplitScreenView}"
-                               Foreground="#BFC4CC"
-                               FontSize="13"
-                               FontWeight="SemiBold"
-                               VerticalAlignment="Center" />
-                    <TextBlock Grid.Column="2"
-                               Text="Zoom"
-                               Foreground="#AEB4BC"
-                               FontSize="12"
-                               FontWeight="SemiBold"
-                               VerticalAlignment="Center" />
-                    <TextBox x:Name="ZoomTextBox"
-                             Grid.Column="3"
-                             Width="84"
-                             Text="{Binding ToolState.ZoomText, Mode=TwoWay}"
-                             HorizontalContentAlignment="Center"
-                             VerticalContentAlignment="Center"
-                             VerticalAlignment="Center"
-                             LostFocus="ZoomTextBox_OnLostFocus"
-                             KeyDown="ZoomTextBox_OnKeyDown" />
                 </Grid>
 
                 <Grid Grid.Row="1">
@@ -567,20 +607,17 @@
             </Grid>
         </Border>
 
-        <Border Grid.Row="3" Grid.Column="1" Background="#161616" BorderBrush="#2B2B2B" BorderThickness="0,1,0,0"
+        <Border Grid.Row="3" Grid.Column="2" Background="#161616" BorderBrush="#2B2B2B" BorderThickness="0,1,0,0"
                 Padding="18,12">
             <Grid RowDefinitions="Auto,*,Auto" RowSpacing="10">
                 <Border Classes="imageSetHeader">
-                    <Grid ColumnDefinitions="76,88,*,Auto" ColumnSpacing="12">
+                    <Grid ColumnDefinitions="88,*,Auto" ColumnSpacing="12">
                         <TextBlock Classes="imageSetHeaderText"
-                                   Text="Preview" />
+                                   Text="Version" />
                         <TextBlock Grid.Column="1"
                                    Classes="imageSetHeaderText"
-                                   Text="Version" />
-                        <TextBlock Grid.Column="2"
-                                   Classes="imageSetHeaderText"
                                    Text="Label" />
-                        <TextBlock Grid.Column="3"
+                        <TextBlock Grid.Column="2"
                                    Classes="imageSetHeaderText"
                                    Text="Actions"
                                    HorizontalAlignment="Right" />
@@ -596,43 +633,20 @@
                     <ListBox.ItemTemplate>
                         <DataTemplate x:DataType="vm:ComparisonImageSetItemViewModel">
                             <Border Classes="imageSetRow">
-                                <Grid ColumnDefinitions="76,88,*,Auto"
+                                <Grid ColumnDefinitions="88,*,Auto"
                                       ColumnSpacing="12"
                                       VerticalAlignment="Center">
-                                    <Border Background="#0A0A0A"
-                                            BorderBrush="#282828"
-                                            BorderThickness="1"
-                                            CornerRadius="4"
-                                            ClipToBounds="True"
-                                            Width="76"
-                                            Height="58"
-                                            VerticalAlignment="Center">
-                                        <Grid>
-                                            <Image Source="{Binding Thumbnail}"
-                                                   Stretch="UniformToFill"
-                                                   RenderOptions.BitmapInterpolationMode="None"
-                                                   IsVisible="{Binding HasThumbnail}" />
-                                            <TextBlock Classes="imageSourceText"
-                                                       Text="No preview"
-                                                       HorizontalAlignment="Center"
-                                                       VerticalAlignment="Center"
-                                                       FontSize="10"
-                                                       IsVisible="{Binding HasNoThumbnail}" />
-                                        </Grid>
-                                    </Border>
-
-                                    <TextBlock Grid.Column="1"
-                                               Classes="imageVersionText"
+                                    <TextBlock Classes="imageVersionText"
                                                Text="{Binding VersionText}"
                                                VerticalAlignment="Center" />
 
-                                    <TextBox Grid.Column="2"
+                                    <TextBox Grid.Column="1"
                                              Classes="inlineImageLabel"
                                              Text="{Binding Label, Mode=TwoWay}"
                                              LostFocus="ImageLabelTextBox_OnLostFocus"
                                              KeyDown="ImageLabelTextBox_OnKeyDown" />
 
-                                    <StackPanel Grid.Column="3"
+                                    <StackPanel Grid.Column="2"
                                                 Orientation="Horizontal"
                                                 HorizontalAlignment="Right"
                                                 VerticalAlignment="Center"

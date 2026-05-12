@@ -272,7 +272,7 @@ public sealed class SidebarNavigationTests
                 && viewModel.RightImage is null);
 
             Assert.Same(viewModel.Workspace.SelectedComparisonRow, comparisonsList.SelectedItem);
-            Assert.Equal("Reference image", viewModel.LeftFileName);
+            Assert.Equal("Baseline image", viewModel.LeftFileName);
             Assert.Equal("Candidate image", viewModel.RightFileName);
         }
         finally

@@ -32,7 +32,6 @@ public partial class MainView : UserControl
         DetachedFromVisualTree += OnDetachedFromVisualTree;
 
         UpdateViewControls();
-
     }
 
     public Func<string, string, Task<bool>> ConfirmDestructiveActionAsync { get; set; } = ConfirmationDialogService.ShowAsync;
@@ -60,25 +59,28 @@ public partial class MainView : UserControl
         }
     }
 
-    private void SideBySideViewTab_OnPointerPressed(object? sender, PointerPressedEventArgs e)
+    private void SideBySideViewButton_OnClick(object? sender, RoutedEventArgs e)
     {
         _viewModel?.ToolState.SelectSideBySideView();
         UpdateViewControls();
         ComparisonStage.FitZoomToStage();
-        e.Handled = true;
     }
 
-    private void SplitScreenViewTab_OnPointerPressed(object? sender, PointerPressedEventArgs e)
+    private void SplitScreenViewButton_OnClick(object? sender, RoutedEventArgs e)
     {
         _viewModel?.ToolState.SelectSplitScreenView();
         UpdateViewControls();
         ComparisonStage.FitZoomToStage();
-        e.Handled = true;
     }
 
     private async void AddMediaButton_OnClick(object? sender, RoutedEventArgs e)
     {
         await OpenFilePickerAndAddImagesAsync();
+    }
+
+    private void MainView_OnSizeChanged(object? sender, SizeChangedEventArgs e)
+    {
+        UpdateImageSetHeightLimit();
     }
 
     private async void ProjectListNameTextBox_OnLostFocus(object? sender, RoutedEventArgs e)
@@ -154,6 +156,17 @@ public partial class MainView : UserControl
         }
 
         await _viewModel.RefreshProjectSourceImagesAsync(_viewModel.Workspace.SelectedProject);
+        RestartImageChangeMonitor();
+    }
+
+    private async void RefreshSelectedComparisonSourcesButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        if (_viewModel?.Workspace.SelectedComparison is null)
+        {
+            return;
+        }
+
+        await _viewModel.RefreshComparisonSourceImagesAsync(_viewModel.Workspace.SelectedComparison);
         RestartImageChangeMonitor();
     }
 
@@ -339,6 +352,16 @@ public partial class MainView : UserControl
         e.Handled = true;
     }
 
+    private void FitZoomButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        ComparisonStage.FitZoomToStage();
+    }
+
+    private void ActualSizeZoomButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        _viewModel?.ToolState.SetZoomScale(1.0);
+    }
+
     private async Task OpenFilePickerAndAddImagesAsync()
     {
         if (_viewModel is null)
@@ -387,6 +410,7 @@ public partial class MainView : UserControl
         SubscribeViewModelEvents();
 
         UpdateViewControls();
+        UpdateImageSetHeightLimit();
     }
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -416,11 +440,26 @@ public partial class MainView : UserControl
             return;
         }
 
-        SideBySideViewTabText.Foreground = Brush.Parse(_viewModel.ToolState.IsSideBySideView ? "#F97316" : "#A8AFB8");
-        SplitScreenViewTabText.Foreground = Brush.Parse(_viewModel.ToolState.IsSplitScreenView ? "#F97316" : "#A8AFB8");
-        SplitScreenViewTab.Opacity = _viewModel.ToolState.CanUseSplitScreen ? 1.0 : 0.58;
-        SideBySideViewTabUnderline.IsVisible = _viewModel.ToolState.IsSideBySideView;
-        SplitScreenViewTabUnderline.IsVisible = _viewModel.ToolState.IsSplitScreenView;
+        ApplyViewModeButtonState(SideBySideViewButton, _viewModel.ToolState.IsSideBySideView);
+        ApplyViewModeButtonState(SplitScreenViewButton, _viewModel.ToolState.IsSplitScreenView);
+        SplitScreenViewButton.Opacity = _viewModel.ToolState.CanUseSplitScreen ? 1.0 : 0.58;
+    }
+
+    private static void ApplyViewModeButtonState(Button button, bool isActive)
+    {
+        button.Background = Brush.Parse(isActive ? "#3A2A1F" : "#262626");
+        button.BorderBrush = Brush.Parse(isActive ? "#F97316" : "#444444");
+        button.Foreground = Brush.Parse(isActive ? "#F97316" : "#A8AFB8");
+    }
+
+    private void UpdateImageSetHeightLimit()
+    {
+        if (ComparisonImagesList is null)
+        {
+            return;
+        }
+
+        ComparisonImagesList.MaxHeight = Math.Max(160, Bounds.Height / 3);
     }
 
     private static IEnumerable<IStorageFile> GetDroppedFiles(IDataTransfer dataTransfer)

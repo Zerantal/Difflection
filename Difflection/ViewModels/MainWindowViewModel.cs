@@ -300,7 +300,7 @@ public class MainWindowViewModel : ViewModelBase
                 if (Workspace.SelectedComparison?.ReferenceImage is null)
                 {
                     LeftImage = null;
-                    LeftFileName = "Reference image";
+                    LeftFileName = "Baseline image";
                 }
 
                 if (Workspace.SelectedComparison?.CandidateImage is null)

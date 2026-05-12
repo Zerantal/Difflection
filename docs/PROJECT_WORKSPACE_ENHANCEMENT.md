@@ -396,3 +396,71 @@ Suggested implementation order:
 6. ~~Extract empty-state/status presentation.~~
 
 Avoid doing this as one large rewrite. Each extraction should preserve behavior, run the full test suite, and leave snapshot updates for explicit visual review.
+
+## De Novo UI Review - 2026-05-12
+
+This review starts from the current UI rather than the original enhancement plan. The app now presents as a real project workspace: there is persistent project/comparison navigation, a main comparison stage, role assignment for images, contextual destructive actions, visible workspace status, empty states, and snapshot coverage for several major states. The direction is credible for a desktop image comparison tool.
+
+The biggest remaining UI opportunity is to make the screen feel less like several adjacent implementation panels and more like one inspection workflow. Difflection's core job is reviewing visual differences, so the primary surface should be the image stage, with navigation, image management, and tools supporting that task without competing for attention.
+
+Recommended improvements:
+
+1. Make the comparison toolbar the central command surface.
+
+   The current UI splits comparison controls across the top view tabs, the right-side add/settings controls, and the workspace header zoom field. Put the mode switch, add images, zoom, fit/reset, split amount, and refresh/source actions into one compact comparison toolbar directly above the stage. This would make the app easier to scan and would reduce the feeling that zoom and view mode are unrelated controls.
+
+2. Replace the bottom image table with a thumbnail-first image strip.
+
+   The current image set area exposes image roles and actions, but its table layout makes images feel like records rather than visual assets. A horizontal thumbnail strip or responsive grid would better match the task. Each item should show the thumbnail, label, source name, version/monitoring metadata, baseline/candidate badges, and actions. For image comparison software, thumbnails are not decoration; they are the fastest way to identify what is being compared.
+
+3. Reduce vertical competition from the image set area.
+
+   The image set panel currently owns a full bottom band even when the comparison stage needs space. Consider making it collapsible, resizable, or visually shallower by default. When there are only one or two images, the panel could be a compact strip. When there are many versions, it could expand into a version browser.
+
+4. Add richer sidebar metadata.
+
+   The project selector and comparison list are functional, but they do not yet provide enough at-a-glance context. Comparisons should show image count, empty/ready status, and possibly monitoring state. Projects should show comparison count or last-updated state. This would help users navigate real workspaces without opening each row to discover what is inside.
+
+5. Clarify naming: use either "Reference" or "Baseline" consistently.
+
+   The model and earlier design language use "reference", while the visible UI uses "Baseline" in several places. Either term can work, but mixing them creates unnecessary cognitive load. My preference is "Reference" because it aligns with the model and is common in visual QA workflows, unless the product deliberately wants a version-control feel.
+
+6. Make active roles visible outside icon state.
+
+   The current baseline/candidate buttons change color, but role identity depends heavily on tooltips and icon interpretation. Add explicit role badges on image rows/cards, and use the same colors and labels in the stage pane headers. This reinforces which image is being shown where and reduces mistakes when swapping roles.
+
+7. Promote fit/reset controls to visible UI.
+
+   Zoom is visible, but fit-to-window, actual size, and reset zoom should be first-class controls. These are common inspection actions, and hiding them behind implicit stage behavior makes the UI feel less complete than it is. Icon buttons with tooltips are enough; they do not need large labels.
+
+8. Improve drop affordances during normal workspace use.
+
+   The empty-state drop target is clear, but the normal comparison stage mostly relies on transparent drag/drop overlays. When a file is dragged over the app, show a visible drop state that explains whether the images will be added to the current comparison. If role-specific drop behavior is later supported, the left/right pane overlays should communicate that directly.
+
+9. Make Settings real or remove it from the main toolbar.
+
+   A visible Settings button with no apparent destination makes the app feel unfinished. If settings are not ready, remove it from the primary toolbar. If settings are needed now, scope the first version around concrete controls such as default project folder, source monitoring behavior, image interpolation, and snapshot/diff preferences.
+
+10. Tighten the visual hierarchy.
+
+   The dark palette is consistent, but many surfaces use similar contrast, borders, and spacing. The stage should be the strongest visual anchor, the toolbar should be secondary, and navigation/image management should be quieter. In practice, this means reducing heavy borders around support panels, using fewer competing bands, and reserving accent color for selected state, active roles, and primary actions.
+
+11. Add an explicit "ready to compare" state.
+
+   The UI distinguishes empty states well, but once two images exist the user should get a clear ready state: reference name, candidate name, dimensions if available, zoom/mode, and diff status. This can sit in the toolbar or stage header. It would make the transition from image management to inspection more deliberate.
+
+12. Review narrow-width behavior with real content.
+
+   There is snapshot coverage for a narrow workspace, which is good. The next visual review should use longer project names, longer comparison names, long filenames, several image versions, and active monitoring text. That is where layout problems are most likely to appear: truncated controls, crowded action buttons, and bottom-panel pressure on the comparison stage.
+
+Suggested implementation order:
+
+1. Consolidate comparison controls into a single toolbar above the stage.
+2. Convert the image set table into a thumbnail-first strip/grid.
+3. Surface sidebar row metadata for project and comparison navigation.
+4. Standardize "Reference" versus "Baseline" terminology.
+5. Add visible fit/reset controls and stronger drag-over states.
+6. Remove or implement Settings.
+7. Refresh UI snapshots using realistic long-content fixtures.
+
+Overall opinion: the UI has moved past MVP structure and now needs product-level hierarchy. The right next pass is not more feature surface area; it is making the existing workflow feel intentional, visual, and inspection-focused.

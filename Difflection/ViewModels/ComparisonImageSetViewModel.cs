@@ -330,13 +330,13 @@ public partial class ComparisonImageSetViewModel : ViewModelBase
         return true;
     }
 
-    public async Task RefreshImageRowsAsync(CancellationToken cancellationToken = default)
+    public Task RefreshImageRowsAsync(CancellationToken cancellationToken = default)
     {
         ClearImageRows();
 
         if (_workspace.SelectedComparison is not { } comparison)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         foreach (var image in comparison.Images
@@ -345,14 +345,10 @@ public partial class ComparisonImageSetViewModel : ViewModelBase
         {
             var row = new ComparisonImageSetItemViewModel(image, comparison);
             ImageRows.Add(row);
-
-            if (_projectStorage is not null)
-            {
-                await row.LoadThumbnailAsync(_projectStorage, cancellationToken);
-            }
         }
 
         OnPropertyChanged(nameof(ImageRows));
+        return Task.CompletedTask;
     }
 
     private static string NormalizeName(string? name, string fallback)

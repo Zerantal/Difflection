@@ -45,7 +45,7 @@ public partial class ComparisonDisplayViewModel : ViewModelBase
     public partial Bitmap? RightImage { get; set; }
 
     [ObservableProperty]
-    public partial string LeftFileName { get; set; } = "Reference image";
+    public partial string LeftFileName { get; set; } = "Baseline image";
 
     [ObservableProperty]
     public partial string RightFileName { get; set; } = "Candidate image";
@@ -115,7 +115,7 @@ public partial class ComparisonDisplayViewModel : ViewModelBase
         else
         {
             LeftImage = null;
-            LeftFileName = "Reference image";
+            LeftFileName = "Baseline image";
         }
 
         if (selectedComparison?.CandidateImage is { } candidate)
@@ -169,7 +169,7 @@ public partial class ComparisonDisplayViewModel : ViewModelBase
     {
         LeftImage = null;
         RightImage = null;
-        LeftFileName = "Reference image";
+        LeftFileName = "Baseline image";
         RightFileName = "Candidate image";
     }
 
