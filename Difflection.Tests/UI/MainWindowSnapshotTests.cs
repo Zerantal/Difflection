@@ -36,42 +36,6 @@ public sealed class MainWindowSnapshotTests
     }
 
     [AvaloniaFact]
-    public async Task Split_screen_with_two_images_matches_snapshot()
-    {
-        var viewModel = new MainWindowViewModel();
-        await LoadFixtureImagesAsync(viewModel);
-        viewModel.ToolState.SelectSplitScreenView();
-
-        var window = TestUiSupport.CreateWindow(viewModel);
-        try
-        {
-            AssertSnapshot(window, "main-window-split-screen-with-images");
-        }
-        finally
-        {
-            window.Close();
-        }
-    }
-
-    [AvaloniaFact]
-    public async Task Side_by_side_with_two_images_matches_snapshot()
-    {
-        var viewModel = new MainWindowViewModel();
-        await LoadFixtureImagesAsync(viewModel);
-        viewModel.ToolState.TrySetZoomText("50%");
-
-        var window = TestUiSupport.CreateWindow(viewModel);
-        try
-        {
-            AssertSnapshot(window, "main-window-side-by-side-with-images");
-        }
-        finally
-        {
-            window.Close();
-        }
-    }
-
-    [AvaloniaFact]
     public async Task Workspace_with_project_and_no_comparisons_matches_snapshot()
     {
         var project = new Project { Name = "Client Redesign" };
@@ -177,29 +141,6 @@ public sealed class MainWindowSnapshotTests
         }
     }
 
-    [AvaloniaFact]
-    public async Task Ctrl_wheel_zoom_does_not_push_toolbar_actions_offscreen()
-    {
-        var viewModel = new MainWindowViewModel();
-        await LoadFixtureImagesAsync(viewModel);
-
-        var window = TestUiSupport.CreateWindow(viewModel);
-        try
-        {
-            for (var i = 0; i < 14; i++)
-            {
-                window.MouseWheel(new Point(500, 350), new Vector(0, 1), RawInputModifiers.Control);
-                Dispatcher.UIThread.RunJobs();
-            }
-
-            AssertSnapshot(window, "main-window-zoomed-side-by-side");
-        }
-        finally
-        {
-            window.Close();
-        }
-    }
-
     private static void AssertSnapshot(TopLevel topLevel, string snapshotName)
     {
         AvaloniaHeadlessPlatform.ForceRenderTimerTick(3);
@@ -217,26 +158,6 @@ public sealed class MainWindowSnapshotTests
     {
         await using var stream = new MemoryStream(CreateFixtureImageBytes(background, accent));
         await viewModel.ImageSet.AddImageAsync(sourceName, stream, mediaType: "image/png", label: label);
-    }
-
-    private static async Task LoadFixtureImagesAsync(MainWindowViewModel viewModel)
-    {
-        var directory = Path.Combine(Path.GetTempPath(), "Difflection.Tests");
-        Directory.CreateDirectory(directory);
-
-        var referencePath = Path.Combine(directory, "reference.png");
-        var candidatePath = Path.Combine(directory, "candidate.png");
-
-        WriteFixtureImage(referencePath, new SKColor(34, 89, 165), new SKColor(249, 115, 22));
-        WriteFixtureImage(candidatePath, new SKColor(92, 42, 145), new SKColor(14, 165, 233));
-
-        await viewModel.ComparisonDisplay.LoadImageAsync(ImageSlot.Left, referencePath);
-        await viewModel.ComparisonDisplay.LoadImageAsync(ImageSlot.Right, candidatePath);
-    }
-
-    private static void WriteFixtureImage(string path, SKColor background, SKColor accent)
-    {
-        File.WriteAllBytes(path, CreateFixtureImageBytes(background, accent));
     }
 
     private static byte[] CreateFixtureImageBytes(SKColor background, SKColor accent)

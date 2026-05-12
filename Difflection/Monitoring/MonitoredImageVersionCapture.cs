@@ -146,7 +146,7 @@ public sealed class MonitoredImageVersionCapture(IProjectStorage projectStorage)
     {
         var version = new ImageAsset
         {
-            Label = CreateVersionLabel(changedImage),
+            Label = "Image",
             SourceName = Path.GetFileName(sourcePath),
             MediaType = changedImage.MediaType,
             OriginalFileMetadata = sourceMetadata,
@@ -192,16 +192,5 @@ public sealed class MonitoredImageVersionCapture(IProjectStorage projectStorage)
         await projectStorage.SaveProjectAsync(project, cancellationToken);
 
         return version;
-    }
-
-    /// <summary>
-    /// Creates a display label for an image version based on the previous image label or source name.
-    /// </summary>
-    /// <param name="image">The image being versioned.</param>
-    /// <returns>A label for the captured version.</returns>
-    private static string CreateVersionLabel(ImageAsset image)
-    {
-        var label = string.IsNullOrWhiteSpace(image.Label) ? image.SourceName : image.Label;
-        return $"{label} version";
     }
 }

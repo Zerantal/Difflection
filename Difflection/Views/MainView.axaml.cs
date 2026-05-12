@@ -22,6 +22,7 @@ public partial class MainView : UserControl
     private MainWindowViewModel? _viewModel;
     private ProjectImageChangeMonitor? _imageChangeMonitor;
     private bool _projectsLoaded;
+    private bool _isImageSetExpanded = true;
 
     public MainView()
     {
@@ -32,6 +33,7 @@ public partial class MainView : UserControl
         DetachedFromVisualTree += OnDetachedFromVisualTree;
 
         UpdateViewControls();
+        UpdateImageSetExpandedState();
     }
 
     public Func<string, string, Task<bool>> ConfirmDestructiveActionAsync { get; set; } = ConfirmationDialogService.ShowAsync;
@@ -81,6 +83,12 @@ public partial class MainView : UserControl
     private void MainView_OnSizeChanged(object? sender, SizeChangedEventArgs e)
     {
         UpdateImageSetHeightLimit();
+    }
+
+    private void ToggleImageSetButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        _isImageSetExpanded = !_isImageSetExpanded;
+        UpdateImageSetExpandedState();
     }
 
     private async void ProjectListNameTextBox_OnLostFocus(object? sender, RoutedEventArgs e)
@@ -411,6 +419,7 @@ public partial class MainView : UserControl
 
         UpdateViewControls();
         UpdateImageSetHeightLimit();
+        UpdateImageSetExpandedState();
     }
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -459,7 +468,27 @@ public partial class MainView : UserControl
             return;
         }
 
-        ComparisonImagesList.MaxHeight = Math.Max(160, Bounds.Height / 3);
+        ComparisonImagesList.ClearValue(MaxHeightProperty);
+    }
+
+    private void UpdateImageSetExpandedState()
+    {
+        if (ComparisonImagesList is null
+            || DifferenceStatusTextBlock is null
+            || ImageSetPanel is null
+            || CollapseImageSetIcon is null
+            || ExpandImageSetIcon is null
+            || ToggleImageSetButton is null)
+        {
+            return;
+        }
+
+        ComparisonImagesList.IsVisible = _isImageSetExpanded;
+        DifferenceStatusTextBlock.IsVisible = _isImageSetExpanded;
+        ImageSetPanel.Padding = _isImageSetExpanded ? new Thickness(18, 12) : new Thickness(18, 8);
+        CollapseImageSetIcon.IsVisible = _isImageSetExpanded;
+        ExpandImageSetIcon.IsVisible = !_isImageSetExpanded;
+        ToolTip.SetTip(ToggleImageSetButton, _isImageSetExpanded ? "Collapse image set" : "Expand image set");
     }
 
     private static IEnumerable<IStorageFile> GetDroppedFiles(IDataTransfer dataTransfer)

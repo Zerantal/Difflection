@@ -409,13 +409,13 @@ Recommended improvements:
 
    ~~The current UI splits comparison controls across the top view tabs, the right-side add/settings controls, and the workspace header zoom field. Put the mode switch, add images, zoom, fit/reset, split amount, and refresh/source actions into one compact comparison toolbar directly above the stage. This would make the app easier to scan and would reduce the feeling that zoom and view mode are unrelated controls.~~
 
-2. Replace the bottom image table with a thumbnail-first image strip.
+2. ~~Replace the bottom image table with a thumbnail-first image strip.~~
 
-   The current image set area exposes image roles and actions, but its table layout makes images feel like records rather than visual assets. A horizontal thumbnail strip or responsive grid would better match the task. Each item should show the thumbnail, label, source name, version/monitoring metadata, baseline/candidate badges, and actions. For image comparison software, thumbnails are not decoration; they are the fastest way to identify what is being compared.
+   ~~The current image set area exposes image roles and actions, but its table layout makes images feel like records rather than visual assets. A horizontal thumbnail strip or responsive grid would better match the task. Each item should show the thumbnail, label, source name, version/monitoring metadata, baseline/candidate badges, and actions. For image comparison software, thumbnails are not decoration; they are the fastest way to identify what is being compared.~~
 
-3. Reduce vertical competition from the image set area.
+3. ~~Reduce vertical competition from the image set area.~~
 
-   The image set panel currently owns a full bottom band even when the comparison stage needs space. Consider making it collapsible, resizable, or visually shallower by default. When there are only one or two images, the panel could be a compact strip. When there are many versions, it could expand into a version browser.
+   ~~The image set panel currently owns a full bottom band even when the comparison stage needs space. Consider making it collapsible, resizable, or visually shallower by default. When there are only one or two images, the panel could be a compact strip. When there are many versions, it could expand into a version browser.~~
 
 4. Add richer sidebar metadata.
 
@@ -456,11 +456,12 @@ Recommended improvements:
 Suggested implementation order:
 
 1. ~~Consolidate comparison controls into a single toolbar above the stage.~~
-2. Convert the image set table into a thumbnail-first strip/grid.
-3. Surface sidebar row metadata for project and comparison navigation.
-4. Standardize "Reference" versus "Baseline" terminology.
-5. Add visible fit/reset controls and stronger drag-over states.
-6. Remove or implement Settings.
-7. Refresh UI snapshots using realistic long-content fixtures.
+2. ~~Convert the image set table into a thumbnail-first strip/grid.~~
+3. ~~Reduce vertical competition from the image set area.~~
+4. Surface sidebar row metadata for project and comparison navigation.
+5. Standardize "Reference" versus "Baseline" terminology.
+6. Add visible fit/reset controls and stronger drag-over states.
+7. Remove or implement Settings.
+8. Refresh UI snapshots using realistic long-content fixtures.
 
 Overall opinion: the UI has moved past MVP structure and now needs product-level hierarchy. The right next pass is not more feature surface area; it is making the existing workflow feel intentional, visual, and inspection-focused.

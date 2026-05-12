@@ -611,10 +611,42 @@
             </Grid>
         </Border>
 
-        <Border Grid.Row="3" Grid.Column="2" Background="#161616" BorderBrush="#2B2B2B" BorderThickness="0,1,0,0"
+        <Border x:Name="ImageSetPanel" Grid.Row="3" Grid.Column="2" Background="#161616" BorderBrush="#2B2B2B" BorderThickness="0,1,0,0"
                 Padding="18,12">
-            <Grid RowDefinitions="*,Auto" RowSpacing="10">
+            <Grid RowDefinitions="Auto,Auto,Auto" RowSpacing="10">
+                <Grid ColumnDefinitions="*,Auto,Auto"
+                      ColumnSpacing="12">
+                    <TextBlock Classes="imageSetHeaderText"
+                               Text="IMAGE SET"
+                               VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="1"
+                               Text="{Binding Workspace.SelectedComparisonImageCountText}"
+                               Foreground="#A8AFB8"
+                               FontSize="12"
+                               FontWeight="SemiBold"
+                               VerticalAlignment="Center" />
+                    <Button x:Name="ToggleImageSetButton"
+                            Grid.Column="2"
+                            Classes="headerIconButton"
+                            ToolTip.Tip="Collapse image set"
+                            HorizontalAlignment="Right"
+                            Click="ToggleImageSetButton_OnClick">
+                        <Grid>
+                            <fi:FluentIcon x:Name="CollapseImageSetIcon"
+                                           Icon="PanelBottom"
+                                           IconVariant="Regular"
+                                           IconSize="Size16" />
+                            <fi:FluentIcon x:Name="ExpandImageSetIcon"
+                                           Icon="PanelBottomExpand"
+                                           IconVariant="Regular"
+                                           IconSize="Size16"
+                                           IsVisible="False" />
+                        </Grid>
+                    </Button>
+                </Grid>
+
                 <ListBox x:Name="ComparisonImagesList"
+                         Grid.Row="1"
                          Classes="sidebarList"
                          ScrollViewer.HorizontalScrollBarVisibility="Auto"
                          ScrollViewer.VerticalScrollBarVisibility="Disabled"
@@ -727,7 +759,8 @@
                     </ListBox.ItemTemplate>
                 </ListBox>
 
-                <TextBlock Grid.Row="1"
+                <TextBlock x:Name="DifferenceStatusTextBlock"
+                           Grid.Row="2"
                            Text="{Binding DifferenceStatusText}"
                            Foreground="#A8AFB8"
                            FontSize="12"
