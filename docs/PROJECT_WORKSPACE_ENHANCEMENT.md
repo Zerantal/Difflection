@@ -405,9 +405,9 @@ The biggest remaining UI opportunity is to make the screen feel less like severa
 
 Recommended improvements:
 
-1. Make the comparison toolbar the central command surface.
+1. ~~Make the comparison toolbar the central command surface.~~
 
-   The current UI splits comparison controls across the top view tabs, the right-side add/settings controls, and the workspace header zoom field. Put the mode switch, add images, zoom, fit/reset, split amount, and refresh/source actions into one compact comparison toolbar directly above the stage. This would make the app easier to scan and would reduce the feeling that zoom and view mode are unrelated controls.
+   ~~The current UI splits comparison controls across the top view tabs, the right-side add/settings controls, and the workspace header zoom field. Put the mode switch, add images, zoom, fit/reset, split amount, and refresh/source actions into one compact comparison toolbar directly above the stage. This would make the app easier to scan and would reduce the feeling that zoom and view mode are unrelated controls.~~
 
 2. Replace the bottom image table with a thumbnail-first image strip.
 
@@ -455,7 +455,7 @@ Recommended improvements:
 
 Suggested implementation order:
 
-1. Consolidate comparison controls into a single toolbar above the stage.
+1. ~~Consolidate comparison controls into a single toolbar above the stage.~~
 2. Convert the image set table into a thumbnail-first strip/grid.
 3. Surface sidebar row metadata for project and comparison navigation.
 4. Standardize "Reference" versus "Baseline" terminology.

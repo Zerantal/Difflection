@@ -93,6 +93,7 @@ public static class ApplicationErrorReporter
             Width = 520,
             SizeToContent = SizeToContent.Height,
             CanResize = false,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
             Content = new StackPanel
             {
                 Margin = new Thickness(18),

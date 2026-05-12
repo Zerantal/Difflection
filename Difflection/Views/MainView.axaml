@@ -207,8 +207,17 @@
             <Setter Property="BorderBrush" Value="#383838" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="CornerRadius" Value="6" />
-            <Setter Property="Padding" Value="10" />
-            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="Padding" Value="8" />
+            <Setter Property="Width" Value="238" />
+            <Setter Property="MinHeight" Value="168" />
+        </Style>
+        <Style Selector="Border.imageThumbnailFrame">
+            <Setter Property="Background" Value="#0A0A0A" />
+            <Setter Property="BorderBrush" Value="#282828" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="Height" Value="86" />
+            <Setter Property="ClipToBounds" Value="True" />
         </Style>
         <Style Selector="Border.roleBadge">
             <Setter Property="Background" Value="#2B2B2B" />
@@ -247,16 +256,11 @@
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="LetterSpacing" Value="0.4" />
         </Style>
-        <Style Selector="Border.imageSetHeader">
-            <Setter Property="Background" Value="#151515" />
-            <Setter Property="BorderBrush" Value="#2A2A2A" />
-            <Setter Property="BorderThickness" Value="0,0,0,1" />
-            <Setter Property="Padding" Value="6,6,6,8" />
-        </Style>
-        <Style Selector="Border.imageSetRow">
-            <Setter Property="BorderBrush" Value="#2A2A2A" />
-            <Setter Property="BorderThickness" Value="0,0,0,1" />
-            <Setter Property="Padding" Value="6,8" />
+        <Style Selector="TextBlock.imageCardTitle">
+            <Setter Property="Foreground" Value="#F3F4F6" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
         </Style>
         <Style Selector="TextBlock.workspaceContextTitle">
             <Setter Property="Foreground" Value="#F3F4F6" />
@@ -609,44 +613,77 @@
 
         <Border Grid.Row="3" Grid.Column="2" Background="#161616" BorderBrush="#2B2B2B" BorderThickness="0,1,0,0"
                 Padding="18,12">
-            <Grid RowDefinitions="Auto,*,Auto" RowSpacing="10">
-                <Border Classes="imageSetHeader">
-                    <Grid ColumnDefinitions="88,*,Auto" ColumnSpacing="12">
-                        <TextBlock Classes="imageSetHeaderText"
-                                   Text="Version" />
-                        <TextBlock Grid.Column="1"
-                                   Classes="imageSetHeaderText"
-                                   Text="Label" />
-                        <TextBlock Grid.Column="2"
-                                   Classes="imageSetHeaderText"
-                                   Text="Actions"
-                                   HorizontalAlignment="Right" />
-                    </Grid>
-                </Border>
-
+            <Grid RowDefinitions="*,Auto" RowSpacing="10">
                 <ListBox x:Name="ComparisonImagesList"
-                         Grid.Row="1"
                          Classes="sidebarList"
-                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                         ScrollViewer.VerticalScrollBarVisibility="Auto"
+                         ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                         ScrollViewer.VerticalScrollBarVisibility="Disabled"
                          ItemsSource="{Binding ImageSet.ImageRows}">
+                    <ListBox.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Orientation="Horizontal" />
+                        </ItemsPanelTemplate>
+                    </ListBox.ItemsPanel>
                     <ListBox.ItemTemplate>
                         <DataTemplate x:DataType="vm:ComparisonImageSetItemViewModel">
-                            <Border Classes="imageSetRow">
-                                <Grid ColumnDefinitions="88,*,Auto"
-                                      ColumnSpacing="12"
-                                      VerticalAlignment="Center">
-                                    <TextBlock Classes="imageVersionText"
-                                               Text="{Binding VersionText}"
-                                               VerticalAlignment="Center" />
+                            <Border Classes="imageSetCard">
+                                <Grid RowDefinitions="Auto,Auto,Auto,Auto"
+                                      RowSpacing="7">
+                                    <Border Classes="imageThumbnailFrame">
+                                        <Grid>
+                                            <Image Source="{Binding Thumbnail}"
+                                                   Stretch="UniformToFill"
+                                                   RenderOptions.BitmapInterpolationMode="None"
+                                                   IsVisible="{Binding HasThumbnail}" />
+                                            <TextBlock Classes="imageSourceText"
+                                                       Text="No preview"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center"
+                                                       FontSize="10"
+                                                       IsVisible="{Binding HasNoThumbnail}" />
+                                            <StackPanel Orientation="Horizontal"
+                                                        Spacing="5"
+                                                        Margin="6"
+                                                        HorizontalAlignment="Left"
+                                                        VerticalAlignment="Top">
+                                                <Border Classes="roleBadge referenceBadge"
+                                                        IsVisible="{Binding IsReference}">
+                                                    <TextBlock Classes="roleBadgeText"
+                                                               Text="Baseline" />
+                                                </Border>
+                                                <Border Classes="roleBadge candidateBadge"
+                                                        IsVisible="{Binding IsCandidate}">
+                                                    <TextBlock Classes="roleBadgeText"
+                                                               Text="Candidate" />
+                                                </Border>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
 
-                                    <TextBox Grid.Column="1"
+                                    <TextBox Grid.Row="1"
                                              Classes="inlineImageLabel"
-                                             Text="{Binding Label, Mode=TwoWay}"
+                                             PlaceholderText="Add label"
+                                             Text="{Binding DisplayLabel, Mode=TwoWay}"
                                              LostFocus="ImageLabelTextBox_OnLostFocus"
                                              KeyDown="ImageLabelTextBox_OnKeyDown" />
 
-                                    <StackPanel Grid.Column="2"
+                                    <Grid Grid.Row="2"
+                                          RowDefinitions="Auto,Auto"
+                                          RowSpacing="2">
+                                        <StackPanel Orientation="Horizontal"
+                                                    Spacing="8">
+                                            <TextBlock Classes="imageVersionText"
+                                                       Text="{Binding RevisionText}" />
+                                            <TextBlock Classes="imageSourceText"
+                                                       Text="{Binding AddedAtText}" />
+                                        </StackPanel>
+                                        <TextBlock Grid.Row="1"
+                                                   Classes="imageSourceText"
+                                                   Text="{Binding MonitoringText}"
+                                                   IsVisible="{Binding HasMonitoring}" />
+                                    </Grid>
+
+                                    <StackPanel Grid.Row="3"
                                                 Orientation="Horizontal"
                                                 HorizontalAlignment="Right"
                                                 VerticalAlignment="Center"
@@ -690,7 +727,7 @@
                     </ListBox.ItemTemplate>
                 </ListBox>
 
-                <TextBlock Grid.Row="2"
+                <TextBlock Grid.Row="1"
                            Text="{Binding DifferenceStatusText}"
                            Foreground="#A8AFB8"
                            FontSize="12"

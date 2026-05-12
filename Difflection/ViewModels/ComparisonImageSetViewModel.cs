@@ -253,16 +253,17 @@ public partial class ComparisonImageSetViewModel : ViewModelBase
     {
         ArgumentNullException.ThrowIfNull(image);
 
-        if (_workspace.SelectedProject is null || _workspace.SelectedComparison is null || !_workspace.SelectedComparison.Images.Contains(image))
+        if (_workspace.SelectedProject is null ||
+            _workspace.SelectedComparison is null ||
+            !_workspace.SelectedComparison.Images.Contains(image))
         {
             return false;
         }
 
         image.Label = NormalizeName(label, image.SourceName);
+        ImageRows.FirstOrDefault(row => row.Id == image.Id)?.RefreshDisplayMetadata();
         _workspace.SelectedComparison.UpdatedAt = DateTimeOffset.UtcNow;
         _workspace.SelectedProject.UpdatedAt = DateTimeOffset.UtcNow;
-        await NotifySelectedComparisonImagesChangedAsync(cancellationToken);
-
         await SaveProjectAsync(_workspace.SelectedProject, cancellationToken);
         return true;
     }
@@ -330,13 +331,13 @@ public partial class ComparisonImageSetViewModel : ViewModelBase
         return true;
     }
 
-    public Task RefreshImageRowsAsync(CancellationToken cancellationToken = default)
+    public async Task RefreshImageRowsAsync(CancellationToken cancellationToken = default)
     {
         ClearImageRows();
 
         if (_workspace.SelectedComparison is not { } comparison)
         {
-            return Task.CompletedTask;
+            return;
         }
 
         foreach (var image in comparison.Images
@@ -345,10 +346,14 @@ public partial class ComparisonImageSetViewModel : ViewModelBase
         {
             var row = new ComparisonImageSetItemViewModel(image, comparison);
             ImageRows.Add(row);
+
+            if (_projectStorage is not null)
+            {
+                await row.LoadThumbnailAsync(_projectStorage, cancellationToken);
+            }
         }
 
         OnPropertyChanged(nameof(ImageRows));
-        return Task.CompletedTask;
     }
 
     private static string NormalizeName(string? name, string fallback)

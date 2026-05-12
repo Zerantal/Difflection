@@ -56,6 +56,30 @@ public sealed class MainWindowViewModelTests
         Assert.Equal("0 images", comparisonRow.DetailText);
     }
 
+    [AvaloniaFact]
+    public async Task LoadProjectsAsync_refreshes_difference_status_for_selected_comparison()
+    {
+        var project = new Project { Name = "Project A" };
+        var comparison = new ComparisonSet { Name = "Comparison A" };
+        project.Comparisons.Add(comparison);
+
+        var reference = new ImageAsset { Label = "Reference", SourceName = "reference.png" };
+        var candidate = new ImageAsset { Label = "Candidate", SourceName = "candidate.png" };
+        comparison.AddImage(reference);
+        comparison.AddImage(candidate);
+
+        var storage = new FakeProjectStorage(project);
+        storage.SavedImageContents[reference.Id] = TestUiSupport.CreatePngBytes(8, 8, SKColors.OrangeRed);
+        storage.SavedImageContents[candidate.Id] = TestUiSupport.CreatePngBytes(8, 8, SKColors.DarkSlateBlue);
+        var viewModel = new MainWindowViewModel(storage);
+
+        await viewModel.LoadProjectsAsync(TestContext.Current.CancellationToken);
+
+        Assert.StartsWith("Difference 100.0%", viewModel.DifferenceStatusText);
+        Assert.Contains("RMS error", viewModel.DifferenceStatusText);
+        Assert.Contains("Compared 8x8", viewModel.DifferenceStatusText);
+    }
+
     [Fact]
     public async Task AddProjectAsync_adds_selects_and_saves_project()
     {
@@ -423,6 +447,28 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
+    public async Task LabelImageAsync_empty_label_reverts_to_default_without_rebuilding_rows()
+    {
+        var storage = new FakeProjectStorage();
+        var viewModel = new MainWindowViewModel(storage);
+        await viewModel.Workspace.AddProjectAsync("Project", TestContext.Current.CancellationToken);
+        await viewModel.Workspace.AddComparisonAsync("Comparison", TestContext.Current.CancellationToken);
+        var image = await viewModel.ImageSet.AddImageAsync("candidate.png", new MemoryStream([1]), cancellationToken: TestContext.Current.CancellationToken);
+        await viewModel.ImageSet.RefreshImageRowsAsync(TestContext.Current.CancellationToken);
+        var originalRow = Assert.Single(viewModel.ImageSet.ImageRows);
+        storage.SavedProjects.Clear();
+
+        var labelled = await viewModel.ImageSet.LabelImageAsync(image, string.Empty, TestContext.Current.CancellationToken);
+
+        Assert.True(labelled);
+        Assert.Equal("candidate.png", image.Label);
+        Assert.Same(originalRow, Assert.Single(viewModel.ImageSet.ImageRows));
+        Assert.False(originalRow.HasDisplayLabel);
+        Assert.Equal(string.Empty, originalRow.DisplayLabel);
+        Assert.Same(viewModel.Workspace.SelectedProject, Assert.Single(storage.SavedProjects));
+    }
+
+    [Fact]
     public async Task LabelImageAsync_returns_false_when_image_is_not_in_selected_comparison()
     {
         var storage = new FakeProjectStorage();
@@ -564,7 +610,7 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
-    public async Task RefreshImageRowsAsync_sorts_images_by_added_date_descending_and_shows_version_chain()
+    public async Task RefreshImageRowsAsync_sorts_images_by_added_date_descending_and_shows_revision_chain()
     {
         var viewModel = new MainWindowViewModel(new FakeProjectStorage());
         await viewModel.Workspace.AddProjectAsync("Project", TestContext.Current.CancellationToken);
@@ -599,9 +645,50 @@ public sealed class MainWindowViewModelTests
         await viewModel.ImageSet.RefreshImageRowsAsync();
 
         Assert.Equal(new[] { newest.Id, middle.Id, oldest.Id }, viewModel.ImageSet.ImageRows.Select(row => row.Id));
-        Assert.Equal("Version 3", viewModel.ImageSet.ImageRows[0].VersionText);
-        Assert.Equal("Version 2", viewModel.ImageSet.ImageRows[1].VersionText);
-        Assert.Equal("Version 1", viewModel.ImageSet.ImageRows[2].VersionText);
+        Assert.Equal("r3", viewModel.ImageSet.ImageRows[0].RevisionText);
+        Assert.Equal("r2", viewModel.ImageSet.ImageRows[1].RevisionText);
+        Assert.Equal("r1", viewModel.ImageSet.ImageRows[2].RevisionText);
+        Assert.NotEmpty(viewModel.ImageSet.ImageRows[0].AddedAtText);
+    }
+
+    [Fact]
+    public void ComparisonImageSetItemViewModel_hides_source_derived_label_until_custom_label_is_set()
+    {
+        var comparison = new ComparisonSet();
+        var image = new ImageAsset
+        {
+            Label = "reference",
+            SourceName = "reference.png"
+        };
+
+        comparison.AddImage(image);
+        var row = new ComparisonImageSetItemViewModel(image, comparison);
+
+        Assert.False(row.HasDisplayLabel);
+        Assert.Equal(string.Empty, row.DisplayLabel);
+
+        row.DisplayLabel = "Approved home screen";
+
+        Assert.True(row.HasDisplayLabel);
+        Assert.Equal("Approved home screen", row.DisplayLabel);
+        Assert.Equal("Approved home screen", image.Label);
+    }
+
+    [Fact]
+    public void ComparisonImageSetItemViewModel_hides_legacy_default_image_label()
+    {
+        var comparison = new ComparisonSet();
+        var image = new ImageAsset
+        {
+            Label = "Image",
+            SourceName = "reference.png"
+        };
+
+        comparison.AddImage(image);
+        var row = new ComparisonImageSetItemViewModel(image, comparison);
+
+        Assert.False(row.HasDisplayLabel);
+        Assert.Equal(string.Empty, row.DisplayLabel);
     }
 
     [AvaloniaFact]

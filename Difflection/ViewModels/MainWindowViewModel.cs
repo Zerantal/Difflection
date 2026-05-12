@@ -91,6 +91,11 @@ public class MainWindowViewModel : ViewModelBase
     public async Task LoadProjectsAsync(CancellationToken cancellationToken = default)
     {
         await Workspace.LoadProjectsAsync(cancellationToken);
+
+        if (ProjectStorage is not null)
+        {
+            await ComparisonDisplay.RefreshCurrentComparisonImagesAsync(Workspace.SelectedComparison, ProjectStorage, cancellationToken);
+        }
     }
 
     public async Task<bool> SetImageMonitoringAsync(
@@ -262,12 +267,24 @@ public class MainWindowViewModel : ViewModelBase
             return;
         }
 
-        if (e.PropertyName is not (nameof(ComparisonDisplayViewModel.LeftImage)
-            or nameof(ComparisonDisplayViewModel.RightImage)
-            or nameof(ComparisonDisplayViewModel.HasBothImages))) return;
-
-        ToolState.NotifyCanUseSplitScreenChanged();
-        WorkspaceStatus.NotifyImageStateChanged();
+        switch (e.PropertyName)
+        {
+            case nameof(ComparisonDisplayViewModel.LeftImage):
+            case nameof(ComparisonDisplayViewModel.RightImage):
+            case nameof(ComparisonDisplayViewModel.HasBothImages):
+                ToolState.NotifyCanUseSplitScreenChanged();
+                WorkspaceStatus.NotifyImageStateChanged();
+                break;
+            case nameof(ComparisonDisplayViewModel.DifferenceStatusText):
+                OnPropertyChanged(nameof(DifferenceStatusText));
+                break;
+            case nameof(ComparisonDisplayViewModel.LeftFileName):
+                OnPropertyChanged(nameof(LeftFileName));
+                break;
+            case nameof(ComparisonDisplayViewModel.RightFileName):
+                OnPropertyChanged(nameof(RightFileName));
+                break;
+        }
     }
 
     private void OnWorkspacePropertyChanged(object? sender, PropertyChangedEventArgs e)

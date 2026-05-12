@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -39,12 +40,35 @@ public sealed partial class ComparisonImageSetItemViewModel(ImageAsset image, Co
 
             Image.Label = value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(DisplayLabel));
+            OnPropertyChanged(nameof(HasDisplayLabel));
         }
     }
 
+    public string DisplayLabel
+    {
+        get => HasDisplayLabel ? Image.Label : string.Empty;
+        set
+        {
+            if (string.Equals(DisplayLabel, value, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            Image.Label = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(Label));
+            OnPropertyChanged(nameof(HasDisplayLabel));
+        }
+    }
+
+    public bool HasDisplayLabel => !IsDefaultLabel(Image.Label);
+
     public string SourceName => Image.SourceName;
 
-    public string VersionText => $"Version {GetVersionNumber()}";
+    public string RevisionText => $"r{GetRevisionNumber()}";
+
+    public string AddedAtText => Image.AddedAt.ToLocalTime().ToString("d MMM HH:mm", CultureInfo.CurrentCulture);
 
     public bool IsReference => comparison.ReferenceImageId == Image.Id;
 
@@ -106,6 +130,17 @@ public sealed partial class ComparisonImageSetItemViewModel(ImageAsset image, Co
         thumbnail?.Dispose();
     }
 
+    public void RefreshDisplayMetadata()
+    {
+        OnPropertyChanged(nameof(Label));
+        OnPropertyChanged(nameof(DisplayLabel));
+        OnPropertyChanged(nameof(HasDisplayLabel));
+        OnPropertyChanged(nameof(RevisionText));
+        OnPropertyChanged(nameof(AddedAtText));
+        OnPropertyChanged(nameof(MonitoringText));
+        OnPropertyChanged(nameof(HasMonitoring));
+    }
+
     private static async Task<Bitmap> CreateBitmapAsync(Stream stream)
     {
         if (OperatingSystem.IsBrowser() || !stream.CanSeek)
@@ -119,7 +154,32 @@ public sealed partial class ComparisonImageSetItemViewModel(ImageAsset image, Co
         return new Bitmap(stream);
     }
 
-    private int GetVersionNumber()
+    private bool IsDefaultLabel(string? label)
+    {
+        if (string.IsNullOrWhiteSpace(label))
+        {
+            return true;
+        }
+
+        var trimmedLabel = label.Trim();
+        return string.Equals(trimmedLabel, "Image", StringComparison.Ordinal)
+            || string.Equals(trimmedLabel, SourceName, StringComparison.Ordinal)
+            || string.Equals(trimmedLabel, GetDefaultLabelFromSourceName(SourceName), StringComparison.Ordinal);
+    }
+
+    private static string GetDefaultLabelFromSourceName(string? sourceName)
+    {
+        var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(sourceName?.Trim());
+        if (!string.IsNullOrWhiteSpace(fileNameWithoutExtension))
+        {
+            return fileNameWithoutExtension;
+        }
+
+        var fileName = Path.GetFileName(sourceName?.Trim());
+        return string.IsNullOrWhiteSpace(fileName) ? "Image" : fileName;
+    }
+
+    private int GetRevisionNumber()
     {
         var versionNumber = 1;
         var current = Image;

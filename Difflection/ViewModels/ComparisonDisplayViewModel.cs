@@ -127,6 +127,8 @@ public partial class ComparisonDisplayViewModel : ViewModelBase
             RightImage = null;
             RightFileName = "Candidate image";
         }
+
+        UpdateDifferenceStatus();
     }
 
     public async Task LoadImageAsync(ImageSlot slot, IStorageFile file)
@@ -171,6 +173,7 @@ public partial class ComparisonDisplayViewModel : ViewModelBase
         RightImage = null;
         LeftFileName = "Baseline image";
         RightFileName = "Candidate image";
+        UpdateDifferenceStatus();
     }
 
     public void DisposeImages()
