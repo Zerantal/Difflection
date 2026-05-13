@@ -15,6 +15,8 @@ public partial class ComparisonDisplayViewModel : ViewModelBase
 {
     private const double MinimumStageWidth = 920;
     private const double MinimumStageHeight = 560;
+    private bool _suppressDifferenceStatusUpdates;
+    private int _differenceStatusVersion;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(SideBySideStageWidth))]
@@ -106,29 +108,45 @@ public partial class ComparisonDisplayViewModel : ViewModelBase
     public async Task RefreshCurrentComparisonImagesAsync(
         ComparisonSet? selectedComparison,
         IProjectStorage? projectStorage,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        bool deferDifferenceStatus = false)
     {
-        if (selectedComparison?.ReferenceImage is { } reference)
+        _suppressDifferenceStatusUpdates = true;
+        try
         {
-            await LoadImageAssetAsync(ImageSlot.Left, reference, projectStorage, cancellationToken);
+            if (selectedComparison?.ReferenceImage is { } reference)
+            {
+                await LoadImageAssetAsync(ImageSlot.Left, reference, projectStorage, cancellationToken);
+            }
+            else
+            {
+                LeftImage = null;
+                LeftFileName = "Baseline image";
+            }
+
+            if (selectedComparison?.CandidateImage is { } candidate)
+            {
+                await LoadImageAssetAsync(ImageSlot.Right, candidate, projectStorage, cancellationToken);
+            }
+            else
+            {
+                RightImage = null;
+                RightFileName = "Candidate image";
+            }
+        }
+        finally
+        {
+            _suppressDifferenceStatusUpdates = false;
+        }
+
+        if (deferDifferenceStatus && HasBothImages)
+        {
+            ScheduleDifferenceStatusUpdate();
         }
         else
         {
-            LeftImage = null;
-            LeftFileName = "Baseline image";
+            UpdateDifferenceStatus();
         }
-
-        if (selectedComparison?.CandidateImage is { } candidate)
-        {
-            await LoadImageAssetAsync(ImageSlot.Right, candidate, projectStorage, cancellationToken);
-        }
-        else
-        {
-            RightImage = null;
-            RightFileName = "Candidate image";
-        }
-
-        UpdateDifferenceStatus();
     }
 
     public async Task LoadImageAsync(ImageSlot slot, IStorageFile file)
@@ -213,8 +231,27 @@ public partial class ComparisonDisplayViewModel : ViewModelBase
 
     private void UpdateDifferenceStatus()
     {
+        _differenceStatusVersion++;
         DifferenceStatusText = ImageDifferenceMetric.Compare(LeftImage, RightImage)?.ToStatusText()
             ?? "Load two images to compare";
+    }
+
+    private void ScheduleDifferenceStatusUpdate()
+    {
+        var version = ++_differenceStatusVersion;
+        DifferenceStatusText = "Calculating difference...";
+        Dispatcher.UIThread.Post(
+            () =>
+            {
+                if (version != _differenceStatusVersion)
+                {
+                    return;
+                }
+
+                DifferenceStatusText = ImageDifferenceMetric.Compare(LeftImage, RightImage)?.ToStatusText()
+                    ?? "Load two images to compare";
+            },
+            DispatcherPriority.Background);
     }
 
     // ReSharper disable once UnusedParameterInPartialMethod
@@ -226,7 +263,10 @@ public partial class ComparisonDisplayViewModel : ViewModelBase
         }
 
         UpdateStageSize();
-        UpdateDifferenceStatus();
+        if (!_suppressDifferenceStatusUpdates)
+        {
+            UpdateDifferenceStatus();
+        }
     }
 
     // ReSharper disable once UnusedParameterInPartialMethod
@@ -238,6 +278,9 @@ public partial class ComparisonDisplayViewModel : ViewModelBase
         }
 
         UpdateStageSize();
-        UpdateDifferenceStatus();
+        if (!_suppressDifferenceStatusUpdates)
+        {
+            UpdateDifferenceStatus();
+        }
     }
 }

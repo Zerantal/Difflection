@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Avalonia.Threading;
 using Avalonia.Platform.Storage;
 using CommunityToolkit.Mvvm.Input;
 using Difflection.Models;
@@ -20,6 +21,8 @@ public partial class ComparisonImageSetViewModel : ViewModelBase
     private readonly ComparisonDisplayViewModel _comparisonDisplay;
     private readonly IProjectStorage? _projectStorage;
     private bool _suppressWorkspaceImageRefresh;
+    private CancellationTokenSource? _scheduledImageRowsRefresh;
+    private ComparisonSet? _imageRowsComparison;
 
     public ComparisonImageSetViewModel(
         WorkspaceNavigatorViewModel workspace,
@@ -331,11 +334,18 @@ public partial class ComparisonImageSetViewModel : ViewModelBase
         return true;
     }
 
-    public async Task RefreshImageRowsAsync(CancellationToken cancellationToken = default)
+    public async Task RefreshImageRowsAsync(CancellationToken cancellationToken = default, bool force = true)
     {
-        ClearImageRows();
+        var comparison = _workspace.SelectedComparison;
+        if (!force && ReferenceEquals(comparison, _imageRowsComparison))
+        {
+            return;
+        }
 
-        if (_workspace.SelectedComparison is not { } comparison)
+        ClearImageRows();
+        _imageRowsComparison = comparison;
+
+        if (comparison is null)
         {
             return;
         }
@@ -384,17 +394,55 @@ public partial class ComparisonImageSetViewModel : ViewModelBase
             _suppressWorkspaceImageRefresh = false;
         }
 
-        await RefreshImageRowsAsync(cancellationToken);
+        await RefreshImageRowsAsync(cancellationToken, force: true);
         ImageSetChanged?.Invoke(this, EventArgs.Empty);
     }
 
     private void OnWorkspacePropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName is nameof(WorkspaceNavigatorViewModel.SelectedComparison)
-            || e.PropertyName is nameof(WorkspaceNavigatorViewModel.SelectedComparisonImages) && !_suppressWorkspaceImageRefresh)
+        if (e.PropertyName is nameof(WorkspaceNavigatorViewModel.SelectedComparison))
         {
-            _ = RefreshImageRowsAsync();
+            ScheduleImageRowsRefresh();
         }
+        else if (e.PropertyName is nameof(WorkspaceNavigatorViewModel.SelectedComparisonImages) && !_suppressWorkspaceImageRefresh)
+        {
+            _ = RefreshImageRowsAsync(force: true);
+        }
+    }
+
+    private void ScheduleImageRowsRefresh()
+    {
+        _scheduledImageRowsRefresh?.Cancel();
+        var refresh = new CancellationTokenSource();
+        _scheduledImageRowsRefresh = refresh;
+
+        Dispatcher.UIThread.Post(
+            async () =>
+            {
+                if (refresh.IsCancellationRequested)
+                {
+                    return;
+                }
+
+                try
+                {
+                    await RefreshImageRowsAsync(refresh.Token, force: false);
+                }
+                catch (OperationCanceledException)
+                {
+                    // A newer selection superseded this refresh.
+                }
+                finally
+                {
+                    if (ReferenceEquals(_scheduledImageRowsRefresh, refresh))
+                    {
+                        _scheduledImageRowsRefresh = null;
+                    }
+
+                    refresh.Dispose();
+                }
+            },
+            DispatcherPriority.Background);
     }
 
     private void ClearImageRows()

@@ -45,13 +45,6 @@ public partial class WorkspaceNavigatorViewModel : ViewModelBase
     public partial ProjectListItemViewModel? SelectedProjectRow { get; set; }
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(SelectedComparison))]
-    [NotifyPropertyChangedFor(nameof(HasSelectedComparison))]
-    [NotifyPropertyChangedFor(nameof(CanDeleteSelectedComparison))]
-    [NotifyPropertyChangedFor(nameof(SelectedComparisonImages))]
-    [NotifyPropertyChangedFor(nameof(SelectedComparisonName))]
-    [NotifyPropertyChangedFor(nameof(SelectedComparisonImageCountText))]
-    [NotifyPropertyChangedFor(nameof(ShowComparisonsEmptyState))]
     public partial ComparisonListItemViewModel? SelectedComparisonRow { get; set; }
 
     public Project? SelectedProject
@@ -491,6 +484,16 @@ public partial class WorkspaceNavigatorViewModel : ViewModelBase
         NotifyWorkspaceStateChanged();
     }
 
+    private void NotifySelectedComparisonStateChanged()
+    {
+        OnPropertyChanged(nameof(SelectedComparison));
+        OnPropertyChanged(nameof(HasSelectedComparison));
+        OnPropertyChanged(nameof(CanDeleteSelectedComparison));
+        OnPropertyChanged(nameof(SelectedComparisonName));
+        OnPropertyChanged(nameof(SelectedComparisonImageCountText));
+        OnPropertyChanged(nameof(ShowComparisonsEmptyState));
+    }
+
     private void RefreshProjectRows()
     {
         var selectedProject = SelectedProject;
@@ -592,7 +595,7 @@ public partial class WorkspaceNavigatorViewModel : ViewModelBase
             }
         }
 
-        NotifySelectedStateChanged();
+        NotifySelectedComparisonStateChanged();
     }
 
 }

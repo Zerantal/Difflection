@@ -505,7 +505,10 @@ public partial class MainView : UserControl
             return;
         }
 
-        await _viewModel.ComparisonDisplay.RefreshCurrentComparisonImagesAsync(_viewModel.Workspace.SelectedComparison, _viewModel.ProjectStorage);
+        await _viewModel.ComparisonDisplay.RefreshCurrentComparisonImagesAsync(
+            _viewModel.Workspace.SelectedComparison,
+            _viewModel.ProjectStorage,
+            deferDifferenceStatus: true);
         UpdateViewControls();
         ComparisonStage.FitZoomToStage();
     }
