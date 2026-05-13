@@ -134,6 +134,11 @@
             <Setter Property="FontSize" Value="13" />
             <Setter Property="TextTrimming" Value="CharacterEllipsis" />
         </Style>
+        <Style Selector="TextBlock.sidebarItemDetailText">
+            <Setter Property="Foreground" Value="#8C939D" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        </Style>
         <Style Selector="TextBox.nameEditor">
             <Setter Property="Background" Value="#101010" />
             <Setter Property="Foreground" Value="#F3F4F6" />
@@ -441,8 +446,12 @@
                           IsVisible="{Binding HasProjects}">
                     <ComboBox.ItemTemplate>
                         <DataTemplate x:DataType="vm:ProjectListItemViewModel">
-                            <TextBlock Text="{Binding Name}"
-                                       TextTrimming="CharacterEllipsis" />
+                            <StackPanel Spacing="2">
+                                <TextBlock Text="{Binding Name}"
+                                           TextTrimming="CharacterEllipsis" />
+                                <TextBlock Classes="sidebarItemDetailText"
+                                           Text="{Binding DetailText}" />
+                            </StackPanel>
                         </DataTemplate>
                     </ComboBox.ItemTemplate>
                 </ComboBox>
@@ -476,7 +485,11 @@
                          SelectedItem="{Binding SelectedComparisonRow, Mode=TwoWay}">
                     <ListBox.ItemTemplate>
                         <DataTemplate x:DataType="vm:ComparisonListItemViewModel">
-                            <Border Background="Transparent"
+                            <Border Background="{Binding ReviewBackground}"
+                                    BorderBrush="{Binding ReviewBorderBrush}"
+                                    BorderThickness="{Binding ReviewBorderThickness}"
+                                    CornerRadius="4"
+                                    Padding="6,4"
                                     ContextRequested="SidebarItem_OnContextRequested">
                                 <Border.ContextMenu>
                                     <ContextMenu>

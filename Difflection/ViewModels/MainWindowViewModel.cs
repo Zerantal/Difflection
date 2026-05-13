@@ -143,11 +143,22 @@ public class MainWindowViewModel : ViewModelBase
             return null;
         }
 
+        var capturedRole = changedImage.MonitoringRole;
         var version = await _monitoredImageVersionCapture.CaptureAsync(project, comparison, changedImage, cancellationToken);
 
-        if (version is null || !ReferenceEquals(project, Workspace.SelectedProject) ||
+        if (version is null)
+        {
+            return null;
+        }
+
+        if (capturedRole == ImageMonitoringRole.Candidate)
+        {
+            await UpdateComparisonReviewStateAsync(project, comparison, cancellationToken);
+        }
+
+        if (!ReferenceEquals(project, Workspace.SelectedProject) ||
             !ReferenceEquals(comparison, Workspace.SelectedComparison)) return version;
-        Workspace.NotifySelectedComparisonImagesChanged();
+        Workspace.NotifyComparisonImagesChanged(comparison);
         WorkspaceStatus.NotifyImageStateChanged();
         await ComparisonDisplay.RefreshCurrentComparisonImagesAsync(Workspace.SelectedComparison, ProjectStorage, cancellationToken);
 
@@ -200,6 +211,7 @@ public class MainWindowViewModel : ViewModelBase
 
         var roleImages = GetCurrentRoleImages(comparison);
         var capturedCount = 0;
+        var capturedCandidate = false;
 
         foreach (var (image, role) in roleImages)
         {
@@ -213,6 +225,7 @@ public class MainWindowViewModel : ViewModelBase
             if (version is not null)
             {
                 capturedCount++;
+                capturedCandidate |= role == ImageMonitoringRole.Candidate;
             }
         }
 
@@ -221,7 +234,11 @@ public class MainWindowViewModel : ViewModelBase
             return 0;
         }
 
-        Workspace.NotifySelectedComparisonImagesChanged();
+        if (capturedCandidate)
+        {
+            await UpdateComparisonReviewStateAsync(project, comparison, cancellationToken);
+        }
+        Workspace.NotifyComparisonImagesChanged(comparison);
         WorkspaceStatus.NotifyImageStateChanged();
 
         if (ReferenceEquals(project, Workspace.SelectedProject) && ReferenceEquals(comparison, Workspace.SelectedComparison))
@@ -231,6 +248,39 @@ public class MainWindowViewModel : ViewModelBase
         }
 
         return capturedCount;
+    }
+
+    private async Task UpdateComparisonReviewStateAsync(
+        Project project,
+        ComparisonSet comparison,
+        CancellationToken cancellationToken)
+    {
+        var requiresReview = await CurrentRoleImagesDifferAsync(comparison, cancellationToken);
+        if (comparison.RequiresReview == requiresReview)
+        {
+            return;
+        }
+
+        comparison.RequiresReview = requiresReview;
+        comparison.UpdatedAt = DateTimeOffset.UtcNow;
+        project.UpdatedAt = DateTimeOffset.UtcNow;
+        await SaveProjectAsync(project, cancellationToken);
+    }
+
+    private async Task<bool> CurrentRoleImagesDifferAsync(
+        ComparisonSet comparison,
+        CancellationToken cancellationToken)
+    {
+        if (ProjectStorage is null || comparison.ReferenceImage is not { } reference || comparison.CandidateImage is not { } candidate)
+        {
+            return false;
+        }
+
+        await using var referenceStream = await ProjectStorage.LoadImageAsync(reference, cancellationToken);
+        await using var candidateStream = await ProjectStorage.LoadImageAsync(candidate, cancellationToken);
+        using var referenceBitmap = new Bitmap(referenceStream);
+        using var candidateBitmap = new Bitmap(candidateStream);
+        return ImageDifferenceMetric.Compare(referenceBitmap, candidateBitmap)?.DifferentPixels > 0;
     }
 
     private static IReadOnlyList<(ImageAsset Image, ImageMonitoringRole Role)> GetCurrentRoleImages(ComparisonSet comparison)

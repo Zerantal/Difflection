@@ -428,11 +428,21 @@ public partial class WorkspaceNavigatorViewModel : ViewModelBase
     {
         if (SelectedComparison is not null)
         {
-            RefreshComparison(SelectedComparison);
+            NotifyComparisonImagesChanged(SelectedComparison);
         }
+    }
 
-        OnPropertyChanged(nameof(SelectedComparisonImages));
-        OnPropertyChanged(nameof(SelectedComparisonImageCountText));
+    public void NotifyComparisonImagesChanged(ComparisonSet comparison)
+    {
+        ArgumentNullException.ThrowIfNull(comparison);
+
+        RefreshComparison(comparison);
+
+        if (ReferenceEquals(comparison, SelectedComparison))
+        {
+            OnPropertyChanged(nameof(SelectedComparisonImages));
+            OnPropertyChanged(nameof(SelectedComparisonImageCountText));
+        }
     }
 
     public void RenameDefaultComparisonFromFirstImage(ComparisonSet comparison, string imageLabel)
@@ -567,6 +577,19 @@ public partial class WorkspaceNavigatorViewModel : ViewModelBase
             }
 
             return;
+        }
+
+        if (value?.Comparison.RequiresReview == true)
+        {
+            value.Comparison.RequiresReview = false;
+            value.Comparison.UpdatedAt = DateTimeOffset.UtcNow;
+            value.Refresh();
+
+            if (SelectedProject is not null)
+            {
+                SelectedProject.UpdatedAt = DateTimeOffset.UtcNow;
+                _ = SaveProjectAsync(SelectedProject, CancellationToken.None);
+            }
         }
 
         NotifySelectedStateChanged();

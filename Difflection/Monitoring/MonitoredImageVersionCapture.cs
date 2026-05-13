@@ -48,7 +48,14 @@ public sealed class MonitoredImageVersionCapture(IProjectStorage projectStorage)
             return null;
         }
 
-        return await CaptureVersionAsync(project, comparison, changedImage, sourcePath, sourceMetadata, changedImage.MonitoringRole, cancellationToken);
+        return await CaptureVersionAsync(
+            project,
+            comparison,
+            changedImage,
+            sourcePath,
+            sourceMetadata,
+            changedImage.MonitoringRole,
+            cancellationToken);
     }
 
     /// <summary>
@@ -121,7 +128,14 @@ public sealed class MonitoredImageVersionCapture(IProjectStorage projectStorage)
             ? ImageMonitoringRole.None
             : role;
 
-        return await CaptureVersionAsync(project, comparison, image, sourcePath, sourceMetadata, monitoringRole, cancellationToken);
+        return await CaptureVersionAsync(
+            project,
+            comparison,
+            image,
+            sourcePath,
+            sourceMetadata,
+            monitoringRole,
+            cancellationToken);
     }
 
     /// <summary>

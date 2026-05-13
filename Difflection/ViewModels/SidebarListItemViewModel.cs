@@ -38,7 +38,7 @@ public abstract partial class SidebarListItemViewModel<TModel>(TModel model) : V
         Refresh();
     }
 
-    public void Refresh()
+    public virtual void Refresh()
     {
         OnPropertyChanged(nameof(Name));
         OnPropertyChanged(nameof(DetailText));

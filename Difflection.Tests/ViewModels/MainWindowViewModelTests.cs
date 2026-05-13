@@ -53,7 +53,7 @@ public sealed class MainWindowViewModelTests
         var comparisonRow = Assert.Single(viewModel.Workspace.SelectedProjectComparisonRows);
         Assert.Same(comparison, comparisonRow.Comparison);
         Assert.Same(comparisonRow, viewModel.Workspace.SelectedComparisonRow);
-        Assert.Equal("0 images", comparisonRow.DetailText);
+        Assert.Equal("No images", comparisonRow.DetailText);
     }
 
     [AvaloniaFact]
@@ -127,7 +127,7 @@ public sealed class MainWindowViewModelTests
         Assert.Same(comparison, viewModel.Workspace.SelectedComparison);
         Assert.Same(viewModel.Workspace.SelectedComparisonRow, Assert.Single(viewModel.Workspace.SelectedProjectComparisonRows));
         Assert.Equal("1 comparison", Assert.Single(viewModel.Workspace.ProjectRows).DetailText);
-        Assert.Equal("0 images", viewModel.Workspace.SelectedComparisonRow?.DetailText);
+        Assert.Equal("No images", viewModel.Workspace.SelectedComparisonRow?.DetailText);
         Assert.Same(project, Assert.Single(storage.SavedProjects));
     }
 
@@ -239,7 +239,7 @@ public sealed class MainWindowViewModelTests
         Assert.Same(image, Assert.Single(comparison.Images));
         Assert.Equal(image.Id, comparison.ReferenceImageId);
         Assert.Null(comparison.CandidateImageId);
-        Assert.Equal("1 image", viewModel.Workspace.SelectedComparisonRow?.DetailText);
+        Assert.Equal("Needs candidate", viewModel.Workspace.SelectedComparisonRow?.DetailText);
         Assert.Equal([1, 2, 3], storage.SavedImageContents[image.Id]);
         Assert.Same(project, Assert.Single(storage.SavedProjects));
     }
@@ -560,6 +560,25 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
+    public async Task Selecting_comparison_marks_pending_review_as_reviewed()
+    {
+        var storage = new FakeProjectStorage();
+        var viewModel = new MainWindowViewModel(storage);
+        await viewModel.Workspace.AddProjectAsync("Project", TestContext.Current.CancellationToken);
+        var pending = await viewModel.Workspace.AddComparisonAsync("Pending", TestContext.Current.CancellationToken);
+        var other = await viewModel.Workspace.AddComparisonAsync("Other", TestContext.Current.CancellationToken);
+        pending.RequiresReview = true;
+        viewModel.Workspace.NotifyComparisonImagesChanged(pending);
+
+        viewModel.Workspace.SelectedComparison = pending;
+
+        Assert.Same(pending, viewModel.Workspace.SelectedComparison);
+        Assert.False(pending.RequiresReview);
+        Assert.False(viewModel.Workspace.SelectedComparisonRow?.NeedsReview);
+        Assert.NotSame(other, viewModel.Workspace.SelectedComparison);
+    }
+
+    [Fact]
     public async Task SetCandidateImageAsync_requires_at_least_two_images()
     {
         var viewModel = new MainWindowViewModel(new FakeProjectStorage());
@@ -739,6 +758,8 @@ public sealed class MainWindowViewModelTests
         Assert.Equal(candidate.Id, version.PreviousVersionImageId);
         Assert.Equal(ImageMonitoringRole.None, candidate.MonitoringRole);
         Assert.Equal(ImageMonitoringRole.Candidate, version.MonitoringRole);
+        Assert.True(comparison.RequiresReview);
+        Assert.True(viewModel.Workspace.SelectedComparisonRow?.NeedsReview);
         Assert.Equal(3, comparison.Images.Count);
     }
 
@@ -790,6 +811,8 @@ public sealed class MainWindowViewModelTests
         Assert.Equal(candidate.Id, comparison.CandidateImage?.PreviousVersionImageId);
         Assert.Equal(ImageMonitoringRole.None, comparison.ReferenceImage?.MonitoringRole);
         Assert.Equal(ImageMonitoringRole.None, comparison.CandidateImage?.MonitoringRole);
+        Assert.True(comparison.RequiresReview);
+        Assert.True(viewModel.Workspace.SelectedComparisonRow?.NeedsReview);
         Assert.NotEmpty(storage.SavedProjects);
         Assert.All(storage.SavedProjects, savedProject => Assert.Same(viewModel.Workspace.SelectedProject, savedProject));
     }
@@ -823,6 +846,32 @@ public sealed class MainWindowViewModelTests
         Assert.Equal(reference.Id, comparison.ReferenceImageId);
         Assert.Equal(candidate.Id, comparison.CandidateImageId);
         Assert.Empty(storage.SavedProjects);
+    }
+
+    [AvaloniaFact]
+    public async Task RefreshComparisonSourceImagesAsync_does_not_mark_matching_candidate_for_review()
+    {
+        var storage = new FakeProjectStorage();
+        var viewModel = new MainWindowViewModel(storage);
+        await viewModel.Workspace.AddProjectAsync("Project", TestContext.Current.CancellationToken);
+        var comparison = await viewModel.Workspace.AddComparisonAsync("Comparison", TestContext.Current.CancellationToken);
+        var referenceFile = TestUiSupport.CreateStorageFile("refresh-matching-reference.png");
+        var candidateFile = TestUiSupport.CreateStorageFile("refresh-matching-candidate.png");
+        var reference = await viewModel.ImageSet.AddImageAsync(referenceFile, cancellationToken: TestContext.Current.CancellationToken);
+        var candidate = await viewModel.ImageSet.AddImageAsync(candidateFile, cancellationToken: TestContext.Current.CancellationToken);
+        var previousReferenceModifiedAt = reference.OriginalFileMetadata?.LastModifiedAt ?? DateTimeOffset.UtcNow;
+        var previousCandidateModifiedAt = candidate.OriginalFileMetadata?.LastModifiedAt ?? DateTimeOffset.UtcNow;
+
+        WriteFixtureImage(referenceFile.Path.LocalPath, SKColors.DarkGreen);
+        File.SetLastWriteTimeUtc(referenceFile.Path.LocalPath, previousReferenceModifiedAt.UtcDateTime.AddSeconds(5));
+        WriteFixtureImage(candidateFile.Path.LocalPath, SKColors.DarkGreen);
+        File.SetLastWriteTimeUtc(candidateFile.Path.LocalPath, previousCandidateModifiedAt.UtcDateTime.AddSeconds(5));
+
+        var capturedCount = await viewModel.RefreshComparisonSourceImagesAsync(comparison, TestContext.Current.CancellationToken);
+
+        Assert.Equal(2, capturedCount);
+        Assert.False(comparison.RequiresReview);
+        Assert.False(viewModel.Workspace.SelectedComparisonRow?.NeedsReview);
     }
 
     [AvaloniaFact]

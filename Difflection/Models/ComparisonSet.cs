@@ -15,6 +15,8 @@ public sealed class ComparisonSet
 
     public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;
 
+    public bool RequiresReview { get; set; }
+
     [JsonInclude]
     public Guid? ReferenceImageId { get; private set; }
 

@@ -417,9 +417,9 @@ Recommended improvements:
 
    ~~The image set panel currently owns a full bottom band even when the comparison stage needs space. Consider making it collapsible, resizable, or visually shallower by default. When there are only one or two images, the panel could be a compact strip. When there are many versions, it could expand into a version browser.~~
 
-4. Add richer sidebar metadata.
+4. ~~Add richer sidebar metadata.~~
 
-   The project selector and comparison list are functional, but they do not yet provide enough at-a-glance context. Comparisons should show image count, empty/ready status, and possibly monitoring state. Projects should show comparison count or last-updated state. This would help users navigate real workspaces without opening each row to discover what is inside.
+   ~~The project selector and comparison list are functional, but they do not yet provide enough at-a-glance context. Comparisons should show image count, empty/ready status, and possibly monitoring state. Projects should show comparison count or last-updated state. This would help users navigate real workspaces without opening each row to discover what is inside.~~
 
 5. Clarify naming: use either "Reference" or "Baseline" consistently.
 
@@ -458,7 +458,7 @@ Suggested implementation order:
 1. ~~Consolidate comparison controls into a single toolbar above the stage.~~
 2. ~~Convert the image set table into a thumbnail-first strip/grid.~~
 3. ~~Reduce vertical competition from the image set area.~~
-4. Surface sidebar row metadata for project and comparison navigation.
+4. ~~Surface sidebar row metadata for project and comparison navigation.~~
 5. Standardize "Reference" versus "Baseline" terminology.
 6. Add visible fit/reset controls and stronger drag-over states.
 7. Remove or implement Settings.
