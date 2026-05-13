@@ -194,7 +194,7 @@ public sealed class MainWindowSnapshotTests
 
     private sealed class SnapshotProjectStorage(params Project[] projects) : IProjectStorage
     {
-        private readonly List<Project> _projects = [..projects];
+        private readonly List<Project> _projects = [.. projects];
         private readonly Dictionary<Guid, byte[]> _imageContents = [];
 
         public Task<IReadOnlyList<Project>> LoadProjectsAsync(CancellationToken cancellationToken = default)

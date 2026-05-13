@@ -363,21 +363,21 @@ public class MainWindowViewModel : ViewModelBase
                 ClearDisplayedComparisonImages();
                 break;
             case nameof(WorkspaceNavigatorViewModel.SelectedComparison):
-            {
-                if (Workspace.SelectedComparison?.ReferenceImage is null)
                 {
-                    LeftImage = null;
-                    LeftFileName = "Baseline image";
-                }
+                    if (Workspace.SelectedComparison?.ReferenceImage is null)
+                    {
+                        LeftImage = null;
+                        LeftFileName = "Baseline image";
+                    }
 
-                if (Workspace.SelectedComparison?.CandidateImage is null)
-                {
-                    RightImage = null;
-                    RightFileName = "Candidate image";
-                }
+                    if (Workspace.SelectedComparison?.CandidateImage is null)
+                    {
+                        RightImage = null;
+                        RightFileName = "Candidate image";
+                    }
 
-                break;
-            }
+                    break;
+                }
         }
     }
 

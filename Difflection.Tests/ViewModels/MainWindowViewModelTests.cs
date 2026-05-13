@@ -903,7 +903,7 @@ public sealed class MainWindowViewModelTests
 
     private sealed class FakeProjectStorage(params Project[] projects) : IProjectStorage
     {
-        private readonly List<Project> _projects = [..projects];
+        private readonly List<Project> _projects = [.. projects];
 
         public List<Project> SavedProjects { get; } = [];
 

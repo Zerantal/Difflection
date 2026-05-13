@@ -33,15 +33,15 @@ public class App : Application
         switch (ApplicationLifetime)
         {
             case IClassicDesktopStyleApplicationLifetime desktop:
-            {
-                var projectStorage = CreateDesktopProjectStorage();
-                projectStorage.ProjectLoadIssue += ProjectStorage_OnProjectLoadIssue;
-                desktop.MainWindow = new MainWindow
                 {
-                    DataContext = new MainWindowViewModel(projectStorage)
-                };
-                break;
-            }
+                    var projectStorage = CreateDesktopProjectStorage();
+                    projectStorage.ProjectLoadIssue += ProjectStorage_OnProjectLoadIssue;
+                    desktop.MainWindow = new MainWindow
+                    {
+                        DataContext = new MainWindowViewModel(projectStorage)
+                    };
+                    break;
+                }
             case ISingleViewApplicationLifetime singleView:
                 singleView.MainView = new MainView
                 {
