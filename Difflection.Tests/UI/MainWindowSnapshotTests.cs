@@ -21,6 +21,11 @@ namespace Difflection.Tests.UI;
 
 public sealed class MainWindowSnapshotTests
 {
+    private static readonly DateTime SnapshotLocalDateTime = new(2026, 1, 15, 10, 30, 0);
+    private static readonly DateTimeOffset SnapshotTimestamp = new(
+        SnapshotLocalDateTime,
+        TimeZoneInfo.Local.GetUtcOffset(SnapshotLocalDateTime));
+
     [AvaloniaFact]
     public void Default_side_by_side_shell_matches_snapshot()
     {
@@ -156,8 +161,9 @@ public sealed class MainWindowSnapshotTests
         SKColor background,
         SKColor accent)
     {
+        var addedAt = SnapshotTimestamp.AddMinutes(viewModel.Workspace.SelectedComparison?.Images.Count ?? 0);
         await using var stream = new MemoryStream(CreateFixtureImageBytes(background, accent));
-        await viewModel.ImageSet.AddImageAsync(sourceName, stream, mediaType: "image/png", label: label);
+        await viewModel.ImageSet.AddImageAsync(sourceName, stream, mediaType: "image/png", label: label, addedAt: addedAt);
     }
 
     private static byte[] CreateFixtureImageBytes(SKColor background, SKColor accent)

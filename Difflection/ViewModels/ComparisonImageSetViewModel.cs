@@ -62,6 +62,7 @@ public partial class ComparisonImageSetViewModel : ViewModelBase
         string? mediaType = null,
         string? label = null,
         ImageSourceMetadata? originalFileMetadata = null,
+        DateTimeOffset? addedAt = null,
         CancellationToken cancellationToken = default)
     {
         if (_workspace.SelectedProject is null)
@@ -83,6 +84,7 @@ public partial class ComparisonImageSetViewModel : ViewModelBase
             Label = NormalizeName(label, fallbackLabel),
             SourceName = normalizedSourceName,
             MediaType = mediaType,
+            AddedAt = addedAt ?? DateTimeOffset.UtcNow,
             OriginalFileMetadata = originalFileMetadata
         };
 
