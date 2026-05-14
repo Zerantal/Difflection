@@ -426,7 +426,7 @@ public sealed class SidebarNavigationTests
     private static T GetControl<T>(Control root, string name)
         where T : Control
     {
-        return root.FindControl<T>(name) ?? throw new InvalidOperationException($"{name} not found.");
+        return TestUiSupport.FindNamedControl<T>(root, name);
     }
 
     private static void Click(Button button)
@@ -459,7 +459,7 @@ public sealed class SidebarNavigationTests
 
     private static void LoseFocus(TextBox textBox)
     {
-        textBox.RaiseEvent(new RoutedEventArgs(InputElement.LostFocusEvent));
+        textBox.RaiseEvent(new FocusChangedEventArgs(InputElement.LostFocusEvent));
     }
 
     private static async Task<TextBox> WaitForInlineNameTextBoxAsync(ItemsControl list, object item)
@@ -479,7 +479,7 @@ public sealed class SidebarNavigationTests
         TextBox? textBox = null;
         await TestUiSupport.WaitForAsync(() =>
         {
-            textBox = root.FindControl<TextBox>("ProjectNameTextBox");
+            textBox = TestUiSupport.FindNamedControl<TextBox>(root, "ProjectNameTextBox");
             return textBox is { IsVisible: true, DataContext: ProjectListItemViewModel textBoxRow }
                 && ReferenceEquals(textBoxRow, row);
         });
@@ -547,6 +547,7 @@ public sealed class SidebarNavigationTests
 
         public List<Guid> DeletedProjectIds { get; } = [];
 
+        // ReSharper disable once MemberCanBePrivate.Local
         public Dictionary<Guid, byte[]> SavedImageContents { get; } = [];
 
         public List<Guid> DeletedImageIds { get; } = [];

@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Avalonia;
@@ -9,6 +10,7 @@ using Avalonia.Input;
 using Avalonia.Platform.Storage;
 using Avalonia.Styling;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using Difflection.ViewModels;
 using Difflection.Views;
 using SkiaSharp;
@@ -43,7 +45,21 @@ internal static class TestUiSupport
         window.Content as MainView ?? throw new InvalidOperationException("MainView not found.");
 
     internal static Difflection.Views.ComparisonStage GetComparisonStage(Window window) =>
-        GetMainView(window).FindControl<Difflection.Views.ComparisonStage>("ComparisonStage") ?? throw new InvalidOperationException("ComparisonStage not found.");
+        FindNamedControl<Difflection.Views.ComparisonStage>(GetMainView(window), "ComparisonStage");
+
+    internal static T FindNamedControl<T>(Control root, string name)
+        where T : Control
+    {
+        if (root is T typedRoot && string.Equals(root.Name, name, StringComparison.Ordinal))
+        {
+            return typedRoot;
+        }
+
+        return root.GetVisualDescendants()
+            .OfType<T>()
+            .FirstOrDefault(control => string.Equals(control.Name, name, StringComparison.Ordinal))
+            ?? throw new InvalidOperationException($"{name} not found.");
+    }
 
     internal static RuledImagePane GetSideBySideLeftPane(Difflection.Views.ComparisonStage stage) =>
         stage.FindControl<RuledImagePane>("SideBySideLeftPane") ?? throw new InvalidOperationException("SideBySideLeftPane not found.");

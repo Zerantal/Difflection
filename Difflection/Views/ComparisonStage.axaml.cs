@@ -29,54 +29,12 @@ public partial class ComparisonStage : UserControl
         DetachedFromVisualTree += OnDetachedFromVisualTree;
     }
 
-    public async Task OpenFilePickerAndLoadAsync()
-    {
-        var storageProvider = TopLevel.GetTopLevel(this)?.StorageProvider;
-        if (storageProvider is null)
-        {
-            return;
-        }
-
-        var files = await storageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
-        {
-            AllowMultiple = true,
-            Title = "Select images to compare",
-            FileTypeFilter =
-            [
-                new FilePickerFileType("Image files")
-                {
-                    Patterns = ["*.png", "*.jpg", "*.jpeg", "*.bmp", "*.gif", "*.webp", "*.tif", "*.tiff"],
-                    MimeTypes = ["image/*"]
-                }
-            ]
-        });
-
-        if (_viewModel is null || files.Count == 0)
-        {
-            return;
-        }
-
-        await _viewModel.ImageSet.AddFilesToCurrentComparisonAsync(files);
-        FitZoomToStage();
-    }
-
-    public async Task LoadBrowserDroppedFilesAsync(IReadOnlyList<string> fileNames, IReadOnlyList<byte[]> fileContents)
-    {
-        if (_viewModel is null)
-        {
-            return;
-        }
-
-        await _viewModel.ImageSet.AddBrowserFilesToCurrentComparisonAsync(fileNames, fileContents, maxFiles: 2);
-        FitZoomToStage();
-    }
-
     public void FitZoomToStage()
     {
         FitZoomToStageInternal();
     }
 
-    internal async Task LoadDroppedFilesAsync(ImageSlot? preferredSlot, IEnumerable<IStorageItem> items)
+    internal async Task LoadDroppedFilesAsync(IEnumerable<IStorageItem> items)
     {
         if (_viewModel is null)
         {
@@ -116,7 +74,7 @@ public partial class ComparisonStage : UserControl
             return;
         }
 
-        await LoadDroppedFilesAsync(null, files);
+        await LoadDroppedFilesAsync(files);
     }
 
     private void StageOverlay_OnPointerWheelChanged(object? sender, PointerWheelEventArgs e)

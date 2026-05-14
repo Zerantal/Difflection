@@ -9,6 +9,7 @@ using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using Avalonia.VisualTree;
 using JetBrains.Annotations;
+using PropertyGenerator.Avalonia;
 
 namespace Difflection.Views;
 
@@ -36,21 +37,6 @@ public partial class RuledSplitImagePane : UserControl
 
     public event EventHandler<double>? SplitRatioChanged;
 
-    public static readonly StyledProperty<IImage?> LeftImageProperty =
-        AvaloniaProperty.Register<RuledSplitImagePane, IImage?>(nameof(LeftImage));
-
-    public static readonly StyledProperty<IImage?> RightImageProperty =
-        AvaloniaProperty.Register<RuledSplitImagePane, IImage?>(nameof(RightImage));
-
-    public static readonly StyledProperty<double> ZoomScaleProperty =
-        AvaloniaProperty.Register<RuledSplitImagePane, double>(nameof(ZoomScale), 1.0);
-
-    public static readonly StyledProperty<double> SurfaceWidthProperty =
-        AvaloniaProperty.Register<RuledSplitImagePane, double>(nameof(SurfaceWidth));
-
-    public static readonly StyledProperty<double> SurfaceHeightProperty =
-        AvaloniaProperty.Register<RuledSplitImagePane, double>(nameof(SurfaceHeight));
-
     private readonly IDisposable _zoomSubscription;
     private bool _isDraggingSplit;
     private double _splitRatio = 0.5;
@@ -68,35 +54,20 @@ public partial class RuledSplitImagePane : UserControl
         DetachedFromVisualTree += Pane_OnDetachedFromVisualTree;
     }
 
-    public IImage? LeftImage
-    {
-        get => GetValue(LeftImageProperty);
-        set => SetValue(LeftImageProperty, value);
-    }
+    [GeneratedStyledProperty]
+    public partial IImage? LeftImage { get; set; }
 
-    public IImage? RightImage
-    {
-        get => GetValue(RightImageProperty);
-        set => SetValue(RightImageProperty, value);
-    }
+    [GeneratedStyledProperty]
+    public partial IImage? RightImage { get; set; }
 
-    public double ZoomScale
-    {
-        get => GetValue(ZoomScaleProperty);
-        set => SetValue(ZoomScaleProperty, value);
-    }
+    [GeneratedStyledProperty(1.0)]
+    public partial double ZoomScale { get; set; }
 
-    public double SurfaceWidth
-    {
-        get => GetValue(SurfaceWidthProperty);
-        set => SetValue(SurfaceWidthProperty, value);
-    }
+    [GeneratedStyledProperty]
+    public partial double SurfaceWidth { get; set; }
 
-    public double SurfaceHeight
-    {
-        get => GetValue(SurfaceHeightProperty);
-        set => SetValue(SurfaceHeightProperty, value);
-    }
+    [GeneratedStyledProperty]
+    public partial double SurfaceHeight { get; set; }
 
     public ScrollViewer ActiveScrollViewer => ScrollViewer;
 
@@ -158,7 +129,7 @@ public partial class RuledSplitImagePane : UserControl
             return;
         }
 
-        await stage.LoadDroppedFilesAsync(null, files);
+        await stage.LoadDroppedFilesAsync(files);
     }
 
     private void SplitDivider_OnPointerPressed(object? sender, PointerPressedEventArgs e)

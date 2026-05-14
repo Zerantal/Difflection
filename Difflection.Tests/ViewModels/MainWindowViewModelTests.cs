@@ -68,9 +68,14 @@ public sealed class MainWindowViewModelTests
         comparison.AddImage(reference);
         comparison.AddImage(candidate);
 
-        var storage = new FakeProjectStorage(project);
-        storage.SavedImageContents[reference.Id] = TestUiSupport.CreatePngBytes(8, 8, SKColors.OrangeRed);
-        storage.SavedImageContents[candidate.Id] = TestUiSupport.CreatePngBytes(8, 8, SKColors.DarkSlateBlue);
+        var storage = new FakeProjectStorage(project)
+        {
+            SavedImageContents =
+            {
+                [reference.Id] = TestUiSupport.CreatePngBytes(8, 8, SKColors.OrangeRed),
+                [candidate.Id] = TestUiSupport.CreatePngBytes(8, 8, SKColors.DarkSlateBlue)
+            }
+        };
         var viewModel = new MainWindowViewModel(storage);
 
         await viewModel.LoadProjectsAsync(TestContext.Current.CancellationToken);
@@ -203,6 +208,29 @@ public sealed class MainWindowViewModelTests
         Assert.Same(
             viewModel.Workspace.SelectedProjectComparisonRows.Single(row => ReferenceEquals(row.Comparison, second)),
             viewModel.Workspace.SelectedComparisonRow);
+    }
+
+    [Fact]
+    public async Task Workspace_rows_preserve_identity_when_projects_and_comparisons_change()
+    {
+        var storage = new FakeProjectStorage();
+        var viewModel = new MainWindowViewModel(storage);
+        var firstProject = await viewModel.Workspace.AddProjectAsync("First", TestContext.Current.CancellationToken);
+        var firstProjectRow = viewModel.Workspace.ProjectRows.Single(row => ReferenceEquals(row.Project, firstProject));
+
+        await viewModel.Workspace.AddProjectAsync("Second", TestContext.Current.CancellationToken);
+
+        Assert.Same(firstProjectRow, viewModel.Workspace.ProjectRows.Single(row => ReferenceEquals(row.Project, firstProject)));
+
+        viewModel.Workspace.SelectedProject = firstProject;
+        var firstComparison = await viewModel.Workspace.AddComparisonAsync("First comparison", TestContext.Current.CancellationToken);
+        var firstComparisonRow = viewModel.Workspace.SelectedProjectComparisonRows.Single(row => ReferenceEquals(row.Comparison, firstComparison));
+
+        await viewModel.Workspace.AddComparisonAsync("Second comparison", TestContext.Current.CancellationToken);
+
+        Assert.Same(
+            firstComparisonRow,
+            viewModel.Workspace.SelectedProjectComparisonRows.Single(row => ReferenceEquals(row.Comparison, firstComparison)));
     }
 
     [Fact]
@@ -661,9 +689,9 @@ public sealed class MainWindowViewModelTests
         comparison.AddImage(middle);
         comparison.AddImage(newest);
 
-        await viewModel.ImageSet.RefreshImageRowsAsync();
+        await viewModel.ImageSet.RefreshImageRowsAsync(TestContext.Current.CancellationToken);
 
-        Assert.Equal(new[] { newest.Id, middle.Id, oldest.Id }, viewModel.ImageSet.ImageRows.Select(row => row.Id));
+        Assert.Equal([newest.Id, middle.Id, oldest.Id], viewModel.ImageSet.ImageRows.Select(row => row.Id));
         Assert.Equal("r3", viewModel.ImageSet.ImageRows[0].RevisionText);
         Assert.Equal("r2", viewModel.ImageSet.ImageRows[1].RevisionText);
         Assert.Equal("r1", viewModel.ImageSet.ImageRows[2].RevisionText);

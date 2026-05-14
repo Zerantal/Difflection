@@ -220,7 +220,7 @@ public sealed partial class ComparisonStageTests
             var drop = new DragEventArgs(DragDrop.DropEvent, transfer, overlay, new Point(10, 10), KeyModifiers.None);
             overlay.RaiseEvent(drop);
 
-            await TestUiSupport.WaitForAsync(() => viewModel.HasLeftImage && viewModel.Workspace.SelectedComparison is not null);
+            await TestUiSupport.WaitForAsync(() => viewModel is { HasLeftImage: true, Workspace.SelectedComparison: not null });
 
             var comparison = Assert.Single(viewModel.Workspace.SelectedProject!.Comparisons);
             Assert.Equal("project-reference", comparison.Name);
@@ -241,8 +241,7 @@ public sealed partial class ComparisonStageTests
         try
         {
             var mainView = TestUiSupport.GetMainView(window);
-            var addComparisonButton = mainView.FindControl<Button>("AddComparisonButton")
-                ?? throw new InvalidOperationException("AddComparisonButton not found.");
+            var addComparisonButton = TestUiSupport.FindNamedControl<Button>(mainView, "AddComparisonButton");
             addComparisonButton.Command?.Execute(addComparisonButton.CommandParameter);
             addComparisonButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
 

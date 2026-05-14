@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Avalonia.Threading;
 using Avalonia.Platform.Storage;
 using CommunityToolkit.Mvvm.Input;
+using Difflection.Infrastructure;
 using Difflection.Models;
 using Difflection.Monitoring;
 using Difflection.Storage;
@@ -34,7 +35,9 @@ public partial class ComparisonImageSetViewModel : ViewModelBase
         _projectStorage = projectStorage;
 
         _workspace.PropertyChanged += OnWorkspacePropertyChanged;
-        _ = RefreshImageRowsAsync();
+        _ = ObservedTask.ReportFailureAsync(
+            RefreshImageRowsAsync(),
+            "Difflection could not refresh the comparison image set.");
     }
 
     public event EventHandler? ImageSetChanged;
@@ -408,7 +411,9 @@ public partial class ComparisonImageSetViewModel : ViewModelBase
         }
         else if (e.PropertyName is nameof(WorkspaceNavigatorViewModel.SelectedComparisonImages) && !_suppressWorkspaceImageRefresh)
         {
-            _ = RefreshImageRowsAsync(force: true);
+            _ = ObservedTask.ReportFailureAsync(
+                RefreshImageRowsAsync(force: true),
+                "Difflection could not refresh the comparison image set.");
         }
     }
 
@@ -419,32 +424,36 @@ public partial class ComparisonImageSetViewModel : ViewModelBase
         _scheduledImageRowsRefresh = refresh;
 
         Dispatcher.UIThread.Post(
-            async () =>
-            {
-                if (refresh.IsCancellationRequested)
-                {
-                    return;
-                }
-
-                try
-                {
-                    await RefreshImageRowsAsync(refresh.Token, force: false);
-                }
-                catch (OperationCanceledException)
-                {
-                    // A newer selection superseded this refresh.
-                }
-                finally
-                {
-                    if (ReferenceEquals(_scheduledImageRowsRefresh, refresh))
-                    {
-                        _scheduledImageRowsRefresh = null;
-                    }
-
-                    refresh.Dispose();
-                }
-            },
+            () => _ = ObservedTask.ReportFailureAsync(
+                RefreshImageRowsAfterSelectionSettlesAsync(refresh),
+                "Difflection could not refresh the comparison image set."),
             DispatcherPriority.Background);
+    }
+
+    private async Task RefreshImageRowsAfterSelectionSettlesAsync(CancellationTokenSource refresh)
+    {
+        if (refresh.IsCancellationRequested)
+        {
+            return;
+        }
+
+        try
+        {
+            await RefreshImageRowsAsync(refresh.Token, force: false);
+        }
+        catch (OperationCanceledException)
+        {
+            // A newer selection superseded this refresh.
+        }
+        finally
+        {
+            if (ReferenceEquals(_scheduledImageRowsRefresh, refresh))
+            {
+                _scheduledImageRowsRefresh = null;
+            }
+
+            refresh.Dispose();
+        }
     }
 
     private void ClearImageRows()

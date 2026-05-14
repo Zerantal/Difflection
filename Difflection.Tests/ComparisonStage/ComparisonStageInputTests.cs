@@ -156,8 +156,7 @@ public sealed partial class ComparisonStageTests
             var initialSplitText = viewModel.ToolState.SplitPercentageText;
 
             await TestUiSupport.WaitForAsync(() => divider.Bounds.Width > 0
-                && dragSurface.Bounds.Width > 0
-                && dragSurface.Bounds.Height > 0);
+                                                   && dragSurface.Bounds is { Width: > 0, Height: > 0 });
 
             var before = divider.Bounds.X;
             var start = dragSurface.TranslatePoint(new Point(dragSurface.Bounds.Width / 2, dragSurface.Bounds.Height / 2), window)
