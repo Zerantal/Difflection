@@ -15,7 +15,6 @@ public partial class ImageSetPanel : UserControl
     {
         InitializeComponent();
 
-        SizeChanged += OnSizeChanged;
         UpdateImageSetExpandedState();
     }
 
@@ -23,11 +22,6 @@ public partial class ImageSetPanel : UserControl
     {
         _isImageSetExpanded = !_isImageSetExpanded;
         UpdateImageSetExpandedState();
-    }
-
-    private void OnSizeChanged(object? sender, SizeChangedEventArgs e)
-    {
-        UpdateImageSetHeightLimit();
     }
 
     private async void ImageLabelTextBox_OnLostFocus(object? sender, RoutedEventArgs e)
@@ -47,16 +41,6 @@ public partial class ImageSetPanel : UserControl
 
         await viewModel.ImageSet.LabelImageAsync(row.Image, textBox.Text);
         e.Handled = true;
-    }
-
-    private void UpdateImageSetHeightLimit()
-    {
-        if (ComparisonImagesList is null)
-        {
-            return;
-        }
-
-        ComparisonImagesList.ClearValue(MaxHeightProperty);
     }
 
     private void UpdateImageSetExpandedState()

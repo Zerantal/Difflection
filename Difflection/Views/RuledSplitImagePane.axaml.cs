@@ -129,7 +129,7 @@ public partial class RuledSplitImagePane : UserControl
             return;
         }
 
-        await stage.LoadDroppedFilesAsync(null, files);
+        await stage.LoadDroppedFilesAsync(files);
     }
 
     private void SplitDivider_OnPointerPressed(object? sender, PointerPressedEventArgs e)

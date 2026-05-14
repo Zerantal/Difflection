@@ -75,12 +75,6 @@
                           Width="16"
                           Height="16" />
             </Button>
-            <Button Classes="headerIconButton"
-                    ToolTip.Tip="Settings">
-                <PathIcon Data="{StaticResource Icon.Settings}"
-                          Width="16"
-                          Height="16" />
-            </Button>
         </StackPanel>
     </Grid>
 </UserControl>
