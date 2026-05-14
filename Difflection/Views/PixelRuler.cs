@@ -4,6 +4,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Media;
+using PropertyGenerator.Avalonia;
 // ReSharper disable MemberCanBePrivate.Global
 
 namespace Difflection.Views;
@@ -20,7 +21,7 @@ public enum PixelRulerMode
     ResetPerImage
 }
 
-public sealed class PixelRuler : Control
+public sealed partial class PixelRuler : Control
 {
     private static readonly SolidColorBrush DefaultBackgroundBrush = new(Color.Parse("#1B1B1B"));
     private static readonly SolidColorBrush DefaultBorderBrush = new(Color.Parse("#343434"));
@@ -36,36 +37,6 @@ public sealed class PixelRuler : Control
 
     public static readonly StyledProperty<IBrush?> ForegroundProperty =
         TemplatedControl.ForegroundProperty.AddOwner<PixelRuler>(new StyledPropertyMetadata<IBrush?>(DefaultLabelBrush));
-
-    public static readonly StyledProperty<PixelRulerOrientation> OrientationProperty =
-        AvaloniaProperty.Register<PixelRuler, PixelRulerOrientation>(nameof(Orientation));
-
-    public static readonly StyledProperty<PixelRulerMode> ModeProperty =
-        AvaloniaProperty.Register<PixelRuler, PixelRulerMode>(nameof(Mode));
-
-    public static readonly StyledProperty<double> ZoomScaleProperty =
-        AvaloniaProperty.Register<PixelRuler, double>(nameof(ZoomScale), 1.0);
-
-    public static readonly StyledProperty<double> ContentOriginXProperty =
-        AvaloniaProperty.Register<PixelRuler, double>(nameof(ContentOriginX));
-
-    public static readonly StyledProperty<double> ContentOriginYProperty =
-        AvaloniaProperty.Register<PixelRuler, double>(nameof(ContentOriginY));
-
-    public static readonly StyledProperty<double> PrimarySegmentLengthProperty =
-        AvaloniaProperty.Register<PixelRuler, double>(nameof(PrimarySegmentLength));
-
-    public static readonly StyledProperty<double> SecondarySegmentStartProperty =
-        AvaloniaProperty.Register<PixelRuler, double>(nameof(SecondarySegmentStart));
-
-    public static readonly StyledProperty<double> SecondarySegmentLengthProperty =
-        AvaloniaProperty.Register<PixelRuler, double>(nameof(SecondarySegmentLength));
-
-    public static readonly StyledProperty<IBrush> MajorTickBrushProperty =
-        AvaloniaProperty.Register<PixelRuler, IBrush>(nameof(MajorTickBrush), DefaultMajorTickBrush);
-
-    public static readonly StyledProperty<IBrush> MinorTickBrushProperty =
-        AvaloniaProperty.Register<PixelRuler, IBrush>(nameof(MinorTickBrush), DefaultMinorTickBrush);
 
     static PixelRuler()
     {
@@ -85,21 +56,29 @@ public sealed class PixelRuler : Control
             MinorTickBrushProperty);
     }
 
-    public PixelRulerOrientation Orientation { get => GetValue(OrientationProperty); set => SetValue(OrientationProperty, value); }
+    [GeneratedStyledProperty]
+    public partial PixelRulerOrientation Orientation { get; set; }
 
-    public PixelRulerMode Mode { get => GetValue(ModeProperty); set => SetValue(ModeProperty, value); }
+    [GeneratedStyledProperty]
+    public partial PixelRulerMode Mode { get; set; }
 
-    public double ZoomScale { get => GetValue(ZoomScaleProperty); set => SetValue(ZoomScaleProperty, value); }
+    [GeneratedStyledProperty(1.0)]
+    public partial double ZoomScale { get; set; }
 
-    public double ContentOriginX { get => GetValue(ContentOriginXProperty); set => SetValue(ContentOriginXProperty, value); }
+    [GeneratedStyledProperty]
+    public partial double ContentOriginX { get; set; }
 
-    public double ContentOriginY { get => GetValue(ContentOriginYProperty); set => SetValue(ContentOriginYProperty, value); }
+    [GeneratedStyledProperty]
+    public partial double ContentOriginY { get; set; }
 
-    public double PrimarySegmentLength { get => GetValue(PrimarySegmentLengthProperty); set => SetValue(PrimarySegmentLengthProperty, value); }
+    [GeneratedStyledProperty]
+    public partial double PrimarySegmentLength { get; set; }
 
-    public double SecondarySegmentStart { get => GetValue(SecondarySegmentStartProperty); set => SetValue(SecondarySegmentStartProperty, value); }
+    [GeneratedStyledProperty]
+    public partial double SecondarySegmentStart { get; set; }
 
-    public double SecondarySegmentLength { get => GetValue(SecondarySegmentLengthProperty); set => SetValue(SecondarySegmentLengthProperty, value); }
+    [GeneratedStyledProperty]
+    public partial double SecondarySegmentLength { get; set; }
 
     public IBrush? Background { get => GetValue(BackgroundProperty); set => SetValue(BackgroundProperty, value); }
 
@@ -107,9 +86,21 @@ public sealed class PixelRuler : Control
 
     public IBrush? Foreground { get => GetValue(ForegroundProperty); set => SetValue(ForegroundProperty, value); }
 
-    public IBrush MajorTickBrush { get => GetValue(MajorTickBrushProperty); set => SetValue(MajorTickBrushProperty, value); }
+    [GeneratedStyledProperty(DefaultValueCallback = nameof(GetDefaultMajorTickBrush))]
+    public partial IBrush MajorTickBrush { get; set; }
 
-    public IBrush MinorTickBrush { get => GetValue(MinorTickBrushProperty); set => SetValue(MinorTickBrushProperty, value); }
+    [GeneratedStyledProperty(DefaultValueCallback = nameof(GetDefaultMinorTickBrush))]
+    public partial IBrush MinorTickBrush { get; set; }
+
+    private static IBrush GetDefaultMajorTickBrush()
+    {
+        return DefaultMajorTickBrush;
+    }
+
+    private static IBrush GetDefaultMinorTickBrush()
+    {
+        return DefaultMinorTickBrush;
+    }
 
     public override void Render(DrawingContext context)
     {

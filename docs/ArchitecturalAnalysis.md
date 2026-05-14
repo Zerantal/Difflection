@@ -173,7 +173,7 @@ Each item should either be removed or connected to a real feature.
 3. ~~Convert repeated code-behind flows into commands or small attached behaviors, starting with inline rename.~~
 4. ~~Move visual-state brushes out of `ComparisonImageSetItemViewModel` and into styles.~~
 5. ~~Simplify `WorkspaceNavigatorViewModel` notifications and row synchronization.~~
-6. Convert manual Avalonia styled properties to generated styled-property attributes where the current Avalonia package supports it cleanly.
+6. ~~Convert manual Avalonia styled properties to generated styled-property attributes where the current Avalonia package supports it cleanly.~~
 7. Remove placeholder/unused code after the component split makes ownership clearer.
 
 ## Verification Notes

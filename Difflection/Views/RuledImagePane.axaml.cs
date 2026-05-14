@@ -2,6 +2,7 @@ using System;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
+using PropertyGenerator.Avalonia;
 
 namespace Difflection.Views;
 
@@ -23,18 +24,6 @@ public partial class RuledImagePane : UserControl
         }
     }
 
-    public static readonly StyledProperty<IImage?> ImageSourceProperty =
-        AvaloniaProperty.Register<RuledImagePane, IImage?>(nameof(ImageSource));
-
-    public static readonly StyledProperty<double> ZoomScaleProperty =
-        AvaloniaProperty.Register<RuledImagePane, double>(nameof(ZoomScale), 1.0);
-
-    public static readonly StyledProperty<double> SurfaceWidthProperty =
-        AvaloniaProperty.Register<RuledImagePane, double>(nameof(SurfaceWidth));
-
-    public static readonly StyledProperty<double> SurfaceHeightProperty =
-        AvaloniaProperty.Register<RuledImagePane, double>(nameof(SurfaceHeight));
-
     private readonly IDisposable _zoomSubscription;
     private bool _rulersDirty = true;
 
@@ -48,29 +37,17 @@ public partial class RuledImagePane : UserControl
         DetachedFromVisualTree += Pane_OnDetachedFromVisualTree;
     }
 
-    public IImage? ImageSource
-    {
-        get => GetValue(ImageSourceProperty);
-        set => SetValue(ImageSourceProperty, value);
-    }
+    [GeneratedStyledProperty]
+    public partial IImage? ImageSource { get; set; }
 
-    public double ZoomScale
-    {
-        get => GetValue(ZoomScaleProperty);
-        set => SetValue(ZoomScaleProperty, value);
-    }
+    [GeneratedStyledProperty(1.0)]
+    public partial double ZoomScale { get; set; }
 
-    public double SurfaceWidth
-    {
-        get => GetValue(SurfaceWidthProperty);
-        set => SetValue(SurfaceWidthProperty, value);
-    }
+    [GeneratedStyledProperty]
+    public partial double SurfaceWidth { get; set; }
 
-    public double SurfaceHeight
-    {
-        get => GetValue(SurfaceHeightProperty);
-        set => SetValue(SurfaceHeightProperty, value);
-    }
+    [GeneratedStyledProperty]
+    public partial double SurfaceHeight { get; set; }
 
     public ScrollViewer ActiveScrollViewer => ScrollViewer;
 
