@@ -168,8 +168,8 @@ Each item should either be removed or connected to a real feature.
 
 ## Suggested Refactor Order
 
-1. Extract `ImageSetPanel`, `WorkspaceSidebar`, and `TopToolbar` from `MainView.axaml`.
-2. Move shared styles into resource dictionaries and delete unused style selectors.
+1. ~~Extract `ImageSetPanel`, `WorkspaceSidebar`, and `TopToolbar` from `MainView.axaml`.~~
+2. ~~Move shared styles into resource dictionaries and delete unused style selectors.~~
 3. Convert repeated code-behind flows into commands or small attached behaviors, starting with inline rename.
 4. Move visual-state brushes out of `ComparisonImageSetItemViewModel` and into styles.
 5. Simplify `WorkspaceNavigatorViewModel` notifications and row synchronization.
