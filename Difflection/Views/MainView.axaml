@@ -1,5 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:infra="using:Difflection.Infrastructure"
              xmlns:vm="using:Difflection.ViewModels"
              xmlns:views="using:Difflection.Views"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -76,10 +77,9 @@
                                      MinWidth="260"
                                      DataContext="{Binding #Root.((vm:MainWindowViewModel)DataContext)?.Workspace.SelectedProjectRow}"
                                      Text="{Binding DraftName, Mode=TwoWay}"
-                                     AttachedToVisualTree="InlineNameTextBox_OnAttachedToVisualTree"
-                                     PropertyChanged="InlineNameTextBox_OnPropertyChanged"
-                                     LostFocus="ProjectListNameTextBox_OnLostFocus"
-                                     KeyDown="ProjectListNameTextBox_OnKeyDown" />
+                                     infra:InlineRenameTextBoxBehavior.IsEnabled="True"
+                                     infra:InlineRenameTextBoxBehavior.CommitCommand="{Binding #Root.((vm:MainWindowViewModel)DataContext)?.Workspace.CommitProjectRenameCommand}"
+                                     infra:InlineRenameTextBoxBehavior.CancelCommand="{Binding #Root.((vm:MainWindowViewModel)DataContext)?.Workspace.CancelProjectRenameEditCommand}" />
                         </Grid>
                         <Button x:Name="EditProjectButton"
                                 Grid.Column="1"

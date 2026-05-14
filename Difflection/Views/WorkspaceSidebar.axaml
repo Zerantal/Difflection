@@ -1,6 +1,7 @@
 <!-- ReSharper disable Xaml.StyleClassNotFound -->
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:infra="using:Difflection.Infrastructure"
              xmlns:vm="using:Difflection.ViewModels"
              x:Class="Difflection.Views.WorkspaceSidebar"
              x:Name="Root"
@@ -104,10 +105,9 @@
                                 <TextBox Classes="sidebarInlineName editing"
                                          Text="{Binding DraftName, Mode=TwoWay}"
                                          IsVisible="{Binding IsEditing}"
-                                         AttachedToVisualTree="InlineNameTextBox_OnAttachedToVisualTree"
-                                         PropertyChanged="InlineNameTextBox_OnPropertyChanged"
-                                         LostFocus="ComparisonListNameTextBox_OnLostFocus"
-                                         KeyDown="ComparisonListNameTextBox_OnKeyDown" />
+                                         infra:InlineRenameTextBoxBehavior.IsEnabled="True"
+                                         infra:InlineRenameTextBoxBehavior.CommitCommand="{Binding #Root.((vm:MainWindowViewModel)DataContext).Workspace.CommitComparisonRenameCommand}"
+                                         infra:InlineRenameTextBoxBehavior.CancelCommand="{Binding #Root.((vm:MainWindowViewModel)DataContext).Workspace.CancelComparisonRenameEditCommand}" />
                             </Grid>
                         </Border>
                     </DataTemplate>

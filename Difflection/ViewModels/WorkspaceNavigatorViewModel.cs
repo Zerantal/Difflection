@@ -115,7 +115,7 @@ public partial class WorkspaceNavigatorViewModel : ViewModelBase
         }
     }
 
-    public void BeginRenameProject(Project project)
+    private void BeginRenameProject(Project project)
     {
         ArgumentNullException.ThrowIfNull(project);
         if (FindProjectRow(project) is { } row)
@@ -125,7 +125,7 @@ public partial class WorkspaceNavigatorViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    public void BeginRenameProject(ProjectListItemViewModel projectRow)
+    private void BeginRenameProject(ProjectListItemViewModel projectRow)
     {
         ArgumentNullException.ThrowIfNull(projectRow);
 
@@ -134,7 +134,7 @@ public partial class WorkspaceNavigatorViewModel : ViewModelBase
         projectRow.BeginEdit();
     }
 
-    public void BeginRenameComparison(ComparisonSet comparison)
+    private void BeginRenameComparison(ComparisonSet comparison)
     {
         ArgumentNullException.ThrowIfNull(comparison);
         if (FindComparisonRow(comparison) is { } row)
@@ -144,7 +144,7 @@ public partial class WorkspaceNavigatorViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    public void BeginRenameComparison(ComparisonListItemViewModel comparisonRow)
+    private void BeginRenameComparison(ComparisonListItemViewModel comparisonRow)
     {
         ArgumentNullException.ThrowIfNull(comparisonRow);
 
@@ -153,7 +153,8 @@ public partial class WorkspaceNavigatorViewModel : ViewModelBase
         comparisonRow.BeginEdit();
     }
 
-    public async Task CommitProjectRenameAsync(ProjectListItemViewModel row, CancellationToken cancellationToken = default)
+    [RelayCommand]
+    private async Task CommitProjectRenameAsync(ProjectListItemViewModel row, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(row);
 
@@ -166,7 +167,8 @@ public partial class WorkspaceNavigatorViewModel : ViewModelBase
         row.EndEdit();
     }
 
-    public async Task CommitComparisonRenameAsync(ComparisonListItemViewModel row, CancellationToken cancellationToken = default)
+    [RelayCommand]
+    private async Task CommitComparisonRenameAsync(ComparisonListItemViewModel row, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(row);
 
@@ -185,10 +187,22 @@ public partial class WorkspaceNavigatorViewModel : ViewModelBase
         row.CancelEdit();
     }
 
-    public static void CancelComparisonRename(ComparisonListItemViewModel row)
+    [RelayCommand]
+    public void CancelProjectRenameEdit(ProjectListItemViewModel row)
+    {
+        CancelProjectRename(row);
+    }
+
+    private static void CancelComparisonRename(ComparisonListItemViewModel row)
     {
         ArgumentNullException.ThrowIfNull(row);
         row.CancelEdit();
+    }
+
+    [RelayCommand]
+    public void CancelComparisonRenameEdit(ComparisonListItemViewModel row)
+    {
+        CancelComparisonRename(row);
     }
 
     public async Task CommitActiveInlineRenamesAsync(CancellationToken cancellationToken = default)
@@ -347,7 +361,7 @@ public partial class WorkspaceNavigatorViewModel : ViewModelBase
         await RenameComparisonAsync(SelectedComparison, name, cancellationToken);
     }
 
-    public async Task RenameProjectAsync(Project project, string? name, CancellationToken cancellationToken = default)
+    private async Task RenameProjectAsync(Project project, string? name, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(project);
 
@@ -363,7 +377,7 @@ public partial class WorkspaceNavigatorViewModel : ViewModelBase
         await SaveProjectAsync(project, cancellationToken);
     }
 
-    public async Task RenameComparisonAsync(ComparisonSet comparison, string? name, CancellationToken cancellationToken = default)
+    private async Task RenameComparisonAsync(ComparisonSet comparison, string? name, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(comparison);
 
@@ -563,6 +577,7 @@ public partial class WorkspaceNavigatorViewModel : ViewModelBase
         SelectedComparisonRow = row;
     }
 
+    // ReSharper disable once UnusedParameterInPartialMethod
     partial void OnSelectedProjectRowChanged(ProjectListItemViewModel? value)
     {
         RefreshComparisonRows();

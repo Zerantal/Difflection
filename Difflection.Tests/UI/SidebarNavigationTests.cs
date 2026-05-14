@@ -459,7 +459,7 @@ public sealed class SidebarNavigationTests
 
     private static void LoseFocus(TextBox textBox)
     {
-        textBox.RaiseEvent(new RoutedEventArgs(InputElement.LostFocusEvent));
+        textBox.RaiseEvent(new FocusChangedEventArgs(InputElement.LostFocusEvent));
     }
 
     private static async Task<TextBox> WaitForInlineNameTextBoxAsync(ItemsControl list, object item)
@@ -547,6 +547,7 @@ public sealed class SidebarNavigationTests
 
         public List<Guid> DeletedProjectIds { get; } = [];
 
+        // ReSharper disable once MemberCanBePrivate.Local
         public Dictionary<Guid, byte[]> SavedImageContents { get; } = [];
 
         public List<Guid> DeletedImageIds { get; } = [];

@@ -8,7 +8,6 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
-using Avalonia.Threading;
 using Difflection.Infrastructure;
 using Difflection.Monitoring;
 using Difflection.ViewModels;
@@ -72,48 +71,6 @@ public partial class MainView : UserControl
     }
 
     // ReSharper disable once AsyncVoidEventHandlerMethod
-    private async void ProjectListNameTextBox_OnLostFocus(object? sender, RoutedEventArgs e)
-    {
-        if (_viewModel is not null && sender is TextBox { DataContext: ProjectListItemViewModel { IsEditing: true } row })
-        {
-            await _viewModel.Workspace.CommitProjectRenameAsync(row);
-        }
-    }
-
-    // ReSharper disable once AsyncVoidEventHandlerMethod
-    private async void ProjectListNameTextBox_OnKeyDown(object? sender, KeyEventArgs e)
-    {
-        if (sender is not TextBox { DataContext: ProjectListItemViewModel row } || !row.IsEditing)
-        {
-            return;
-        }
-
-        if (e.Key == Key.Enter && _viewModel is not null)
-        {
-            await _viewModel.Workspace.CommitProjectRenameAsync(row);
-            e.Handled = true;
-        }
-        else if (e.Key == Key.Escape)
-        {
-            WorkspaceNavigatorViewModel.CancelProjectRename(row);
-            e.Handled = true;
-        }
-    }
-
-    private void InlineNameTextBox_OnAttachedToVisualTree(object? sender, VisualTreeAttachmentEventArgs e)
-    {
-        FocusInlineNameEditor(sender as TextBox);
-    }
-
-    private void InlineNameTextBox_OnPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
-    {
-        if (e.Property == IsVisibleProperty)
-        {
-            FocusInlineNameEditor(sender as TextBox);
-        }
-    }
-
-    // ReSharper disable once AsyncVoidEventHandlerMethod
     private async void RefreshSelectedProjectSourcesButton_OnClick(object? sender, RoutedEventArgs e)
     {
         if (_viewModel?.Workspace.SelectedProject is null)
@@ -144,24 +101,6 @@ public partial class MainView : UserControl
 
         await _viewModel.Workspace.DeleteProjectAsync(row.Project);
         RestartImageChangeMonitor();
-    }
-
-    private static void FocusInlineNameEditor(TextBox? textBox)
-    {
-        if (textBox is not null
-            && textBox is { IsVisible: true, DataContext: ProjectListItemViewModel { IsEditing: true } })
-        {
-            Dispatcher.UIThread.Post(() =>
-            {
-                if (!textBox.IsVisible)
-                {
-                    return;
-                }
-
-                textBox.Focus();
-                textBox.SelectAll();
-            });
-        }
     }
 
     [UsedImplicitly]
