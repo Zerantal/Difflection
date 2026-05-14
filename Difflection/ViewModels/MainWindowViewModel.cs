@@ -1,278 +1,389 @@
 using System;
+using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Media.Imaging;
-using Avalonia.Platform.Storage;
-using CommunityToolkit.Mvvm.ComponentModel;
+using Difflection.Models;
+using Difflection.Monitoring;
+using Difflection.Storage;
 
 namespace Difflection.ViewModels;
 
-public partial class MainWindowViewModel : ViewModelBase
+public class MainWindowViewModel : ViewModelBase
 {
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsSideBySideView))]
-    [NotifyPropertyChangedFor(nameof(IsSplitScreenView))]
-    [NotifyPropertyChangedFor(nameof(CurrentViewTitle))]
-    public partial ComparisonViewMode SelectedViewMode { get; set; } = ComparisonViewMode.SideBySide;
+    private readonly MonitoredImageVersionCapture? _monitoredImageVersionCapture;
 
-    [ObservableProperty]
-    public partial string SplitPercentageText { get; set; } = "50 / 50";
-
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(ZoomText))]
-    public partial double ZoomScale { get; set; } = 1.0;
-
-    [ObservableProperty]
-    public partial string ZoomText { get; set; } = "100%";
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(SideBySideStageWidth))]
-    public partial double StageWidth { get; set; } = 920;
-
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(SideBySideStageHeight))]
-    public partial double StageHeight { get; set; } = 560;
-
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasLeftImage))]
-    [NotifyPropertyChangedFor(nameof(HasAnyImage))]
-    [NotifyPropertyChangedFor(nameof(HasBothImages))]
-    [NotifyPropertyChangedFor(nameof(CanUseSplitScreen))]
-    [NotifyPropertyChangedFor(nameof(LeftImageWidth))]
-    [NotifyPropertyChangedFor(nameof(LeftImageHeight))]
-    [NotifyPropertyChangedFor(nameof(SideBySideStageWidth))]
-    [NotifyPropertyChangedFor(nameof(SideBySideStageHeight))]
-    public partial Bitmap? LeftImage { get; set; }
-
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasRightImage))]
-    [NotifyPropertyChangedFor(nameof(HasAnyImage))]
-    [NotifyPropertyChangedFor(nameof(HasBothImages))]
-    [NotifyPropertyChangedFor(nameof(CanUseSplitScreen))]
-    [NotifyPropertyChangedFor(nameof(RightImageWidth))]
-    [NotifyPropertyChangedFor(nameof(RightImageHeight))]
-    [NotifyPropertyChangedFor(nameof(SideBySideStageWidth))]
-    [NotifyPropertyChangedFor(nameof(SideBySideStageHeight))]
-    public partial Bitmap? RightImage { get; set; }
-
-    [ObservableProperty]
-    public partial string LeftFileName { get; set; } = "Reference image";
-
-    [ObservableProperty]
-    public partial string RightFileName { get; set; } = "Candidate image";
-
-    [ObservableProperty]
-    public partial string DifferenceStatusText { get; set; } = "Load two images to compare";
-
-    public bool HasLeftImage => LeftImage is not null;
-
-    public bool HasRightImage => RightImage is not null;
-
-    public bool HasAnyImage => HasLeftImage || HasRightImage;
-
-    public bool HasBothImages => HasLeftImage && HasRightImage;
-
-    public double LeftImageWidth => LeftImage?.PixelSize.Width ?? StageWidth;
-
-    public double LeftImageHeight => LeftImage?.PixelSize.Height ?? StageHeight;
-
-    public double RightImageWidth => RightImage?.PixelSize.Width ?? StageWidth;
-
-    public double RightImageHeight => RightImage?.PixelSize.Height ?? StageHeight;
-
-    public bool IsSideBySideView => SelectedViewMode == ComparisonViewMode.SideBySide;
-
-    public bool IsSplitScreenView => SelectedViewMode == ComparisonViewMode.SplitScreen;
-
-    public bool CanUseSplitScreen => HasBothImages;
-
-    public string CurrentViewTitle => SelectedViewMode switch
+    public MainWindowViewModel()
     {
-        ComparisonViewMode.SplitScreen => "Split screen",
-        _ => "Side-by-side"
-    };
-
-    public double SideBySideStageWidth => HasBothImages
-        ? LeftImageWidth + 16 + RightImageWidth
-        : HasLeftImage
-            ? LeftImageWidth
-            : HasRightImage
-                ? RightImageWidth
-                : StageWidth;
-
-    public double SideBySideStageHeight => HasBothImages
-        ? Math.Max(LeftImageHeight, RightImageHeight)
-        : HasLeftImage
-            ? LeftImageHeight
-            : HasRightImage
-                ? RightImageHeight
-                : StageHeight;
-
-    public void SetZoomScale(double zoomScale)
-    {
-        ZoomScale = Math.Clamp(zoomScale, 0.05, 64.0);
+        Workspace = new WorkspaceNavigatorViewModel();
+        ToolState = new ComparisonToolStateViewModel(() => HasBothImages);
+        WorkspaceStatus = new WorkspaceStatusViewModel(Workspace, ComparisonDisplay);
+        ImageSet = new ComparisonImageSetViewModel(Workspace, ComparisonDisplay, ProjectStorage);
+        ComparisonDisplay.PropertyChanged += OnComparisonDisplayPropertyChanged;
+        Workspace.PropertyChanged += OnWorkspacePropertyChanged;
+        ImageSet.ImageSetChanged += OnImageSetChanged;
     }
 
-    public bool TrySetZoomText(string? text)
+    public MainWindowViewModel(IProjectStorage projectStorage)
     {
-        if (string.IsNullOrWhiteSpace(text))
+        ProjectStorage = projectStorage;
+        Workspace = new WorkspaceNavigatorViewModel(projectStorage);
+        ToolState = new ComparisonToolStateViewModel(() => HasBothImages);
+        WorkspaceStatus = new WorkspaceStatusViewModel(Workspace, ComparisonDisplay);
+        ImageSet = new ComparisonImageSetViewModel(Workspace, ComparisonDisplay, projectStorage);
+        _monitoredImageVersionCapture = new MonitoredImageVersionCapture(projectStorage);
+        ComparisonDisplay.PropertyChanged += OnComparisonDisplayPropertyChanged;
+        Workspace.PropertyChanged += OnWorkspacePropertyChanged;
+        ImageSet.ImageSetChanged += OnImageSetChanged;
+    }
+
+    public ComparisonDisplayViewModel ComparisonDisplay { get; } = new();
+
+    public WorkspaceNavigatorViewModel Workspace { get; }
+
+    public ComparisonToolStateViewModel ToolState { get; }
+
+    public WorkspaceStatusViewModel WorkspaceStatus { get; }
+
+    public ComparisonImageSetViewModel ImageSet { get; }
+
+    public IProjectStorage? ProjectStorage { get; }
+
+    public Bitmap? LeftImage
+    {
+        get => ComparisonDisplay.LeftImage;
+        private set => ComparisonDisplay.LeftImage = value;
+    }
+
+    public Bitmap? RightImage
+    {
+        get => ComparisonDisplay.RightImage;
+        private set => ComparisonDisplay.RightImage = value;
+    }
+
+    public string LeftFileName
+    {
+        get => ComparisonDisplay.LeftFileName;
+        private set => ComparisonDisplay.LeftFileName = value;
+    }
+
+    public string RightFileName
+    {
+        get => ComparisonDisplay.RightFileName;
+        private set => ComparisonDisplay.RightFileName = value;
+    }
+
+    public string DifferenceStatusText
+    {
+        get => ComparisonDisplay.DifferenceStatusText;
+        set => ComparisonDisplay.DifferenceStatusText = value;
+    }
+
+    public bool HasLeftImage => ComparisonDisplay.HasLeftImage;
+
+    public bool HasRightImage => ComparisonDisplay.HasRightImage;
+
+    public bool HasBothImages => ComparisonDisplay.HasBothImages;
+
+    public async Task LoadProjectsAsync(CancellationToken cancellationToken = default)
+    {
+        await Workspace.LoadProjectsAsync(cancellationToken);
+
+        if (ProjectStorage is not null)
         {
-            ZoomText = $"{Math.Round(ZoomScale * 100):0}%";
+            await ComparisonDisplay.RefreshCurrentComparisonImagesAsync(Workspace.SelectedComparison, ProjectStorage, cancellationToken);
+        }
+    }
+
+    public async Task<bool> SetImageMonitoringAsync(
+        ImageAsset image,
+        ImageMonitoringRole monitoringRole,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(image);
+
+        if (Workspace.SelectedProject is null || Workspace.SelectedComparison is null || !Workspace.SelectedComparison.Images.Contains(image))
+        {
             return false;
         }
 
-        var trimmed = text.Trim();
-        var percentText = trimmed.EndsWith('%') ? trimmed[..^1] : trimmed;
-
-        if (!double.TryParse(percentText, out var percent) || percent <= 0)
+        if (monitoringRole != ImageMonitoringRole.None)
         {
-            ZoomText = $"{Math.Round(ZoomScale * 100):0}%";
-            return false;
+            var sourcePath = image.OriginalFileMetadata?.Path;
+
+            if (string.IsNullOrWhiteSpace(sourcePath) || !File.Exists(sourcePath))
+            {
+                throw new InvalidOperationException("Image monitoring requires an existing local source file path.");
+            }
+
+            image.OriginalFileMetadata = await ImageSourceMetadataReader.ReadAsync(sourcePath, cancellationToken);
         }
 
-        SetZoomScale(percent / 100.0);
+        image.MonitoringRole = monitoringRole;
+        Workspace.SelectedComparison.UpdatedAt = DateTimeOffset.UtcNow;
+        Workspace.SelectedProject.UpdatedAt = DateTimeOffset.UtcNow;
+        Workspace.NotifySelectedComparisonImagesChanged();
+        WorkspaceStatus.NotifyImageStateChanged();
+
+        await SaveProjectAsync(Workspace.SelectedProject, cancellationToken);
         return true;
     }
 
-    public void SelectSideBySideView()
+    public async Task<ImageAsset?> CaptureMonitoredImageChangeAsync(
+        Project project,
+        ComparisonSet comparison,
+        ImageAsset changedImage,
+        CancellationToken cancellationToken = default)
     {
-        SelectedViewMode = ComparisonViewMode.SideBySide;
-    }
-
-    public void SelectSplitScreenView()
-    {
-        if (CanUseSplitScreen)
+        if (_monitoredImageVersionCapture is null)
         {
-            SelectedViewMode = ComparisonViewMode.SplitScreen;
+            return null;
         }
+
+        var capturedRole = changedImage.MonitoringRole;
+        var version = await _monitoredImageVersionCapture.CaptureAsync(project, comparison, changedImage, cancellationToken);
+
+        if (version is null)
+        {
+            return null;
+        }
+
+        if (capturedRole == ImageMonitoringRole.Candidate)
+        {
+            await UpdateComparisonReviewStateAsync(project, comparison, cancellationToken);
+        }
+
+        if (!ReferenceEquals(project, Workspace.SelectedProject) ||
+            !ReferenceEquals(comparison, Workspace.SelectedComparison)) return version;
+        Workspace.NotifyComparisonImagesChanged(comparison);
+        WorkspaceStatus.NotifyImageStateChanged();
+        await ComparisonDisplay.RefreshCurrentComparisonImagesAsync(Workspace.SelectedComparison, ProjectStorage, cancellationToken);
+
+        return version;
     }
 
-    public async Task LoadImageAsync(ImageSlot slot, IStorageFile file)
+    public async Task<int> RefreshProjectSourceImagesAsync(
+        Project project,
+        CancellationToken cancellationToken = default)
     {
-        await using var stream = await file.OpenReadAsync();
-        var bitmap = await CreateBitmapAsync(stream);
+        ArgumentNullException.ThrowIfNull(project);
 
-        switch (slot)
+        if (_monitoredImageVersionCapture is null || !Workspace.Projects.Contains(project))
         {
-            case ImageSlot.Left:
-                LeftImage = bitmap;
-                LeftFileName = file.Name;
+            return 0;
+        }
+
+        var capturedCount = 0;
+        foreach (var comparison in project.Comparisons.ToArray())
+        {
+            capturedCount += await RefreshComparisonSourceImagesAsync(project, comparison, cancellationToken);
+        }
+
+        return capturedCount;
+    }
+
+    public Task<int> RefreshComparisonSourceImagesAsync(
+        ComparisonSet comparison,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(comparison);
+
+        if (Workspace.SelectedProject is null || !Workspace.SelectedProject.Comparisons.Contains(comparison))
+        {
+            return Task.FromResult(0);
+        }
+
+        return RefreshComparisonSourceImagesAsync(Workspace.SelectedProject, comparison, cancellationToken);
+    }
+
+    private async Task<int> RefreshComparisonSourceImagesAsync(
+        Project project,
+        ComparisonSet comparison,
+        CancellationToken cancellationToken)
+    {
+        if (_monitoredImageVersionCapture is null)
+        {
+            return 0;
+        }
+
+        var roleImages = GetCurrentRoleImages(comparison);
+        var capturedCount = 0;
+        var capturedCandidate = false;
+
+        foreach (var (image, role) in roleImages)
+        {
+            var version = await _monitoredImageVersionCapture.RefreshCurrentRoleImageAsync(
+                project,
+                comparison,
+                image,
+                role,
+                cancellationToken);
+
+            if (version is not null)
+            {
+                capturedCount++;
+                capturedCandidate |= role == ImageMonitoringRole.Candidate;
+            }
+        }
+
+        if (capturedCount == 0)
+        {
+            return 0;
+        }
+
+        if (capturedCandidate)
+        {
+            await UpdateComparisonReviewStateAsync(project, comparison, cancellationToken);
+        }
+        Workspace.NotifyComparisonImagesChanged(comparison);
+        WorkspaceStatus.NotifyImageStateChanged();
+
+        if (ReferenceEquals(project, Workspace.SelectedProject) && ReferenceEquals(comparison, Workspace.SelectedComparison))
+        {
+            await ImageSet.RefreshImageRowsAsync(cancellationToken);
+            await ComparisonDisplay.RefreshCurrentComparisonImagesAsync(Workspace.SelectedComparison, ProjectStorage, cancellationToken);
+        }
+
+        return capturedCount;
+    }
+
+    private async Task UpdateComparisonReviewStateAsync(
+        Project project,
+        ComparisonSet comparison,
+        CancellationToken cancellationToken)
+    {
+        var requiresReview = await CurrentRoleImagesDifferAsync(comparison, cancellationToken);
+        if (comparison.RequiresReview == requiresReview)
+        {
+            return;
+        }
+
+        comparison.RequiresReview = requiresReview;
+        comparison.UpdatedAt = DateTimeOffset.UtcNow;
+        project.UpdatedAt = DateTimeOffset.UtcNow;
+        await SaveProjectAsync(project, cancellationToken);
+    }
+
+    private async Task<bool> CurrentRoleImagesDifferAsync(
+        ComparisonSet comparison,
+        CancellationToken cancellationToken)
+    {
+        if (ProjectStorage is null || comparison.ReferenceImage is not { } reference || comparison.CandidateImage is not { } candidate)
+        {
+            return false;
+        }
+
+        await using var referenceStream = await ProjectStorage.LoadImageAsync(reference, cancellationToken);
+        await using var candidateStream = await ProjectStorage.LoadImageAsync(candidate, cancellationToken);
+        using var referenceBitmap = new Bitmap(referenceStream);
+        using var candidateBitmap = new Bitmap(candidateStream);
+        return ImageDifferenceMetric.Compare(referenceBitmap, candidateBitmap)?.DifferentPixels > 0;
+    }
+
+    private static IReadOnlyList<(ImageAsset Image, ImageMonitoringRole Role)> GetCurrentRoleImages(ComparisonSet comparison)
+    {
+        List<(ImageAsset Image, ImageMonitoringRole Role)> roleImages = [];
+
+        if (comparison.ReferenceImage is { } reference)
+        {
+            roleImages.Add((reference, ImageMonitoringRole.Reference));
+        }
+
+        if (comparison.CandidateImage is { } candidate && roleImages.All(item => item.Image.Id != candidate.Id))
+        {
+            roleImages.Add((candidate, ImageMonitoringRole.Candidate));
+        }
+
+        return roleImages;
+    }
+
+    private Task SaveProjectAsync(Project project, CancellationToken cancellationToken)
+    {
+        return ProjectStorage?.SaveProjectAsync(project, cancellationToken) ?? Task.CompletedTask;
+    }
+
+    private void OnImageSetChanged(object? sender, EventArgs e)
+    {
+        WorkspaceStatus.NotifyImageStateChanged();
+    }
+
+    private void OnComparisonDisplayPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (string.IsNullOrEmpty(e.PropertyName))
+        {
+            return;
+        }
+
+        switch (e.PropertyName)
+        {
+            case nameof(ComparisonDisplayViewModel.LeftImage):
+            case nameof(ComparisonDisplayViewModel.RightImage):
+            case nameof(ComparisonDisplayViewModel.HasBothImages):
+                ToolState.NotifyCanUseSplitScreenChanged();
+                WorkspaceStatus.NotifyImageStateChanged();
                 break;
-            case ImageSlot.Right:
-                RightImage = bitmap;
-                RightFileName = file.Name;
+            case nameof(ComparisonDisplayViewModel.DifferenceStatusText):
+                OnPropertyChanged(nameof(DifferenceStatusText));
                 break;
-            default:
-                bitmap.Dispose();
-                throw new ArgumentOutOfRangeException(nameof(slot), slot, null);
-        }
-    }
-
-    public async Task LoadImageAsync(ImageSlot slot, string filePath)
-    {
-        await using var stream = File.OpenRead(filePath);
-        var bitmap = await CreateBitmapAsync(stream);
-
-        switch (slot)
-        {
-            case ImageSlot.Left:
-                LeftImage = bitmap;
-                LeftFileName = Path.GetFileName(filePath);
+            case nameof(ComparisonDisplayViewModel.LeftFileName):
+                OnPropertyChanged(nameof(LeftFileName));
                 break;
-            case ImageSlot.Right:
-                RightImage = bitmap;
-                RightFileName = Path.GetFileName(filePath);
+            case nameof(ComparisonDisplayViewModel.RightFileName):
+                OnPropertyChanged(nameof(RightFileName));
                 break;
-            default:
-                bitmap.Dispose();
-                throw new ArgumentOutOfRangeException(nameof(slot), slot, null);
         }
     }
 
-    public async Task LoadImageAsync(ImageSlot slot, string fileName, Stream stream)
+    private void OnWorkspacePropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        var bitmap = await CreateBitmapAsync(stream);
-
-        switch (slot)
+        if (string.IsNullOrEmpty(e.PropertyName))
         {
-            case ImageSlot.Left:
-                LeftImage = bitmap;
-                LeftFileName = Path.GetFileName(fileName);
+            return;
+        }
+
+        if (e.PropertyName is nameof(WorkspaceNavigatorViewModel.SelectedProject)
+            or nameof(WorkspaceNavigatorViewModel.SelectedComparison)
+            or nameof(WorkspaceNavigatorViewModel.SelectedProjectName)
+            or nameof(WorkspaceNavigatorViewModel.SelectedComparisonName)
+            or nameof(WorkspaceNavigatorViewModel.SelectedComparisonImageCountText)
+            or nameof(WorkspaceNavigatorViewModel.HasProjects)
+            or nameof(WorkspaceNavigatorViewModel.ShowProjectsEmptyState)
+            or nameof(WorkspaceNavigatorViewModel.ShowComparisonsEmptyState))
+        {
+            WorkspaceStatus.NotifyWorkspaceStateChanged();
+        }
+
+        switch (e.PropertyName)
+        {
+            case nameof(WorkspaceNavigatorViewModel.SelectedProject)
+                when Workspace.SelectedComparison is null:
+                ClearDisplayedComparisonImages();
                 break;
-            case ImageSlot.Right:
-                RightImage = bitmap;
-                RightFileName = Path.GetFileName(fileName);
-                break;
-            default:
-                bitmap.Dispose();
-                throw new ArgumentOutOfRangeException(nameof(slot), slot, null);
+            case nameof(WorkspaceNavigatorViewModel.SelectedComparison):
+                {
+                    if (Workspace.SelectedComparison?.ReferenceImage is null)
+                    {
+                        LeftImage = null;
+                        LeftFileName = "Baseline image";
+                    }
+
+                    if (Workspace.SelectedComparison?.CandidateImage is null)
+                    {
+                        RightImage = null;
+                        RightFileName = "Candidate image";
+                    }
+
+                    break;
+                }
         }
     }
 
-    public void DisposeImages()
+    private void ClearDisplayedComparisonImages()
     {
-        LeftImage = null;
-        RightImage = null;
-    }
-
-    private static async Task<Bitmap> CreateBitmapAsync(Stream stream)
-    {
-        if (OperatingSystem.IsBrowser() || !stream.CanSeek)
-        {
-            await using var buffer = new MemoryStream();
-            await stream.CopyToAsync(buffer);
-            buffer.Position = 0;
-            return new Bitmap(buffer);
-        }
-
-        return new Bitmap(stream);
-    }
-
-    private void UpdateStageSize()
-    {
-        var leftWidth = LeftImage?.PixelSize.Width ?? 0;
-        var rightWidth = RightImage?.PixelSize.Width ?? 0;
-        var leftHeight = LeftImage?.PixelSize.Height ?? 0;
-        var rightHeight = RightImage?.PixelSize.Height ?? 0;
-
-        StageWidth = Math.Max(920, Math.Max(leftWidth, rightWidth));
-        StageHeight = Math.Max(560, Math.Max(leftHeight, rightHeight));
-    }
-
-    private void UpdateDifferenceStatus()
-    {
-        DifferenceStatusText = ImageDifferenceMetric.Compare(LeftImage, RightImage)?.ToStatusText()
-            ?? "Load two images to compare";
-    }
-
-    // ReSharper disable once UnusedParameterInPartialMethod
-    partial void OnLeftImageChanged(Bitmap? oldValue, Bitmap? newValue)
-    {
-        oldValue?.Dispose();
-        UpdateStageSize();
-        UpdateDifferenceStatus();
-
-        if (!CanUseSplitScreen && IsSplitScreenView)
-        {
-            SelectSideBySideView();
-        }
-    }
-
-    // ReSharper disable once UnusedParameterInPartialMethod
-    partial void OnRightImageChanged(Bitmap? oldValue, Bitmap? newValue)
-    {
-        oldValue?.Dispose();
-        UpdateStageSize();
-        UpdateDifferenceStatus();
-
-        if (!CanUseSplitScreen && IsSplitScreenView)
-        {
-            SelectSideBySideView();
-        }
-    }
-
-    partial void OnZoomScaleChanged(double value)
-    {
-        ZoomText = $"{Math.Round(value * 100):0}%";
+        ComparisonDisplay.Clear();
     }
 }
 

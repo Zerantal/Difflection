@@ -13,7 +13,7 @@
     
     <Grid x:Name="PaneRoot"
           ClipToBounds="True"
-          RowDefinitions="28,*"
+          RowDefinitions="24,28,*"
           ColumnDefinitions="44,*"
           Background="#1B1B1B"
           DragDrop.AllowDrop="True"
@@ -24,7 +24,49 @@
                 BorderThickness="0,0,1,1"
                 IsHitTestVisible="False" />
 
-        <views:PixelRuler Grid.Row="0"
+        <Border Grid.Row="0"
+                Grid.Column="1"
+                Background="#141414"
+                BorderBrush="#2A2A2A"
+                BorderThickness="0,0,0,1"
+                IsHitTestVisible="False">
+            <Grid Margin="8,0">
+                <Border Background="#101010"
+                        BorderBrush="#3A2A1F"
+                        BorderThickness="1"
+                        CornerRadius="4"
+                        Padding="8,2"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center">
+                    <TextBlock Text="Baseline"
+                               Foreground="#F3F4F6"
+                               FontSize="11"
+                               FontWeight="SemiBold" />
+                </Border>
+
+                <Border Background="#101010"
+                        BorderBrush="#1F2C3A"
+                        BorderThickness="1"
+                        CornerRadius="4"
+                        Padding="8,2"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center">
+                    <TextBlock Text="Candidate"
+                               Foreground="#F3F4F6"
+                               FontSize="11"
+                               FontWeight="SemiBold" />
+                </Border>
+            </Grid>
+        </Border>
+
+        <Border Grid.Row="0"
+                Grid.Column="0"
+                Background="#141414"
+                BorderBrush="#343434"
+                BorderThickness="0,0,1,1"
+                IsHitTestVisible="False" />
+
+        <views:PixelRuler Grid.Row="1"
                           Grid.Column="1"
                           x:Name="TopRuler"
                           Height="28"
@@ -37,7 +79,14 @@
                           Foreground="#D7DADF"
                           IsHitTestVisible="False" />
 
-        <views:PixelRuler Grid.Row="1"
+        <Border Grid.Row="1"
+                Grid.Column="0"
+                Background="#1B1B1B"
+                BorderBrush="#343434"
+                BorderThickness="0,0,1,1"
+                IsHitTestVisible="False" />
+
+        <views:PixelRuler Grid.Row="2"
                           Grid.Column="0"
                           x:Name="LeftRuler"
                           Width="44"
@@ -50,7 +99,7 @@
                           Foreground="#D7DADF"
                           IsHitTestVisible="False" />
 
-        <Border Grid.Row="1"
+        <Border Grid.Row="2"
                 Grid.Column="1"
                 BorderBrush="#242424"
                 BorderThickness="1"

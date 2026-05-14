@@ -7,6 +7,7 @@ using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Input;
 using Avalonia.Platform.Storage;
+using Avalonia.Styling;
 using Avalonia.Threading;
 using Difflection.ViewModels;
 using Difflection.Views;
@@ -18,8 +19,14 @@ internal static class TestUiSupport
 {
     internal static MainWindow CreateWindow(MainWindowViewModel viewModel, double width = 1100, double height = 700, double renderScale = 1.0)
     {
+        if (Application.Current is { } application)
+        {
+            application.RequestedThemeVariant = ThemeVariant.Dark;
+        }
+
         var window = new MainWindow
         {
+            RequestedThemeVariant = ThemeVariant.Dark,
             Width = width,
             Height = height,
             DataContext = viewModel
@@ -77,6 +84,17 @@ internal static class TestUiSupport
         typed.Path = new Uri(path);
         typed.FilePath = path;
         return proxy;
+    }
+
+    internal static byte[] CreatePngBytes(int width = 48, int height = 48, SKColor? color = null)
+    {
+        using var bitmap = new SKBitmap(width, height);
+        using var canvas = new SKCanvas(bitmap);
+        canvas.Clear(color ?? SKColors.OrangeRed);
+
+        using var image = SKImage.FromBitmap(bitmap);
+        using var data = image.Encode(SKEncodedImageFormat.Png, 100);
+        return data.ToArray();
     }
 
     internal static bool RulerZeroIsAlignedWithOrigin(Control originControl, PixelRuler topRuler, PixelRuler leftRuler, Visual relativeTo)

@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Avalonia;
@@ -52,41 +51,23 @@ public partial class ComparisonStage : UserControl
             ]
         });
 
-        await LoadDroppedFilesAsync(null, files);
+        if (_viewModel is null || files.Count == 0)
+        {
+            return;
+        }
+
+        await _viewModel.ImageSet.AddFilesToCurrentComparisonAsync(files);
+        FitZoomToStage();
     }
 
     public async Task LoadBrowserDroppedFilesAsync(IReadOnlyList<string> fileNames, IReadOnlyList<byte[]> fileContents)
     {
-        if (_viewModel is null || fileNames.Count != fileContents.Count)
+        if (_viewModel is null)
         {
             return;
         }
 
-        var files = fileNames
-            .Zip(fileContents, (name, bytes) => (Name: name, Bytes: bytes))
-            .Take(2)
-            .ToArray();
-
-        if (files.Length == 0)
-        {
-            return;
-        }
-
-        if (files.Length >= 2)
-        {
-            using var leftStream = new MemoryStream(files[0].Bytes, writable: false);
-            await _viewModel.LoadImageAsync(ImageSlot.Left, files[0].Name, leftStream);
-
-            using var rightStream = new MemoryStream(files[1].Bytes, writable: false);
-            await _viewModel.LoadImageAsync(ImageSlot.Right, files[1].Name, rightStream);
-
-            FitZoomToStage();
-            return;
-        }
-
-        var slot = ResolveNextSlot();
-        using var stream = new MemoryStream(files[0].Bytes, writable: false);
-        await _viewModel.LoadImageAsync(slot, files[0].Name, stream);
+        await _viewModel.ImageSet.AddBrowserFilesToCurrentComparisonAsync(fileNames, fileContents, maxFiles: 2);
         FitZoomToStage();
     }
 
@@ -102,22 +83,13 @@ public partial class ComparisonStage : UserControl
             return;
         }
 
-        var files = items.OfType<IStorageFile>().Take(2).ToArray();
+        var files = items.OfType<IStorageFile>().ToArray();
         if (files.Length == 0)
         {
             return;
         }
 
-        if (files.Length >= 2)
-        {
-            await _viewModel.LoadImageAsync(ImageSlot.Left, files[0]);
-            await _viewModel.LoadImageAsync(ImageSlot.Right, files[1]);
-            FitZoomToStage();
-            return;
-        }
-
-        var slot = preferredSlot ?? ResolveNextSlot();
-        await _viewModel.LoadImageAsync(slot, files[0]);
+        await _viewModel.ImageSet.AddFilesToCurrentComparisonAsync(files);
         FitZoomToStage();
     }
 
@@ -149,7 +121,7 @@ public partial class ComparisonStage : UserControl
 
     private void StageOverlay_OnPointerWheelChanged(object? sender, PointerWheelEventArgs e)
     {
-        if (_viewModel is null || !_viewModel.HasAnyImage)
+        if (_viewModel is null || !_viewModel.ComparisonDisplay.HasAnyImage)
         {
             return;
         }
@@ -168,10 +140,10 @@ public partial class ComparisonStage : UserControl
             var surface = zoomTarget.Value.Surface;
             var stagePoint = e.GetPosition(surface);
             var pointerInViewer = e.GetPosition(scrollViewer);
-            var oldZoom = _viewModel.ZoomScale;
+            var oldZoom = _viewModel.ToolState.ZoomScale;
             var oldOffset = scrollViewer.Offset;
             var relativePoint = GetRelativePoint(stagePoint, surface);
-            var otherTarget = _viewModel.IsSideBySideView && _viewModel.HasBothImages
+            var otherTarget = _viewModel.ToolState.IsSideBySideView && _viewModel.ComparisonDisplay.HasBothImages
                 ? GetOtherSideBySideTarget(scrollViewer)
                 : null;
             var otherOldOffset = otherTarget is null ? default : otherTarget.Value.ScrollViewer.Offset;
@@ -184,19 +156,19 @@ public partial class ComparisonStage : UserControl
 
             if (e.Delta.Y > 0)
             {
-                _viewModel.SetZoomScale(_viewModel.ZoomScale * ZoomStepFactor);
+                _viewModel.ToolState.SetZoomScale(_viewModel.ToolState.ZoomScale * ZoomStepFactor);
             }
             else if (e.Delta.Y < 0)
             {
-                _viewModel.SetZoomScale(_viewModel.ZoomScale / ZoomStepFactor);
+                _viewModel.ToolState.SetZoomScale(_viewModel.ToolState.ZoomScale / ZoomStepFactor);
             }
 
-            if (!oldZoom.Equals(_viewModel.ZoomScale))
+            if (!oldZoom.Equals(_viewModel.ToolState.ZoomScale))
             {
-                ApplyZoomAnchor(scrollViewer, pointerInViewer, oldOffset, oldZoom, _viewModel.ZoomScale);
+                ApplyZoomAnchor(scrollViewer, pointerInViewer, oldOffset, oldZoom, _viewModel.ToolState.ZoomScale);
                 if (otherTarget is not null)
                 {
-                    ApplyZoomAnchor(otherTarget.Value.ScrollViewer, otherPointerInViewer, otherOldOffset, oldZoom, _viewModel.ZoomScale);
+                    ApplyZoomAnchor(otherTarget.Value.ScrollViewer, otherPointerInViewer, otherOldOffset, oldZoom, _viewModel.ToolState.ZoomScale);
                 }
             }
 
@@ -227,7 +199,7 @@ public partial class ComparisonStage : UserControl
             Math.Max(0, offset.Y - deltaY));
 
         target.ScrollViewer.Offset = newOffset;
-        if (_viewModel.IsSideBySideView && _viewModel.HasBothImages)
+        if (_viewModel.ToolState.IsSideBySideView && _viewModel.ComparisonDisplay.HasBothImages)
         {
             var otherTarget = GetOtherSideBySideTarget(target.ScrollViewer);
             if (otherTarget is not null)
@@ -244,27 +216,13 @@ public partial class ComparisonStage : UserControl
             .OfType<IStorageFile>();
     }
 
-    private ImageSlot ResolveNextSlot() =>
-        _viewModel switch
-        {
-            null => ImageSlot.Left,
-            { HasLeftImage: false } => ImageSlot.Left,
-            _ => ImageSlot.Right
-        };
-
     private void OnDataContextChanged(object? sender, EventArgs e)
     {
-        if (_viewModel is not null)
-        {
-            _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
-        }
+        UnsubscribeViewModelEvents();
 
         _viewModel = DataContext as MainWindowViewModel;
 
-        if (_viewModel is not null)
-        {
-            _viewModel.PropertyChanged += OnViewModelPropertyChanged;
-        }
+        SubscribeViewModelEvents();
 
         UpdateSideBySideLayout();
         FitZoomToStage();
@@ -273,14 +231,14 @@ public partial class ComparisonStage : UserControl
 
     private void OnViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
-        if (e.PropertyName is nameof(MainWindowViewModel.StageWidth)
-            or nameof(MainWindowViewModel.StageHeight)
-            or nameof(MainWindowViewModel.SideBySideStageWidth)
-            or nameof(MainWindowViewModel.SideBySideStageHeight)
-            or nameof(MainWindowViewModel.HasLeftImage)
-            or nameof(MainWindowViewModel.HasRightImage)
-            or nameof(MainWindowViewModel.HasBothImages)
-            or nameof(MainWindowViewModel.SelectedViewMode))
+        if (e.PropertyName is nameof(ComparisonDisplayViewModel.StageWidth)
+            or nameof(ComparisonDisplayViewModel.StageHeight)
+            or nameof(ComparisonDisplayViewModel.SideBySideStageWidth)
+            or nameof(ComparisonDisplayViewModel.SideBySideStageHeight)
+            or nameof(ComparisonDisplayViewModel.HasLeftImage)
+            or nameof(ComparisonDisplayViewModel.HasRightImage)
+            or nameof(ComparisonDisplayViewModel.HasBothImages)
+            or nameof(ComparisonToolStateViewModel.SelectedViewMode))
         {
             UpdateSideBySideLayout();
             FitZoomToStage();
@@ -289,7 +247,7 @@ public partial class ComparisonStage : UserControl
 
     private void UpdateSideBySideLayout()
     {
-        Grid.SetColumnSpan(SideBySideLeftPane, _viewModel?.HasBothImages == true ? 1 : 3);
+        Grid.SetColumnSpan(SideBySideLeftPane, _viewModel?.ComparisonDisplay.HasBothImages == true ? 1 : 3);
     }
 
     private static Point GetRelativePoint(Point point, Control surface)
@@ -308,12 +266,12 @@ public partial class ComparisonStage : UserControl
 
         Dispatcher.UIThread.Post(() =>
         {
-            if (!_viewModel.HasAnyImage)
+            if (!_viewModel.ComparisonDisplay.HasAnyImage)
             {
                 return;
             }
 
-            var scrollViewer = _viewModel.IsSplitScreenView
+            var scrollViewer = _viewModel.ToolState.IsSplitScreenView
                 ? SplitPane.ActiveScrollViewer
                 : SideBySideLeftPane.ActiveScrollViewer;
             if (scrollViewer.Bounds.Width <= 0 || scrollViewer.Bounds.Height <= 0)
@@ -321,12 +279,12 @@ public partial class ComparisonStage : UserControl
                 return;
             }
 
-            var targetWidth = Math.Max(_viewModel.LeftImageWidth, _viewModel.RightImageWidth);
-            var targetHeight = Math.Max(_viewModel.LeftImageHeight, _viewModel.RightImageHeight);
+            var targetWidth = Math.Max(_viewModel.ComparisonDisplay.LeftImageWidth, _viewModel.ComparisonDisplay.RightImageWidth);
+            var targetHeight = Math.Max(_viewModel.ComparisonDisplay.LeftImageHeight, _viewModel.ComparisonDisplay.RightImageHeight);
 
             var scaleX = scrollViewer.Bounds.Width / Math.Max(1, targetWidth);
             var scaleY = scrollViewer.Bounds.Height / Math.Max(1, targetHeight);
-            _viewModel.SetZoomScale(Math.Min(scaleX, scaleY));
+            _viewModel.ToolState.SetZoomScale(Math.Min(scaleX, scaleY));
         }, DispatcherPriority.Loaded);
     }
 
@@ -345,7 +303,7 @@ public partial class ComparisonStage : UserControl
         var ratio = splitRatio ?? 0.5;
         var leftPercent = Math.Round(Math.Clamp(ratio, 0.0, 1.0) * 100.0);
         var rightPercent = 100.0 - leftPercent;
-        _viewModel.SplitPercentageText = $"{leftPercent:0} / {rightPercent:0}";
+        _viewModel.ToolState.SplitPercentageText = $"{leftPercent:0} / {rightPercent:0}";
     }
 
     private static void ApplyZoomAnchor(ScrollViewer scrollViewer, Point anchorInViewer, Vector oldOffset, double oldZoom, double newZoom)
@@ -358,7 +316,7 @@ public partial class ComparisonStage : UserControl
 
     private (ScrollViewer ScrollViewer, Control Surface)? GetWheelTargetPane(PointerWheelEventArgs e)
     {
-        if (_viewModel?.IsSplitScreenView == true)
+        if (_viewModel?.ToolState.IsSplitScreenView == true)
         {
             return (SplitPane.ActiveScrollViewer, SplitPane.ActiveSurface);
         }
@@ -392,17 +350,37 @@ public partial class ComparisonStage : UserControl
         return null;
     }
 
-    private bool HasSecondPane => _viewModel?.HasBothImages == true;
+    private bool HasSecondPane => _viewModel?.ComparisonDisplay.HasBothImages == true;
 
     private void OnDetachedFromVisualTree(object? sender, VisualTreeAttachmentEventArgs e)
     {
         RemoveHandler(PointerWheelChangedEvent, StageOverlay_OnPointerWheelChanged);
         SplitPane.SplitRatioChanged -= SplitPane_OnSplitRatioChanged;
 
-        if (_viewModel is not null)
+        UnsubscribeViewModelEvents();
+
+        _viewModel?.ComparisonDisplay.DisposeImages();
+    }
+
+    private void SubscribeViewModelEvents()
+    {
+        if (_viewModel is null)
         {
-            _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
-            _viewModel.DisposeImages();
+            return;
         }
+
+        _viewModel.ToolState.PropertyChanged += OnViewModelPropertyChanged;
+        _viewModel.ComparisonDisplay.PropertyChanged += OnViewModelPropertyChanged;
+    }
+
+    private void UnsubscribeViewModelEvents()
+    {
+        if (_viewModel is null)
+        {
+            return;
+        }
+
+        _viewModel.ToolState.PropertyChanged -= OnViewModelPropertyChanged;
+        _viewModel.ComparisonDisplay.PropertyChanged -= OnViewModelPropertyChanged;
     }
 }

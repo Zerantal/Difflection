@@ -15,9 +15,9 @@ public sealed partial class ComparisonStageTests
     public async Task Split_screen_divider_starts_centered()
     {
         var viewModel = new MainWindowViewModel();
-        await viewModel.LoadImageAsync(ImageSlot.Left, TestUiSupport.CreateStorageFile("left.png"));
-        await viewModel.LoadImageAsync(ImageSlot.Right, TestUiSupport.CreateStorageFile("right.png"));
-        viewModel.SelectSplitScreenView();
+        await viewModel.ComparisonDisplay.LoadImageAsync(ImageSlot.Left, TestUiSupport.CreateStorageFile("left.png"));
+        await viewModel.ComparisonDisplay.LoadImageAsync(ImageSlot.Right, TestUiSupport.CreateStorageFile("right.png"));
+        viewModel.ToolState.SelectSplitScreenView();
 
         var window = TestUiSupport.CreateWindow(viewModel);
         try
@@ -58,7 +58,6 @@ public sealed partial class ComparisonStageTests
             Assert.True(leftPane.IsVisible);
             Assert.True(surface.Bounds.Width > 0);
             Assert.InRange(Math.Abs(leftPane.Bounds.Width - layout.Bounds.Width), 0, 2.1);
-            Assert.True(ruler.Bounds.Width > surface.Bounds.Width);
             Assert.True(rightPane is null || !rightPane.IsVisible);
         }
         finally

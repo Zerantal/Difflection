@@ -1,11 +1,17 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="Difflection.App"
-             RequestedThemeVariant="Default">
-             <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
+             RequestedThemeVariant="Dark">
+    <!-- Difflection is currently designed against the dark Fluent theme. Light theme support should be added deliberately. -->
 
     <Application.Resources>
-        <SolidColorBrush x:Key="ImageViewportFillBrush" Color="#2A2A2A" />
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceInclude Source="avares://Difflection/Styles/Icons.axaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <SolidColorBrush x:Key="ImageViewportFillBrush" Color="#2A2A2A" />
+        </ResourceDictionary>
     </Application.Resources>
 
     <Application.Styles>

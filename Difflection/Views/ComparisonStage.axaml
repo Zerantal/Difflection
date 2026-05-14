@@ -15,41 +15,76 @@
           Background="#1B1B1B">
         <Border Grid.Row="1"
                 Grid.Column="1"
-                IsVisible="{Binding IsSideBySideView}"
+                IsVisible="{Binding ToolState.IsSideBySideView}"
                 BorderBrush="#242424"
                 BorderThickness="1"
                 Background="#050505">
             <Grid x:Name="SideBySideSurface"
                   ClipToBounds="True"
+                  RowDefinitions="Auto,*"
                   ColumnDefinitions="*,16,*">
+                <Border Grid.Row="0"
+                        Grid.Column="0"
+                        Background="#101010E0"
+                        CornerRadius="4"
+                        Margin="8,8,8,0"
+                        Padding="8,2"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Top"
+                        IsHitTestVisible="False">
+                    <TextBlock Text="Baseline"
+                               Foreground="#F3F4F6"
+                               FontSize="11"
+                               FontWeight="SemiBold" />
+                </Border>
+
+                <Border Grid.Row="0"
+                        Grid.Column="2"
+                        Background="#101010E0"
+                        CornerRadius="4"
+                        Margin="8,8,8,0"
+                        Padding="8,2"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Top"
+                        IsHitTestVisible="False">
+                    <TextBlock Text="Candidate"
+                               Foreground="#F3F4F6"
+                               FontSize="11"
+                               FontWeight="SemiBold" />
+                </Border>
+
                 <views:RuledImagePane x:Name="SideBySideLeftPane"
+                                      Grid.Row="1"
                                       Grid.Column="0"
-                                      SurfaceWidth="{Binding LeftImageWidth}"
-                                      SurfaceHeight="{Binding LeftImageHeight}"
-                                      ImageSource="{Binding LeftImage}"
-                                      ZoomScale="{Binding ZoomScale}" />
+                                      SurfaceWidth="{Binding ComparisonDisplay.LeftImageWidth}"
+                                      SurfaceHeight="{Binding ComparisonDisplay.LeftImageHeight}"
+                                      ImageSource="{Binding ComparisonDisplay.LeftImage}"
+                                      ZoomScale="{Binding ToolState.ZoomScale}" />
 
                 <Border x:Name="SideBySideGutter"
+                        Grid.Row="1"
                         Grid.Column="1"
                         Width="16"
                         Background="#101010"
-                        IsVisible="{Binding HasBothImages}" />
+                        IsVisible="{Binding ComparisonDisplay.HasBothImages}" />
 
                 <views:RuledImagePane x:Name="SideBySideRightPane"
+                                      Grid.Row="1"
                                       Grid.Column="2"
-                                      SurfaceWidth="{Binding RightImageWidth}"
-                                      SurfaceHeight="{Binding RightImageHeight}"
-                                      ImageSource="{Binding RightImage}"
-                                      ZoomScale="{Binding ZoomScale}"
-                                      IsVisible="{Binding HasBothImages}" />
+                                      SurfaceWidth="{Binding ComparisonDisplay.RightImageWidth}"
+                                      SurfaceHeight="{Binding ComparisonDisplay.RightImageHeight}"
+                                      ImageSource="{Binding ComparisonDisplay.RightImage}"
+                                      ZoomScale="{Binding ToolState.ZoomScale}"
+                                      IsVisible="{Binding ComparisonDisplay.HasBothImages}" />
 
                 <Border x:Name="SideBySideDropOverlay"
+                        Grid.Row="1"
                         Grid.Column="0"
                         Grid.ColumnSpan="3"
                         Background="Transparent"
                         HorizontalAlignment="Stretch"
                         VerticalAlignment="Stretch"
-                        IsVisible="{Binding IsSideBySideView}"
+                        IsVisible="{Binding ToolState.IsSideBySideView}"
                         DragDrop.AllowDrop="True"
                         DragDrop.DragOver="StageOverlay_OnDragOver"
                         DragDrop.Drop="StageOverlay_OnDrop" />
@@ -58,18 +93,18 @@
 
         <Border Grid.Row="1"
                 Grid.Column="1"
-                IsVisible="{Binding IsSplitScreenView}"
+                IsVisible="{Binding ToolState.IsSplitScreenView}"
                 BorderBrush="#242424"
                 BorderThickness="1"
                 Background="#050505">
             <Grid ClipToBounds="True">
                 <views:RuledSplitImagePane x:Name="SplitPane"
-                                           IsVisible="{Binding IsSplitScreenView}"
-                                           ZoomScale="{Binding ZoomScale}"
-                                           SurfaceWidth="{Binding StageWidth}"
-                                           SurfaceHeight="{Binding StageHeight}"
-                                           LeftImage="{Binding LeftImage}"
-                                           RightImage="{Binding RightImage}" />
+                                           IsVisible="{Binding ToolState.IsSplitScreenView}"
+                                           ZoomScale="{Binding ToolState.ZoomScale}"
+                                           SurfaceWidth="{Binding ComparisonDisplay.StageWidth}"
+                                           SurfaceHeight="{Binding ComparisonDisplay.StageHeight}"
+                                           LeftImage="{Binding ComparisonDisplay.LeftImage}"
+                                           RightImage="{Binding ComparisonDisplay.RightImage}" />
             </Grid>
         </Border>
     </Grid>
