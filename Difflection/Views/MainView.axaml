@@ -324,35 +324,51 @@
 
         <Border Grid.Row="1" Grid.Column="2" Background="#202020" BorderBrush="#363636"
                 BorderThickness="0,0,0,1">
-            <Grid ColumnDefinitions="Auto,*" Margin="12,0" DataContext="{Binding}">
-                <StackPanel Orientation="Horizontal"
-                            VerticalAlignment="Center"
-                            Spacing="6">
-                    <Button x:Name="SideBySideViewButton"
-                            Classes="viewModeButton"
-                            Content="Side-by-side"
-                            Click="SideBySideViewButton_OnClick" />
-                    <Button x:Name="SplitScreenViewButton"
-                            Classes="viewModeButton"
-                            Content="Split screen"
-                            IsEnabled="{Binding ToolState.CanUseSplitScreen}"
-                            Click="SplitScreenViewButton_OnClick" />
-                    <Border Classes="toolbarSeparator" />
-                    <Button Classes="headerIconButton"
-                            ToolTip.Tip="Add images to comparison"
-                            Click="AddMediaButton_OnClick">
-                        <fi:FluentIcon Icon="Add"
-                                       IconVariant="Regular"
-                                       IconSize="Size16" />
-                    </Button>
-                    <Button Classes="headerIconButton"
-                            ToolTip.Tip="Refresh source images for selected comparison"
-                            IsEnabled="{Binding Workspace.HasSelectedComparison}"
-                            Click="RefreshSelectedComparisonSourcesButton_OnClick">
-                        <fi:FluentIcon Icon="ImageArrowCounterclockwise"
-                                       IconVariant="Regular"
-                                       IconSize="Size16" />
-                    </Button>
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12" Margin="12,0" DataContext="{Binding Workspace}">
+                <StackPanel Spacing="3"
+                            VerticalAlignment="Center">
+                    <Grid ColumnDefinitions="Auto,Auto,*" ColumnSpacing="8">
+                        <TextBlock Classes="workspaceContextTitle"
+                                   Text="{Binding SelectedProjectName}"
+                                   VerticalAlignment="Center"
+                                   IsVisible="{Binding SelectedProjectRow.IsNotEditing}" />
+                        <TextBlock Classes="workspaceContextTitle"
+                                   Text="No project selected"
+                                   VerticalAlignment="Center"
+                                   IsVisible="{Binding ShowProjectsEmptyState}" />
+                        <Grid IsVisible="{Binding SelectedProjectRow.IsEditing, TargetNullValue=False, FallbackValue=False}">
+                            <TextBox x:Name="ProjectNameTextBox"
+                                     Classes="nameEditor"
+                                     MinWidth="260"
+                                     DataContext="{Binding #Root.((vm:MainWindowViewModel)DataContext).Workspace.SelectedProjectRow}"
+                                     Text="{Binding DraftName, Mode=TwoWay}"
+                                     AttachedToVisualTree="InlineNameTextBox_OnAttachedToVisualTree"
+                                     PropertyChanged="InlineNameTextBox_OnPropertyChanged"
+                                     LostFocus="ProjectListNameTextBox_OnLostFocus"
+                                     KeyDown="ProjectListNameTextBox_OnKeyDown" />
+                        </Grid>
+                        <Button x:Name="EditProjectButton"
+                                Grid.Column="1"
+                                Classes="headerIconButton"
+                                ToolTip.Tip="Rename project"
+                                IsEnabled="{Binding HasSelectedProject}"
+                                IsVisible="{Binding SelectedProjectRow.IsNotEditing}"
+                                Command="{Binding BeginRenameProjectCommand}"
+                                CommandParameter="{Binding SelectedProjectRow}">
+                            <fi:FluentIcon Icon="Edit"
+                                           IconVariant="Regular"
+                                           IconSize="Size16" />
+                        </Button>
+                    </Grid>
+                    <StackPanel Orientation="Horizontal"
+                                Spacing="12"
+                                DataContext="{Binding #Root.((vm:MainWindowViewModel)DataContext)}">
+                        <TextBlock Classes="workspaceContextDetail"
+                                   Text="{Binding WorkspaceStatus.WorkspaceContextDetail}" />
+                        <TextBlock Classes="workspaceContextDetail"
+                                   Text="{Binding WorkspaceStatus.WorkspaceActionHint}"
+                                   IsVisible="{Binding WorkspaceStatus.ShowWorkspaceActionHint}" />
+                    </StackPanel>
                 </StackPanel>
 
                 <StackPanel Grid.Column="1"
@@ -360,41 +376,23 @@
                             HorizontalAlignment="Right"
                             VerticalAlignment="Center"
                             Spacing="6">
-                    <TextBlock Text="{Binding ToolState.SplitPercentageText}"
-                               IsVisible="{Binding ToolState.IsSplitScreenView}"
-                               Foreground="#BFC4CC"
-                               FontSize="13"
-                               FontWeight="SemiBold"
-                               VerticalAlignment="Center" />
-                    <TextBox x:Name="ZoomTextBox"
-                             Classes="toolbarZoomBox"
-                             Width="64"
-                             ToolTip.Tip="Zoom percentage"
-                             Text="{Binding ToolState.ZoomText, Mode=TwoWay}"
-                             HorizontalContentAlignment="Center"
-                             VerticalContentAlignment="Center"
-                             VerticalAlignment="Center"
-                             LostFocus="ZoomTextBox_OnLostFocus"
-                             KeyDown="ZoomTextBox_OnKeyDown" />
-                    <Button Classes="headerIconButton"
-                            ToolTip.Tip="Fit images to stage"
-                            IsEnabled="{Binding ComparisonDisplay.HasAnyImage}"
-                            Click="FitZoomButton_OnClick">
-                        <fi:FluentIcon Icon="AutoFitWidth"
+                    <Button x:Name="DeleteProjectButton"
+                            Classes="headerIconButton"
+                            ToolTip.Tip="Delete project"
+                            IsEnabled="{Binding CanDeleteSelectedProject}"
+                            IsVisible="{Binding SelectedProjectRow.IsNotEditing}"
+                            Click="DeleteSelectedProjectButton_OnClick">
+                        <fi:FluentIcon Icon="Delete"
                                        IconVariant="Regular"
                                        IconSize="Size16" />
                     </Button>
-                    <Button Classes="headerIconButton"
-                            ToolTip.Tip="Actual size"
-                            IsEnabled="{Binding ComparisonDisplay.HasAnyImage}"
-                            Click="ActualSizeZoomButton_OnClick">
-                        <fi:FluentIcon Icon="FullScreenMaximize"
-                                       IconVariant="Regular"
-                                       IconSize="Size16" />
-                    </Button>
-                    <Button Classes="headerIconButton"
-                            ToolTip.Tip="Settings">
-                        <fi:FluentIcon Icon="AppsSettings"
+                    <Button x:Name="RefreshProjectSourcesButton"
+                            Classes="headerIconButton"
+                            ToolTip.Tip="Refresh all source images in project"
+                            IsEnabled="{Binding HasSelectedProject}"
+                            IsVisible="{Binding SelectedProjectRow.IsNotEditing}"
+                            Click="RefreshSelectedProjectSourcesButton_OnClick">
+                        <fi:FluentIcon Icon="ArrowSync"
                                        IconVariant="Regular"
                                        IconSize="Size16" />
                     </Button>
@@ -526,73 +524,80 @@
 
         <Border Grid.Row="2" Grid.Column="2" Background="#101010" Padding="24">
             <Grid RowDefinitions="Auto,*" RowSpacing="12">
-                <Grid ColumnDefinitions="*" ColumnSpacing="12">
-                    <StackPanel Spacing="6"
+                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                    <StackPanel Orientation="Horizontal"
                                 VerticalAlignment="Center"
-                                DataContext="{Binding Workspace}">
-                        <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,*" ColumnSpacing="8">
-                            <TextBlock Classes="workspaceContextTitle"
-                                       Text="{Binding SelectedProjectName}"
-                                       VerticalAlignment="Center"
-                                       IsVisible="{Binding SelectedProjectRow.IsNotEditing}" />
-                            <TextBlock Classes="workspaceContextTitle"
-                                       Text="No project selected"
-                                       VerticalAlignment="Center"
-                                       IsVisible="{Binding ShowProjectsEmptyState}" />
-                            <TextBox x:Name="ProjectNameTextBox"
-                                     Classes="nameEditor"
-                                     MinWidth="260"
-                                     DataContext="{Binding SelectedProjectRow}"
-                                     Text="{Binding DraftName, Mode=TwoWay}"
-                                     IsVisible="{Binding IsEditing}"
-                                     AttachedToVisualTree="InlineNameTextBox_OnAttachedToVisualTree"
-                                     PropertyChanged="InlineNameTextBox_OnPropertyChanged"
-                                     LostFocus="ProjectListNameTextBox_OnLostFocus"
-                                     KeyDown="ProjectListNameTextBox_OnKeyDown" />
-                            <Button x:Name="EditProjectButton"
-                                    Grid.Column="1"
-                                    Classes="headerIconButton"
-                                    ToolTip.Tip="Rename project"
-                                    IsEnabled="{Binding HasSelectedProject}"
-                                    IsVisible="{Binding SelectedProjectRow.IsNotEditing}"
-                                    Command="{Binding BeginRenameProjectCommand}"
-                                    CommandParameter="{Binding SelectedProjectRow}">
-                                <fi:FluentIcon Icon="Edit"
-                                               IconVariant="Regular"
-                                               IconSize="Size16" />
-                            </Button>
-                            <Button x:Name="DeleteProjectButton"
-                                    Grid.Column="2"
-                                    Classes="headerIconButton"
-                                    ToolTip.Tip="Delete project"
-                                    IsEnabled="{Binding CanDeleteSelectedProject}"
-                                    IsVisible="{Binding SelectedProjectRow.IsNotEditing}"
-                                    Click="DeleteSelectedProjectButton_OnClick">
-                                <fi:FluentIcon Icon="Delete"
-                                               IconVariant="Regular"
-                                               IconSize="Size16" />
-                            </Button>
-                            <Button x:Name="RefreshProjectSourcesButton"
-                                    Grid.Column="3"
-                                    Classes="headerIconButton"
-                                    ToolTip.Tip="Refresh all source images in project"
-                                    IsEnabled="{Binding HasSelectedProject}"
-                                    IsVisible="{Binding SelectedProjectRow.IsNotEditing}"
-                                    Click="RefreshSelectedProjectSourcesButton_OnClick">
-                                <fi:FluentIcon Icon="FolderSync"
-                                               IconVariant="Regular"
-                                               IconSize="Size16" />
-                            </Button>
-                        </Grid>
-                        <StackPanel Orientation="Horizontal"
-                                    Spacing="12"
-                                    DataContext="{Binding #Root.((vm:MainWindowViewModel)DataContext)}">
-                            <TextBlock Classes="workspaceContextDetail"
-                                       Text="{Binding WorkspaceStatus.WorkspaceContextDetail}" />
-                            <TextBlock Classes="workspaceContextDetail"
-                                       Text="{Binding WorkspaceStatus.WorkspaceActionHint}"
-                                       IsVisible="{Binding WorkspaceStatus.ShowWorkspaceActionHint}" />
-                        </StackPanel>
+                                Spacing="6">
+                        <Button x:Name="SideBySideViewButton"
+                                Classes="viewModeButton"
+                                Content="Side-by-side"
+                                Click="SideBySideViewButton_OnClick" />
+                        <Button x:Name="SplitScreenViewButton"
+                                Classes="viewModeButton"
+                                Content="Split screen"
+                                IsEnabled="{Binding ToolState.CanUseSplitScreen}"
+                                Click="SplitScreenViewButton_OnClick" />
+                        <Border Classes="toolbarSeparator" />
+                        <Button Classes="headerIconButton"
+                                ToolTip.Tip="Add images to comparison"
+                                Click="AddMediaButton_OnClick">
+                            <fi:FluentIcon Icon="Add"
+                                           IconVariant="Regular"
+                                           IconSize="Size16" />
+                        </Button>
+                        <Button Classes="headerIconButton"
+                                ToolTip.Tip="Refresh source images for selected comparison"
+                                IsEnabled="{Binding Workspace.HasSelectedComparison}"
+                                Click="RefreshSelectedComparisonSourcesButton_OnClick">
+                            <fi:FluentIcon Icon="ArrowSync"
+                                           IconVariant="Regular"
+                                           IconSize="Size16" />
+                        </Button>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1"
+                                Orientation="Horizontal"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center"
+                                Spacing="6">
+                        <TextBlock Text="{Binding ToolState.SplitPercentageText}"
+                                   IsVisible="{Binding ToolState.IsSplitScreenView}"
+                                   Foreground="#BFC4CC"
+                                   FontSize="13"
+                                   FontWeight="SemiBold"
+                                   VerticalAlignment="Center" />
+                        <TextBox x:Name="ZoomTextBox"
+                                 Classes="toolbarZoomBox"
+                                 Width="64"
+                                 ToolTip.Tip="Zoom percentage"
+                                 Text="{Binding ToolState.ZoomText, Mode=TwoWay}"
+                                 HorizontalContentAlignment="Center"
+                                 VerticalContentAlignment="Center"
+                                 VerticalAlignment="Center"
+                                 LostFocus="ZoomTextBox_OnLostFocus"
+                                 KeyDown="ZoomTextBox_OnKeyDown" />
+                        <Button Classes="headerIconButton"
+                                ToolTip.Tip="Fit images to stage"
+                                IsEnabled="{Binding ComparisonDisplay.HasAnyImage}"
+                                Click="FitZoomButton_OnClick">
+                            <fi:FluentIcon Icon="AutoFitWidth"
+                                           IconVariant="Regular"
+                                           IconSize="Size16" />
+                        </Button>
+                        <Button Classes="headerIconButton"
+                                ToolTip.Tip="Actual size"
+                                IsEnabled="{Binding ComparisonDisplay.HasAnyImage}"
+                                Click="ActualSizeZoomButton_OnClick">
+                            <fi:FluentIcon Icon="FullScreenMaximize"
+                                           IconVariant="Regular"
+                                           IconSize="Size16" />
+                        </Button>
+                        <Button Classes="headerIconButton"
+                                ToolTip.Tip="Settings">
+                            <fi:FluentIcon Icon="Settings"
+                                           IconVariant="Regular"
+                                           IconSize="Size16" />
+                        </Button>
                     </StackPanel>
                 </Grid>
 
@@ -646,11 +651,11 @@
                             Click="ToggleImageSetButton_OnClick">
                         <Grid>
                             <fi:FluentIcon x:Name="CollapseImageSetIcon"
-                                           Icon="PanelBottom"
+                                           Icon="ChevronDown"
                                            IconVariant="Regular"
                                            IconSize="Size16" />
                             <fi:FluentIcon x:Name="ExpandImageSetIcon"
-                                           Icon="PanelBottomExpand"
+                                           Icon="ChevronUp"
                                            IconVariant="Regular"
                                            IconSize="Size16"
                                            IsVisible="False" />
