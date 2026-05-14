@@ -1,0 +1,86 @@
+<!-- ReSharper disable Xaml.StyleClassNotFound -->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Difflection.ViewModels"
+             x:Class="Difflection.Views.TopToolbar"
+             x:Name="Root"
+             x:DataType="vm:MainWindowViewModel"
+             Background="Transparent">
+    <Grid ColumnDefinitions="*,Auto"
+          ColumnSpacing="12">
+        <StackPanel Orientation="Horizontal"
+                    VerticalAlignment="Center"
+                    Spacing="6">
+            <Button x:Name="SideBySideViewButton"
+                    Classes="viewModeButton"
+                    Content="Side-by-side"
+                    Click="SideBySideViewButton_OnClick" />
+            <Button x:Name="SplitScreenViewButton"
+                    Classes="viewModeButton"
+                    Content="Split screen"
+                    IsEnabled="{Binding ToolState.CanUseSplitScreen}"
+                    Click="SplitScreenViewButton_OnClick" />
+            <Border Classes="toolbarSeparator" />
+            <Button Classes="headerIconButton"
+                    ToolTip.Tip="Add images to comparison"
+                    Click="AddMediaButton_OnClick">
+                <PathIcon Data="{StaticResource Icon.Add}"
+                          Width="16"
+                          Height="16" />
+            </Button>
+            <Button Classes="headerIconButton"
+                    ToolTip.Tip="Refresh source images for selected comparison"
+                    IsEnabled="{Binding Workspace.HasSelectedComparison}"
+                    Click="RefreshSelectedComparisonSourcesButton_OnClick">
+                <PathIcon Data="{StaticResource Icon.Refresh}"
+                          Width="16"
+                          Height="16" />
+            </Button>
+        </StackPanel>
+
+        <StackPanel Grid.Column="1"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center"
+                    Spacing="6">
+            <TextBlock Text="{Binding ToolState.SplitPercentageText}"
+                       IsVisible="{Binding ToolState.IsSplitScreenView}"
+                       Foreground="#BFC4CC"
+                       FontSize="13"
+                       FontWeight="SemiBold"
+                       VerticalAlignment="Center" />
+            <TextBox x:Name="ZoomTextBox"
+                     Classes="toolbarZoomBox"
+                     Width="64"
+                     ToolTip.Tip="Zoom percentage"
+                     Text="{Binding ToolState.ZoomText, Mode=TwoWay}"
+                     HorizontalContentAlignment="Center"
+                     VerticalContentAlignment="Center"
+                     VerticalAlignment="Center"
+                     LostFocus="ZoomTextBox_OnLostFocus"
+                     KeyDown="ZoomTextBox_OnKeyDown" />
+            <Button Classes="headerIconButton"
+                    ToolTip.Tip="Fit images to stage"
+                    IsEnabled="{Binding ComparisonDisplay.HasAnyImage}"
+                    Click="FitZoomButton_OnClick">
+                <PathIcon Data="{StaticResource Icon.AutofitContent}"
+                          Width="16"
+                          Height="16" />
+            </Button>
+            <Button Classes="headerIconButton"
+                    ToolTip.Tip="Actual size"
+                    IsEnabled="{Binding ComparisonDisplay.HasAnyImage}"
+                    Click="ActualSizeZoomButton_OnClick">
+                <PathIcon Data="{StaticResource Icon.ActualSize}"
+                          Width="16"
+                          Height="16" />
+            </Button>
+            <Button Classes="headerIconButton"
+                    ToolTip.Tip="Settings">
+                <PathIcon Data="{StaticResource Icon.Settings}"
+                          Width="16"
+                          Height="16" />
+            </Button>
+        </StackPanel>
+    </Grid>
+</UserControl>

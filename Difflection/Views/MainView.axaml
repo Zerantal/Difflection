@@ -8,7 +8,6 @@
              x:Class="Difflection.Views.MainView"
              x:Name="Root"
              x:DataType="vm:MainWindowViewModel"
-             SizeChanged="MainView_OnSizeChanged"
              Background="#181818">
     <Design.DataContext>
         <vm:MainWindowViewModel />
@@ -298,9 +297,17 @@
         </Style>
     </UserControl.Styles>
 
-    <Grid x:Name="RootGrid" RowDefinitions="34,60,*,Auto" ColumnDefinitions="260,5,*" Background="#181818">
-        <Border Grid.Row="0" Grid.ColumnSpan="3" Background="#222222" BorderBrush="#353535" BorderThickness="0,0,0,1">
-            <Grid ColumnDefinitions="Auto,*" Margin="14,0">
+    <Grid x:Name="RootGrid"
+          RowDefinitions="34,60,*,Auto"
+          ColumnDefinitions="260,5,*"
+          Background="#181818">
+        <Border Grid.Row="0"
+                Grid.ColumnSpan="3"
+                Background="#222222"
+                BorderBrush="#353535"
+                BorderThickness="0,0,0,1">
+            <Grid ColumnDefinitions="Auto,*"
+                  Margin="14,0">
                 <TextBlock Text="Difflection"
                            FontSize="14"
                            FontWeight="SemiBold"
@@ -321,25 +328,33 @@
                 BorderBrush="#303030"
                 BorderThickness="0,0,1,1" />
 
-        <Border Grid.Row="1" Grid.Column="2" Background="#202020" BorderBrush="#363636"
+        <Border Grid.Row="1"
+                Grid.Column="2"
+                Background="#202020"
+                BorderBrush="#363636"
                 BorderThickness="0,0,0,1">
-            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12" Margin="12,0" DataContext="{Binding Workspace}">
+            <Grid ColumnDefinitions="*,Auto"
+                  ColumnSpacing="12"
+                  Margin="12,0"
+                  DataContext="{Binding Workspace}">
                 <StackPanel Spacing="3"
                             VerticalAlignment="Center">
-                    <Grid ColumnDefinitions="Auto,Auto,*" ColumnSpacing="8">
+                    <Grid ColumnDefinitions="Auto,Auto,*"
+                          ColumnSpacing="8">
                         <TextBlock Classes="workspaceContextTitle"
                                    Text="{Binding SelectedProjectName}"
                                    VerticalAlignment="Center"
-                                   IsVisible="{Binding SelectedProjectRow.IsNotEditing}" />
-                        <TextBlock Classes="workspaceContextTitle"
+                                   IsVisible="{Binding SelectedProjectRow?.IsNotEditing}" />
+                        <TextBlock Grid.Column="0" Classes="workspaceContextTitle"
                                    Text="No project selected"
                                    VerticalAlignment="Center"
                                    IsVisible="{Binding ShowProjectsEmptyState}" />
-                        <Grid IsVisible="{Binding SelectedProjectRow.IsEditing, TargetNullValue=False, FallbackValue=False}">
+                        <Grid Grid.Column="0"
+                              IsVisible="{Binding SelectedProjectRow.IsEditing, TargetNullValue=False, FallbackValue=False}">
                             <TextBox x:Name="ProjectNameTextBox"
                                      Classes="nameEditor"
                                      MinWidth="260"
-                                     DataContext="{Binding #Root.((vm:MainWindowViewModel)DataContext).Workspace.SelectedProjectRow}"
+                                     DataContext="{Binding #Root.((vm:MainWindowViewModel)DataContext)?.Workspace.SelectedProjectRow}"
                                      Text="{Binding DraftName, Mode=TwoWay}"
                                      AttachedToVisualTree="InlineNameTextBox_OnAttachedToVisualTree"
                                      PropertyChanged="InlineNameTextBox_OnPropertyChanged"
@@ -351,7 +366,7 @@
                                 Classes="headerIconButton"
                                 ToolTip.Tip="Rename project"
                                 IsEnabled="{Binding HasSelectedProject}"
-                                IsVisible="{Binding SelectedProjectRow.IsNotEditing}"
+                                IsVisible="{Binding SelectedProjectRow?.IsNotEditing}"
                                 Command="{Binding BeginRenameProjectCommand}"
                                 CommandParameter="{Binding SelectedProjectRow}">
                             <PathIcon Data="{StaticResource Icon.Edit}"
@@ -379,7 +394,7 @@
                             Classes="headerIconButton"
                             ToolTip.Tip="Delete project"
                             IsEnabled="{Binding CanDeleteSelectedProject}"
-                            IsVisible="{Binding SelectedProjectRow.IsNotEditing}"
+                            IsVisible="{Binding SelectedProjectRow?.IsNotEditing}"
                             Click="DeleteSelectedProjectButton_OnClick">
                         <PathIcon Data="{StaticResource Icon.Delete}"
                                   Width="16"
@@ -389,7 +404,7 @@
                             Classes="headerIconButton"
                             ToolTip.Tip="Refresh all source images in project"
                             IsEnabled="{Binding HasSelectedProject}"
-                            IsVisible="{Binding SelectedProjectRow.IsNotEditing}"
+                            IsVisible="{Binding SelectedProjectRow?.IsNotEditing}"
                             Click="RefreshSelectedProjectSourcesButton_OnClick">
                         <PathIcon Data="{StaticResource Icon.Refresh}"
                                   Width="16"
@@ -410,195 +425,19 @@
                       HorizontalAlignment="Stretch"
                       VerticalAlignment="Stretch" />
 
+        <views:WorkspaceSidebar Grid.Row="2"
+                                Grid.RowSpan="2"
+                                Grid.Column="0"
+                                x:Name="WorkspaceSidebarHost" />
+
         <Border Grid.Row="2"
-                Grid.RowSpan="2"
-                Grid.Column="0"
-                Background="#171717"
-                BorderBrush="#303030"
-                BorderThickness="0,0,1,0"
-                Padding="12"
-                DataContext="{Binding Workspace}">
-            <Grid RowDefinitions="Auto,Auto,16,Auto,*" RowSpacing="8">
-                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
-                    <TextBlock Classes="sidebarHeading"
-                               Text="PROJECT"
-                               VerticalAlignment="Center" />
-                    <Button x:Name="AddProjectButton"
-                            Grid.Column="1"
-                            Classes="sidebarIconButton"
-                            ToolTip.Tip="Add project"
-                            Command="{Binding AddProjectForInlineRenameCommand}">
-                        <PathIcon Data="{StaticResource Icon.Add}"
-                                  Width="16"
-                                  Height="16" />
-                    </Button>
-                </Grid>
-
-                <ComboBox x:Name="ProjectsSelector"
-                          Grid.Row="1"
-                          Classes="projectSelector"
-                          ItemsSource="{Binding ProjectRows}"
-                          SelectedItem="{Binding SelectedProjectRow, Mode=TwoWay}"
-                          IsEnabled="{Binding HasProjects}"
-                          IsVisible="{Binding HasProjects}">
-                    <ComboBox.ItemTemplate>
-                        <DataTemplate x:DataType="vm:ProjectListItemViewModel">
-                            <StackPanel Spacing="2">
-                                <TextBlock Text="{Binding Name}"
-                                           TextTrimming="CharacterEllipsis" />
-                                <TextBlock Classes="sidebarItemDetailText"
-                                           Text="{Binding DetailText}" />
-                            </StackPanel>
-                        </DataTemplate>
-                    </ComboBox.ItemTemplate>
-                </ComboBox>
-                <TextBlock Grid.Row="1"
-                           Classes="sidebarEmptyText"
-                           Text="No projects yet."
-                           IsVisible="{Binding #Root.((vm:MainWindowViewModel)DataContext).WorkspaceStatus.ShowProjectsEmptyState}" />
-
-                <Border Grid.Row="2" Height="1" Background="#303030" VerticalAlignment="Center" />
-
-                <Grid Grid.Row="3" ColumnDefinitions="*,Auto" ColumnSpacing="6">
-                    <TextBlock Classes="sidebarHeading"
-                               Text="COMPARISONS"
-                               VerticalAlignment="Center" />
-                    <Button x:Name="AddComparisonButton"
-                            Grid.Column="1"
-                            Classes="sidebarIconButton"
-                            ToolTip.Tip="Add comparison"
-                            IsEnabled="{Binding CanAddComparison}"
-                            Command="{Binding AddComparisonForInlineRenameCommand}">
-                        <PathIcon Data="{StaticResource Icon.Add}"
-                                  Width="16"
-                                  Height="16" />
-                    </Button>
-                </Grid>
-
-                <ListBox x:Name="ComparisonsList"
-                         Grid.Row="4"
-                         Classes="sidebarList"
-                         ItemsSource="{Binding SelectedProjectComparisonRows}"
-                         SelectedItem="{Binding SelectedComparisonRow, Mode=TwoWay}">
-                    <ListBox.ItemTemplate>
-                        <DataTemplate x:DataType="vm:ComparisonListItemViewModel">
-                            <Border Background="{Binding ReviewBackground}"
-                                    BorderBrush="{Binding ReviewBorderBrush}"
-                                    BorderThickness="{Binding ReviewBorderThickness}"
-                                    CornerRadius="4"
-                                    Padding="6,4"
-                                    ContextRequested="SidebarItem_OnContextRequested">
-                                <Border.ContextMenu>
-                                    <ContextMenu>
-                                        <MenuItem Header="Refresh source images"
-                                                  Click="RefreshComparisonSourcesMenuItem_OnClick" />
-                                        <MenuItem Header="Rename" />
-                                        <MenuItem Header="Delete"
-                                                  Click="DeleteComparisonMenuItem_OnClick" />
-                                    </ContextMenu>
-                                </Border.ContextMenu>
-                                <Grid>
-                                    <TextBlock Classes="sidebarItemText"
-                                               Text="{Binding Name}"
-                                               VerticalAlignment="Center"
-                                               IsVisible="{Binding IsNotEditing}" />
-                                    <TextBox Classes="sidebarInlineName editing"
-                                             Text="{Binding DraftName, Mode=TwoWay}"
-                                             IsVisible="{Binding IsEditing}"
-                                             AttachedToVisualTree="InlineNameTextBox_OnAttachedToVisualTree"
-                                             PropertyChanged="InlineNameTextBox_OnPropertyChanged"
-                                             LostFocus="ComparisonListNameTextBox_OnLostFocus"
-                                             KeyDown="ComparisonListNameTextBox_OnKeyDown" />
-                                </Grid>
-                            </Border>
-                        </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
-                <TextBlock Grid.Row="4"
-                           Classes="sidebarEmptyText"
-                           Text="No comparisons in this project."
-                           IsVisible="{Binding #Root.((vm:MainWindowViewModel)DataContext).WorkspaceStatus.ShowComparisonsEmptyState}" />
-            </Grid>
-        </Border>
-
-        <Border Grid.Row="2" Grid.Column="2" Background="#101010" Padding="24">
-            <Grid RowDefinitions="Auto,*" RowSpacing="12">
-                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
-                    <StackPanel Orientation="Horizontal"
-                                VerticalAlignment="Center"
-                                Spacing="6">
-                        <Button x:Name="SideBySideViewButton"
-                                Classes="viewModeButton"
-                                Content="Side-by-side"
-                                Click="SideBySideViewButton_OnClick" />
-                        <Button x:Name="SplitScreenViewButton"
-                                Classes="viewModeButton"
-                                Content="Split screen"
-                                IsEnabled="{Binding ToolState.CanUseSplitScreen}"
-                                Click="SplitScreenViewButton_OnClick" />
-                        <Border Classes="toolbarSeparator" />
-                        <Button Classes="headerIconButton"
-                                ToolTip.Tip="Add images to comparison"
-                                Click="AddMediaButton_OnClick">
-                            <PathIcon Data="{StaticResource Icon.Add}"
-                                      Width="16"
-                                      Height="16" />
-                        </Button>
-                        <Button Classes="headerIconButton"
-                                ToolTip.Tip="Refresh source images for selected comparison"
-                                IsEnabled="{Binding Workspace.HasSelectedComparison}"
-                                Click="RefreshSelectedComparisonSourcesButton_OnClick">
-                            <PathIcon Data="{StaticResource Icon.Refresh}"
-                                      Width="16"
-                                      Height="16" />
-                        </Button>
-                    </StackPanel>
-
-                    <StackPanel Grid.Column="1"
-                                Orientation="Horizontal"
-                                HorizontalAlignment="Right"
-                                VerticalAlignment="Center"
-                                Spacing="6">
-                        <TextBlock Text="{Binding ToolState.SplitPercentageText}"
-                                   IsVisible="{Binding ToolState.IsSplitScreenView}"
-                                   Foreground="#BFC4CC"
-                                   FontSize="13"
-                                   FontWeight="SemiBold"
-                                   VerticalAlignment="Center" />
-                        <TextBox x:Name="ZoomTextBox"
-                                 Classes="toolbarZoomBox"
-                                 Width="64"
-                                 ToolTip.Tip="Zoom percentage"
-                                 Text="{Binding ToolState.ZoomText, Mode=TwoWay}"
-                                 HorizontalContentAlignment="Center"
-                                 VerticalContentAlignment="Center"
-                                 VerticalAlignment="Center"
-                                 LostFocus="ZoomTextBox_OnLostFocus"
-                                 KeyDown="ZoomTextBox_OnKeyDown" />
-                        <Button Classes="headerIconButton"
-                                ToolTip.Tip="Fit images to stage"
-                                IsEnabled="{Binding ComparisonDisplay.HasAnyImage}"
-                                Click="FitZoomButton_OnClick">
-                            <PathIcon Data="{StaticResource Icon.AutofitContent}"
-                                      Width="16"
-                                      Height="16" />
-                        </Button>
-                        <Button Classes="headerIconButton"
-                                ToolTip.Tip="Actual size"
-                                IsEnabled="{Binding ComparisonDisplay.HasAnyImage}"
-                                Click="ActualSizeZoomButton_OnClick">
-                            <PathIcon Data="{StaticResource Icon.ActualSize}"
-                                      Width="16"
-                                      Height="16" />
-                        </Button>
-                        <Button Classes="headerIconButton"
-                                ToolTip.Tip="Settings">
-                            <PathIcon Data="{StaticResource Icon.Settings}"
-                                      Width="16"
-                                      Height="16" />
-                        </Button>
-                    </StackPanel>
-                </Grid>
+                Grid.Column="2"
+                Background="#101010"
+                Padding="24">
+            <Grid RowDefinitions="Auto,*"
+                  RowSpacing="12">
+                <views:TopToolbar Grid.Row="0"
+                                  x:Name="TopToolbarHost" />
 
                 <Grid Grid.Row="1">
                     <views:ComparisonStage x:Name="ComparisonStage" />
@@ -628,162 +467,8 @@
             </Grid>
         </Border>
 
-        <Border x:Name="ImageSetPanel" Grid.Row="3" Grid.Column="2" Background="#161616" BorderBrush="#2B2B2B" BorderThickness="0,1,0,0"
-                Padding="18,12">
-            <Grid RowDefinitions="Auto,Auto,Auto" RowSpacing="10">
-                <Grid ColumnDefinitions="*,Auto,Auto"
-                      ColumnSpacing="12">
-                    <TextBlock Classes="imageSetHeaderText"
-                               Text="IMAGE SET"
-                               VerticalAlignment="Center" />
-                    <TextBlock Grid.Column="1"
-                               Text="{Binding Workspace.SelectedComparisonImageCountText}"
-                               Foreground="#A8AFB8"
-                               FontSize="12"
-                               FontWeight="SemiBold"
-                               VerticalAlignment="Center" />
-                    <Button x:Name="ToggleImageSetButton"
-                            Grid.Column="2"
-                            Classes="headerIconButton"
-                            ToolTip.Tip="Collapse image set"
-                            HorizontalAlignment="Right"
-                            Click="ToggleImageSetButton_OnClick">
-                        <Grid>
-                            <PathIcon x:Name="CollapseImageSetIcon"
-                                      Data="{StaticResource Icon.ChevronDown}"
-                                      Width="16"
-                                      Height="16" />
-                            <PathIcon x:Name="ExpandImageSetIcon"
-                                      Data="{StaticResource Icon.ChevronUp}"
-                                      Width="16"
-                                      Height="16"
-                                      IsVisible="False" />
-                        </Grid>
-                    </Button>
-                </Grid>
-
-                <ListBox x:Name="ComparisonImagesList"
-                         Grid.Row="1"
-                         Classes="sidebarList"
-                         ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                         ScrollViewer.VerticalScrollBarVisibility="Disabled"
-                         ItemsSource="{Binding ImageSet.ImageRows}">
-                    <ListBox.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <VirtualizingStackPanel Orientation="Horizontal" />
-                        </ItemsPanelTemplate>
-                    </ListBox.ItemsPanel>
-                    <ListBox.ItemTemplate>
-                        <DataTemplate x:DataType="vm:ComparisonImageSetItemViewModel">
-                            <Border Classes="imageSetCard">
-                                <Grid RowDefinitions="Auto,Auto,Auto,Auto"
-                                      RowSpacing="7">
-                                    <Border Classes="imageThumbnailFrame">
-                                        <Grid>
-                                            <Image Source="{Binding Thumbnail}"
-                                                   Stretch="UniformToFill"
-                                                   RenderOptions.BitmapInterpolationMode="None"
-                                                   IsVisible="{Binding HasThumbnail}" />
-                                            <TextBlock Classes="imageSourceText"
-                                                       Text="No preview"
-                                                       HorizontalAlignment="Center"
-                                                       VerticalAlignment="Center"
-                                                       FontSize="10"
-                                                       IsVisible="{Binding HasNoThumbnail}" />
-                                            <StackPanel Orientation="Horizontal"
-                                                        Spacing="5"
-                                                        Margin="6"
-                                                        HorizontalAlignment="Left"
-                                                        VerticalAlignment="Top">
-                                                <Border Classes="roleBadge referenceBadge"
-                                                        IsVisible="{Binding IsReference}">
-                                                    <TextBlock Classes="roleBadgeText"
-                                                               Text="Baseline" />
-                                                </Border>
-                                                <Border Classes="roleBadge candidateBadge"
-                                                        IsVisible="{Binding IsCandidate}">
-                                                    <TextBlock Classes="roleBadgeText"
-                                                               Text="Candidate" />
-                                                </Border>
-                                            </StackPanel>
-                                        </Grid>
-                                    </Border>
-
-                                    <TextBox Grid.Row="1"
-                                             Classes="inlineImageLabel"
-                                             PlaceholderText="Add label"
-                                             Text="{Binding DisplayLabel, Mode=TwoWay}"
-                                             LostFocus="ImageLabelTextBox_OnLostFocus"
-                                             KeyDown="ImageLabelTextBox_OnKeyDown" />
-
-                                    <Grid Grid.Row="2"
-                                          RowDefinitions="Auto,Auto"
-                                          RowSpacing="2">
-                                        <StackPanel Orientation="Horizontal"
-                                                    Spacing="8">
-                                            <TextBlock Classes="imageVersionText"
-                                                       Text="{Binding RevisionText}" />
-                                            <TextBlock Classes="imageSourceText"
-                                                       Text="{Binding AddedAtText}" />
-                                        </StackPanel>
-                                        <TextBlock Grid.Row="1"
-                                                   Classes="imageSourceText"
-                                                   Text="{Binding MonitoringText}"
-                                                   IsVisible="{Binding HasMonitoring}" />
-                                    </Grid>
-
-                                    <StackPanel Grid.Row="3"
-                                                Orientation="Horizontal"
-                                                HorizontalAlignment="Right"
-                                                VerticalAlignment="Center"
-                                                Spacing="6">
-                                        <Button Classes="imageActionIconButton"
-                                                ToolTip.Tip="Set as baseline"
-                                                IsEnabled="{Binding CanSetReference}"
-                                                Background="{Binding BaselineButtonBackground}"
-                                                BorderBrush="{Binding BaselineButtonBorderBrush}"
-                                                Foreground="{Binding BaselineButtonForeground}"
-                                                Command="{Binding #Root.((vm:MainWindowViewModel)DataContext).ImageSet.SetReferenceImageAndRefreshCommand}"
-                                                CommandParameter="{Binding Image}">
-                                            <PathIcon Data="{StaticResource Icon.Bookmark}"
-                                                      Width="16"
-                                                      Height="16" />
-                                        </Button>
-                                        <Button Classes="imageActionIconButton"
-                                                ToolTip.Tip="Set as candidate"
-                                                IsEnabled="{Binding CanSetCandidate}"
-                                                Background="{Binding CandidateButtonBackground}"
-                                                BorderBrush="{Binding CandidateButtonBorderBrush}"
-                                                Foreground="{Binding CandidateButtonForeground}"
-                                                Command="{Binding #Root.((vm:MainWindowViewModel)DataContext).ImageSet.SetCandidateImageAndRefreshCommand}"
-                                                CommandParameter="{Binding Image}">
-                                            <PathIcon Data="{StaticResource Icon.Star}"
-                                                      Width="16"
-                                                      Height="16" />
-                                        </Button>
-                                        <Button Classes="imageActionIconButton"
-                                                ToolTip.Tip="Remove image"
-                                                Command="{Binding #Root.((vm:MainWindowViewModel)DataContext).ImageSet.DeleteImageAndRefreshCommand}"
-                                                CommandParameter="{Binding Image}">
-                                            <PathIcon Data="{StaticResource Icon.Delete}"
-                                                      Width="16"
-                                                      Height="16" />
-                                        </Button>
-                                    </StackPanel>
-                                </Grid>
-                            </Border>
-                        </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
-
-                <TextBlock x:Name="DifferenceStatusTextBlock"
-                           Grid.Row="2"
-                           Text="{Binding DifferenceStatusText}"
-                           Foreground="#A8AFB8"
-                           FontSize="12"
-                           FontWeight="SemiBold"
-                           TextTrimming="CharacterEllipsis" />
-            </Grid>
-        </Border>
+        <views:ImageSetPanel Grid.Row="3"
+                             Grid.Column="2"
+                             x:Name="ImageSetPanelHost" />
     </Grid>
 </UserControl>

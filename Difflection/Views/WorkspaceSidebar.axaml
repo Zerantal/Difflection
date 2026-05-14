@@ -1,0 +1,122 @@
+<!-- ReSharper disable Xaml.StyleClassNotFound -->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Difflection.ViewModels"
+             x:Class="Difflection.Views.WorkspaceSidebar"
+             x:Name="Root"
+             x:DataType="vm:MainWindowViewModel"
+             Background="Transparent">
+    <Border Background="#171717"
+            BorderBrush="#303030"
+            BorderThickness="0,0,1,0"
+            Padding="12">
+        <Grid RowDefinitions="Auto,Auto,16,Auto,*"
+              RowSpacing="8">
+            <Grid ColumnDefinitions="*,Auto"
+                  ColumnSpacing="6">
+                <TextBlock Classes="sidebarHeading"
+                           Text="PROJECT"
+                           VerticalAlignment="Center" />
+                <Button x:Name="AddProjectButton"
+                        Grid.Column="1"
+                        Classes="sidebarIconButton"
+                        ToolTip.Tip="Add project"
+                        Command="{Binding Workspace.AddProjectForInlineRenameCommand}">
+                    <PathIcon Data="{StaticResource Icon.Add}"
+                              Width="16"
+                              Height="16" />
+                </Button>
+            </Grid>
+
+            <ComboBox x:Name="ProjectsSelector"
+                      Grid.Row="1"
+                      Classes="projectSelector"
+                      ItemsSource="{Binding Workspace.ProjectRows}"
+                      SelectedItem="{Binding Workspace.SelectedProjectRow, Mode=TwoWay}"
+                      IsEnabled="{Binding Workspace.HasProjects}"
+                      IsVisible="{Binding Workspace.HasProjects}">
+                <ComboBox.ItemTemplate>
+                    <DataTemplate x:DataType="vm:ProjectListItemViewModel">
+                        <StackPanel Spacing="2">
+                            <TextBlock Text="{Binding Name}"
+                                       TextTrimming="CharacterEllipsis" />
+                            <TextBlock Classes="sidebarItemDetailText"
+                                       Text="{Binding DetailText}" />
+                        </StackPanel>
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+            </ComboBox>
+            <TextBlock Grid.Row="1"
+                       Classes="sidebarEmptyText"
+                       Text="No projects yet."
+                       IsVisible="{Binding WorkspaceStatus.ShowProjectsEmptyState}" />
+
+            <Border Grid.Row="2"
+                    Height="1"
+                    Background="#303030"
+                    VerticalAlignment="Center" />
+
+            <Grid Grid.Row="3"
+                  ColumnDefinitions="*,Auto"
+                  ColumnSpacing="6">
+                <TextBlock Classes="sidebarHeading"
+                           Text="COMPARISONS"
+                           VerticalAlignment="Center" />
+                <Button x:Name="AddComparisonButton"
+                        Grid.Column="1"
+                        Classes="sidebarIconButton"
+                        ToolTip.Tip="Add comparison"
+                        IsEnabled="{Binding Workspace.CanAddComparison}"
+                        Command="{Binding Workspace.AddComparisonForInlineRenameCommand}">
+                    <PathIcon Data="{StaticResource Icon.Add}"
+                              Width="16"
+                              Height="16" />
+                </Button>
+            </Grid>
+
+            <ListBox x:Name="ComparisonsList"
+                     Grid.Row="4"
+                     Classes="sidebarList"
+                     ItemsSource="{Binding Workspace.SelectedProjectComparisonRows}"
+                     SelectedItem="{Binding Workspace.SelectedComparisonRow, Mode=TwoWay}">
+                <ListBox.ItemTemplate>
+                    <DataTemplate x:DataType="vm:ComparisonListItemViewModel">
+                        <Border Background="{Binding ReviewBackground}"
+                                BorderBrush="{Binding ReviewBorderBrush}"
+                                BorderThickness="{Binding ReviewBorderThickness}"
+                                CornerRadius="4"
+                                Padding="6,4"
+                                ContextRequested="SidebarItem_OnContextRequested">
+                            <Border.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="Refresh source images"
+                                              Click="RefreshComparisonSourcesMenuItem_OnClick" />
+                                    <MenuItem Header="Rename" />
+                                    <MenuItem Header="Delete"
+                                              Click="DeleteComparisonMenuItem_OnClick" />
+                                </ContextMenu>
+                            </Border.ContextMenu>
+                            <Grid>
+                                <TextBlock Classes="sidebarItemText"
+                                           Text="{Binding Name}"
+                                           VerticalAlignment="Center"
+                                           IsVisible="{Binding IsNotEditing}" />
+                                <TextBox Classes="sidebarInlineName editing"
+                                         Text="{Binding DraftName, Mode=TwoWay}"
+                                         IsVisible="{Binding IsEditing}"
+                                         AttachedToVisualTree="InlineNameTextBox_OnAttachedToVisualTree"
+                                         PropertyChanged="InlineNameTextBox_OnPropertyChanged"
+                                         LostFocus="ComparisonListNameTextBox_OnLostFocus"
+                                         KeyDown="ComparisonListNameTextBox_OnKeyDown" />
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+            <TextBlock Grid.Row="4"
+                       Classes="sidebarEmptyText"
+                       Text="No comparisons in this project."
+                       IsVisible="{Binding WorkspaceStatus.ShowComparisonsEmptyState}" />
+        </Grid>
+    </Border>
+</UserControl>

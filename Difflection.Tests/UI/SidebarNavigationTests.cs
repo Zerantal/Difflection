@@ -426,7 +426,7 @@ public sealed class SidebarNavigationTests
     private static T GetControl<T>(Control root, string name)
         where T : Control
     {
-        return root.FindControl<T>(name) ?? throw new InvalidOperationException($"{name} not found.");
+        return TestUiSupport.FindNamedControl<T>(root, name);
     }
 
     private static void Click(Button button)
@@ -479,7 +479,7 @@ public sealed class SidebarNavigationTests
         TextBox? textBox = null;
         await TestUiSupport.WaitForAsync(() =>
         {
-            textBox = root.FindControl<TextBox>("ProjectNameTextBox");
+            textBox = TestUiSupport.FindNamedControl<TextBox>(root, "ProjectNameTextBox");
             return textBox is { IsVisible: true, DataContext: ProjectListItemViewModel textBoxRow }
                 && ReferenceEquals(textBoxRow, row);
         });

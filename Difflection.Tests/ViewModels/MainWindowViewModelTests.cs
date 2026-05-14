@@ -68,9 +68,14 @@ public sealed class MainWindowViewModelTests
         comparison.AddImage(reference);
         comparison.AddImage(candidate);
 
-        var storage = new FakeProjectStorage(project);
-        storage.SavedImageContents[reference.Id] = TestUiSupport.CreatePngBytes(8, 8, SKColors.OrangeRed);
-        storage.SavedImageContents[candidate.Id] = TestUiSupport.CreatePngBytes(8, 8, SKColors.DarkSlateBlue);
+        var storage = new FakeProjectStorage(project)
+        {
+            SavedImageContents =
+            {
+                [reference.Id] = TestUiSupport.CreatePngBytes(8, 8, SKColors.OrangeRed),
+                [candidate.Id] = TestUiSupport.CreatePngBytes(8, 8, SKColors.DarkSlateBlue)
+            }
+        };
         var viewModel = new MainWindowViewModel(storage);
 
         await viewModel.LoadProjectsAsync(TestContext.Current.CancellationToken);
@@ -661,9 +666,9 @@ public sealed class MainWindowViewModelTests
         comparison.AddImage(middle);
         comparison.AddImage(newest);
 
-        await viewModel.ImageSet.RefreshImageRowsAsync();
+        await viewModel.ImageSet.RefreshImageRowsAsync(TestContext.Current.CancellationToken);
 
-        Assert.Equal(new[] { newest.Id, middle.Id, oldest.Id }, viewModel.ImageSet.ImageRows.Select(row => row.Id));
+        Assert.Equal([newest.Id, middle.Id, oldest.Id], viewModel.ImageSet.ImageRows.Select(row => row.Id));
         Assert.Equal("r3", viewModel.ImageSet.ImageRows[0].RevisionText);
         Assert.Equal("r2", viewModel.ImageSet.ImageRows[1].RevisionText);
         Assert.Equal("r1", viewModel.ImageSet.ImageRows[2].RevisionText);

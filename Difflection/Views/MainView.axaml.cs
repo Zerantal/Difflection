@@ -7,7 +7,6 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
-using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using Difflection.Infrastructure;
@@ -22,7 +21,8 @@ public partial class MainView : UserControl
     private MainWindowViewModel? _viewModel;
     private ProjectImageChangeMonitor? _imageChangeMonitor;
     private bool _projectsLoaded;
-    private bool _isImageSetExpanded = true;
+    private readonly WorkspaceSidebar? _workspaceSidebar;
+    private Func<string, string, Task<bool>> _confirmDestructiveActionAsync = ConfirmationDialogService.ShowAsync;
 
     public MainView()
     {
@@ -32,73 +32,55 @@ public partial class MainView : UserControl
         AttachedToVisualTree += OnAttachedToVisualTree;
         DetachedFromVisualTree += OnDetachedFromVisualTree;
 
-        UpdateViewControls();
-        UpdateImageSetExpandedState();
-    }
-
-    public Func<string, string, Task<bool>> ConfirmDestructiveActionAsync { get; set; } = ConfirmationDialogService.ShowAsync;
-
-    private void SidebarItem_OnContextRequested(object? sender, ContextRequestedEventArgs e)
-    {
-        if (sender is not Control { ContextMenu: { Items: { } items } } control || control.DataContext is null)
+        _workspaceSidebar = this.FindControl<WorkspaceSidebar>("WorkspaceSidebarHost");
+        if (_workspaceSidebar is not null)
         {
-            return;
+            _workspaceSidebar.ConfirmDestructiveActionAsync = ConfirmDestructiveActionAsync;
+            _workspaceSidebar.RequestImageChangeMonitorRestart = RestartImageChangeMonitor;
         }
 
-        foreach (var menuItem in items.OfType<MenuItem>())
+        var topToolbar = this.FindControl<TopToolbar>("TopToolbarHost");
+        if (topToolbar is not null)
         {
-            menuItem.CommandParameter = control.DataContext;
+            topToolbar.FitZoomToStage = () => ComparisonStage.FitZoomToStage();
+            topToolbar.RequestImageChangeMonitorRestart = RestartImageChangeMonitor;
+        }
+    }
 
-            if (string.Equals(menuItem.Header?.ToString(), "Rename", StringComparison.Ordinal))
+    public Func<string, string, Task<bool>> ConfirmDestructiveActionAsync
+    {
+        get => _confirmDestructiveActionAsync;
+        set
+        {
+            _confirmDestructiveActionAsync = value;
+            if (_workspaceSidebar is not null)
             {
-                menuItem.Command = control.DataContext switch
-                {
-                    ProjectListItemViewModel => _viewModel?.Workspace.BeginRenameProjectCommand,
-                    ComparisonListItemViewModel => _viewModel?.Workspace.BeginRenameComparisonCommand,
-                    _ => menuItem.Command
-                };
+                _workspaceSidebar.ConfirmDestructiveActionAsync = value;
             }
         }
     }
 
-    private void SideBySideViewButton_OnClick(object? sender, RoutedEventArgs e)
+    public async Task LoadBrowserDroppedFilesAsync(IReadOnlyList<string> fileNames, IReadOnlyList<byte[]> fileContents)
     {
-        _viewModel?.ToolState.SelectSideBySideView();
-        UpdateViewControls();
+        if (_viewModel is null)
+        {
+            return;
+        }
+
+        await _viewModel.ImageSet.AddBrowserFilesToCurrentComparisonAsync(fileNames, fileContents, maxFiles: 2);
         ComparisonStage.FitZoomToStage();
     }
 
-    private void SplitScreenViewButton_OnClick(object? sender, RoutedEventArgs e)
-    {
-        _viewModel?.ToolState.SelectSplitScreenView();
-        UpdateViewControls();
-        ComparisonStage.FitZoomToStage();
-    }
-
-    private async void AddMediaButton_OnClick(object? sender, RoutedEventArgs e)
-    {
-        await OpenFilePickerAndAddImagesAsync();
-    }
-
-    private void MainView_OnSizeChanged(object? sender, SizeChangedEventArgs e)
-    {
-        UpdateImageSetHeightLimit();
-    }
-
-    private void ToggleImageSetButton_OnClick(object? sender, RoutedEventArgs e)
-    {
-        _isImageSetExpanded = !_isImageSetExpanded;
-        UpdateImageSetExpandedState();
-    }
-
+    // ReSharper disable once AsyncVoidEventHandlerMethod
     private async void ProjectListNameTextBox_OnLostFocus(object? sender, RoutedEventArgs e)
     {
-        if (_viewModel is not null && sender is TextBox { DataContext: ProjectListItemViewModel row } && row.IsEditing)
+        if (_viewModel is not null && sender is TextBox { DataContext: ProjectListItemViewModel { IsEditing: true } row })
         {
             await _viewModel.Workspace.CommitProjectRenameAsync(row);
         }
     }
 
+    // ReSharper disable once AsyncVoidEventHandlerMethod
     private async void ProjectListNameTextBox_OnKeyDown(object? sender, KeyEventArgs e)
     {
         if (sender is not TextBox { DataContext: ProjectListItemViewModel row } || !row.IsEditing)
@@ -118,44 +100,20 @@ public partial class MainView : UserControl
         }
     }
 
-    private async void ComparisonListNameTextBox_OnLostFocus(object? sender, RoutedEventArgs e)
+    private void InlineNameTextBox_OnAttachedToVisualTree(object? sender, VisualTreeAttachmentEventArgs e)
     {
-        if (_viewModel is not null && sender is TextBox { DataContext: ComparisonListItemViewModel row } && row.IsEditing)
+        FocusInlineNameEditor(sender as TextBox);
+    }
+
+    private void InlineNameTextBox_OnPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
+    {
+        if (e.Property == IsVisibleProperty)
         {
-            await _viewModel.Workspace.CommitComparisonRenameAsync(row);
+            FocusInlineNameEditor(sender as TextBox);
         }
     }
 
-    private async void ComparisonListNameTextBox_OnKeyDown(object? sender, KeyEventArgs e)
-    {
-        if (sender is not TextBox { DataContext: ComparisonListItemViewModel row } || !row.IsEditing)
-        {
-            return;
-        }
-
-        if (e.Key == Key.Enter && _viewModel is not null)
-        {
-            await _viewModel.Workspace.CommitComparisonRenameAsync(row);
-            e.Handled = true;
-        }
-        else if (e.Key == Key.Escape)
-        {
-            WorkspaceNavigatorViewModel.CancelComparisonRename(row);
-            e.Handled = true;
-        }
-    }
-
-    private async void RefreshProjectSourcesMenuItem_OnClick(object? sender, RoutedEventArgs e)
-    {
-        if (_viewModel is null || sender is not MenuItem { CommandParameter: ProjectListItemViewModel row })
-        {
-            return;
-        }
-
-        await _viewModel.RefreshProjectSourceImagesAsync(row.Project);
-        RestartImageChangeMonitor();
-    }
-
+    // ReSharper disable once AsyncVoidEventHandlerMethod
     private async void RefreshSelectedProjectSourcesButton_OnClick(object? sender, RoutedEventArgs e)
     {
         if (_viewModel?.Workspace.SelectedProject is null)
@@ -167,48 +125,7 @@ public partial class MainView : UserControl
         RestartImageChangeMonitor();
     }
 
-    private async void RefreshSelectedComparisonSourcesButton_OnClick(object? sender, RoutedEventArgs e)
-    {
-        if (_viewModel?.Workspace.SelectedComparison is null)
-        {
-            return;
-        }
-
-        await _viewModel.RefreshComparisonSourceImagesAsync(_viewModel.Workspace.SelectedComparison);
-        RestartImageChangeMonitor();
-    }
-
-    private async void RefreshComparisonSourcesMenuItem_OnClick(object? sender, RoutedEventArgs e)
-    {
-        if (_viewModel is null || sender is not MenuItem { CommandParameter: ComparisonListItemViewModel row })
-        {
-            return;
-        }
-
-        await _viewModel.RefreshComparisonSourceImagesAsync(row.Comparison);
-        RestartImageChangeMonitor();
-    }
-
-    private async void DeleteProjectMenuItem_OnClick(object? sender, RoutedEventArgs e)
-    {
-        if (_viewModel is null || sender is not MenuItem { CommandParameter: ProjectListItemViewModel row })
-        {
-            return;
-        }
-
-        var confirmed = await ConfirmDestructiveActionAsync(
-            "Delete project?",
-            $"Delete project \"{row.Name}\" and all of its comparisons and images?");
-
-        if (!confirmed)
-        {
-            return;
-        }
-
-        await _viewModel.Workspace.DeleteProjectAsync(row.Project);
-        RestartImageChangeMonitor();
-    }
-
+    // ReSharper disable once AsyncVoidEventHandlerMethod
     private async void DeleteSelectedProjectButton_OnClick(object? sender, RoutedEventArgs e)
     {
         if (_viewModel?.Workspace.SelectedProjectRow is not { } row)
@@ -229,45 +146,10 @@ public partial class MainView : UserControl
         RestartImageChangeMonitor();
     }
 
-    private async void DeleteComparisonMenuItem_OnClick(object? sender, RoutedEventArgs e)
-    {
-        if (_viewModel is null || sender is not MenuItem { CommandParameter: ComparisonListItemViewModel row })
-        {
-            return;
-        }
-
-        var confirmed = await ConfirmDestructiveActionAsync(
-            "Delete comparison?",
-            $"Delete comparison \"{row.Name}\" and all images in its image set?");
-
-        if (!confirmed)
-        {
-            return;
-        }
-
-        await _viewModel.Workspace.DeleteComparisonAsync(row.Comparison);
-        RestartImageChangeMonitor();
-    }
-
-    private void InlineNameTextBox_OnAttachedToVisualTree(object? sender, VisualTreeAttachmentEventArgs e)
-    {
-        FocusInlineNameEditor(sender as TextBox);
-    }
-
-    private void InlineNameTextBox_OnPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
-    {
-        if (e.Property == IsVisibleProperty)
-        {
-            FocusInlineNameEditor(sender as TextBox);
-        }
-    }
-
     private static void FocusInlineNameEditor(TextBox? textBox)
     {
         if (textBox is not null
-            && textBox.IsVisible
-            && (textBox.DataContext is ProjectListItemViewModel { IsEditing: true }
-                || textBox.DataContext is ComparisonListItemViewModel { IsEditing: true }))
+            && textBox is { IsVisible: true, DataContext: ProjectListItemViewModel { IsEditing: true } })
         {
             Dispatcher.UIThread.Post(() =>
             {
@@ -282,36 +164,6 @@ public partial class MainView : UserControl
         }
     }
 
-    private async void ImageLabelTextBox_OnLostFocus(object? sender, RoutedEventArgs e)
-    {
-        if (_viewModel is not null && sender is TextBox { DataContext: ComparisonImageSetItemViewModel row } textBox)
-        {
-            await _viewModel.ImageSet.LabelImageAsync(row.Image, textBox.Text);
-        }
-    }
-
-    private async void ImageLabelTextBox_OnKeyDown(object? sender, KeyEventArgs e)
-    {
-        if (e.Key != Key.Enter || _viewModel is null || sender is not TextBox { DataContext: ComparisonImageSetItemViewModel row } textBox)
-        {
-            return;
-        }
-
-        await _viewModel.ImageSet.LabelImageAsync(row.Image, textBox.Text);
-        e.Handled = true;
-    }
-
-    public async Task LoadBrowserDroppedFilesAsync(IReadOnlyList<string> fileNames, IReadOnlyList<byte[]> fileContents)
-    {
-        if (_viewModel is null)
-        {
-            return;
-        }
-
-        await _viewModel.ImageSet.AddBrowserFilesToCurrentComparisonAsync(fileNames, fileContents, maxFiles: 2);
-        ComparisonStage.FitZoomToStage();
-    }
-
     [UsedImplicitly]
     private void MainEmptyStateOverlay_OnDragOver(object? sender, DragEventArgs e)
     {
@@ -324,7 +176,9 @@ public partial class MainView : UserControl
     private void MainEmptyStateOverlay_OnDrop(object? sender, DragEventArgs e)
     {
         e.Handled = true;
-        _ = MainEmptyStateOverlay_OnDropAsync(e);
+        _ = ObservedTask.ReportFailureAsync(
+            MainEmptyStateOverlay_OnDropAsync(e),
+            "Difflection could not load the dropped images.");
     }
 
     private async Task MainEmptyStateOverlay_OnDropAsync(DragEventArgs e)
@@ -344,68 +198,6 @@ public partial class MainView : UserControl
         ComparisonStage.FitZoomToStage();
     }
 
-    private void ZoomTextBox_OnLostFocus(object? sender, RoutedEventArgs e)
-    {
-        _viewModel?.ToolState.TrySetZoomText(ZoomTextBox.Text);
-    }
-
-    private void ZoomTextBox_OnKeyDown(object? sender, KeyEventArgs e)
-    {
-        if (e.Key != Key.Enter)
-        {
-            return;
-        }
-
-        _viewModel?.ToolState.TrySetZoomText(ZoomTextBox.Text);
-        e.Handled = true;
-    }
-
-    private void FitZoomButton_OnClick(object? sender, RoutedEventArgs e)
-    {
-        ComparisonStage.FitZoomToStage();
-    }
-
-    private void ActualSizeZoomButton_OnClick(object? sender, RoutedEventArgs e)
-    {
-        _viewModel?.ToolState.SetZoomScale(1.0);
-    }
-
-    private async Task OpenFilePickerAndAddImagesAsync()
-    {
-        if (_viewModel is null)
-        {
-            return;
-        }
-
-        var storageProvider = TopLevel.GetTopLevel(this)?.StorageProvider;
-        if (storageProvider is null)
-        {
-            return;
-        }
-
-        var files = await storageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
-        {
-            AllowMultiple = true,
-            Title = "Add images to comparison",
-            FileTypeFilter =
-            [
-                new FilePickerFileType("Image files")
-                {
-                    Patterns = ["*.png", "*.jpg", "*.jpeg", "*.bmp", "*.gif", "*.webp", "*.tif", "*.tiff"],
-                    MimeTypes = ["image/*"]
-                }
-            ]
-        });
-
-        if (files.Count == 0)
-        {
-            return;
-        }
-
-        await _viewModel.ImageSet.AddFilesToCurrentComparisonAsync(files);
-        ComparisonStage.FitZoomToStage();
-    }
-
     private void OnDataContextChanged(object? sender, EventArgs e)
     {
         UnsubscribeViewModelEvents();
@@ -416,23 +208,16 @@ public partial class MainView : UserControl
         _projectsLoaded = false;
 
         SubscribeViewModelEvents();
-
-        UpdateViewControls();
-        UpdateImageSetHeightLimit();
-        UpdateImageSetExpandedState();
     }
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName is nameof(ComparisonToolStateViewModel.SelectedViewMode) or nameof(ComparisonToolStateViewModel.CanUseSplitScreen))
-        {
-            UpdateViewControls();
-        }
-
         if (e.PropertyName is nameof(WorkspaceNavigatorViewModel.SelectedProject)
             or nameof(WorkspaceNavigatorViewModel.SelectedComparison))
         {
-            _ = RefreshCurrentComparisonAndFitStageAsync();
+            _ = ObservedTask.ReportFailureAsync(
+                RefreshCurrentComparisonAndFitStageAsync(),
+                "Difflection could not refresh the selected comparison.");
         }
 
         if (e.PropertyName is nameof(WorkspaceNavigatorViewModel.SelectedProjectComparisons)
@@ -440,55 +225,6 @@ public partial class MainView : UserControl
         {
             RestartImageChangeMonitor();
         }
-    }
-
-    private void UpdateViewControls()
-    {
-        if (_viewModel is null)
-        {
-            return;
-        }
-
-        ApplyViewModeButtonState(SideBySideViewButton, _viewModel.ToolState.IsSideBySideView);
-        ApplyViewModeButtonState(SplitScreenViewButton, _viewModel.ToolState.IsSplitScreenView);
-        SplitScreenViewButton.Opacity = _viewModel.ToolState.CanUseSplitScreen ? 1.0 : 0.58;
-    }
-
-    private static void ApplyViewModeButtonState(Button button, bool isActive)
-    {
-        button.Background = Brush.Parse(isActive ? "#3A2A1F" : "#262626");
-        button.BorderBrush = Brush.Parse(isActive ? "#F97316" : "#444444");
-        button.Foreground = Brush.Parse(isActive ? "#F97316" : "#A8AFB8");
-    }
-
-    private void UpdateImageSetHeightLimit()
-    {
-        if (ComparisonImagesList is null)
-        {
-            return;
-        }
-
-        ComparisonImagesList.ClearValue(MaxHeightProperty);
-    }
-
-    private void UpdateImageSetExpandedState()
-    {
-        if (ComparisonImagesList is null
-            || DifferenceStatusTextBlock is null
-            || ImageSetPanel is null
-            || CollapseImageSetIcon is null
-            || ExpandImageSetIcon is null
-            || ToggleImageSetButton is null)
-        {
-            return;
-        }
-
-        ComparisonImagesList.IsVisible = _isImageSetExpanded;
-        DifferenceStatusTextBlock.IsVisible = _isImageSetExpanded;
-        ImageSetPanel.Padding = _isImageSetExpanded ? new Thickness(18, 12) : new Thickness(18, 8);
-        CollapseImageSetIcon.IsVisible = _isImageSetExpanded;
-        ExpandImageSetIcon.IsVisible = !_isImageSetExpanded;
-        ToolTip.SetTip(ToggleImageSetButton, _isImageSetExpanded ? "Collapse image set" : "Expand image set");
     }
 
     private static IEnumerable<IStorageFile> GetDroppedFiles(IDataTransfer dataTransfer)
@@ -509,7 +245,6 @@ public partial class MainView : UserControl
             _viewModel.Workspace.SelectedComparison,
             _viewModel.ProjectStorage,
             deferDifferenceStatus: true);
-        UpdateViewControls();
         ComparisonStage.FitZoomToStage();
     }
 
@@ -529,7 +264,6 @@ public partial class MainView : UserControl
             return;
         }
 
-        _viewModel.ToolState.PropertyChanged += OnViewModelPropertyChanged;
         _viewModel.Workspace.PropertyChanged += OnViewModelPropertyChanged;
     }
 
@@ -540,10 +274,10 @@ public partial class MainView : UserControl
             return;
         }
 
-        _viewModel.ToolState.PropertyChanged -= OnViewModelPropertyChanged;
         _viewModel.Workspace.PropertyChanged -= OnViewModelPropertyChanged;
     }
 
+    // ReSharper disable once AsyncVoidEventHandlerMethod
     private async void OnAttachedToVisualTree(object? sender, VisualTreeAttachmentEventArgs e)
     {
         BrowserInterop.AttachBrowserBridge?.Invoke(this);
@@ -596,7 +330,7 @@ public partial class MainView : UserControl
         }
     }
 
-    private async void ImageChangeMonitor_OnVersionCaptured(object? sender, MonitoredImageVersionCapturedEventArgs e)
+    private void ImageChangeMonitor_OnVersionCaptured(object? sender, MonitoredImageVersionCapturedEventArgs e)
     {
         if (_viewModel is null)
         {
@@ -606,8 +340,9 @@ public partial class MainView : UserControl
         if (ReferenceEquals(e.Project, _viewModel.Workspace.SelectedProject)
             && ReferenceEquals(e.Comparison, _viewModel.Workspace.SelectedComparison))
         {
-            await RefreshCurrentComparisonAndFitStageAsync();
+            _ = ObservedTask.ReportFailureAsync(
+                RefreshCurrentComparisonAndFitStageAsync(),
+                "Difflection could not display the captured source image change.");
         }
     }
-
 }
