@@ -2,7 +2,6 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Difflection.ViewModels"
              xmlns:views="using:Difflection.Views"
-             xmlns:fi="using:FluentIcons.Avalonia"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
@@ -355,9 +354,9 @@
                                 IsVisible="{Binding SelectedProjectRow.IsNotEditing}"
                                 Command="{Binding BeginRenameProjectCommand}"
                                 CommandParameter="{Binding SelectedProjectRow}">
-                            <fi:FluentIcon Icon="Edit"
-                                           IconVariant="Regular"
-                                           IconSize="Size16" />
+                            <PathIcon Data="{StaticResource Icon.Edit}"
+                                      Width="16"
+                                      Height="16" />
                         </Button>
                     </Grid>
                     <StackPanel Orientation="Horizontal"
@@ -382,9 +381,9 @@
                             IsEnabled="{Binding CanDeleteSelectedProject}"
                             IsVisible="{Binding SelectedProjectRow.IsNotEditing}"
                             Click="DeleteSelectedProjectButton_OnClick">
-                        <fi:FluentIcon Icon="Delete"
-                                       IconVariant="Regular"
-                                       IconSize="Size16" />
+                        <PathIcon Data="{StaticResource Icon.Delete}"
+                                  Width="16"
+                                  Height="16" />
                     </Button>
                     <Button x:Name="RefreshProjectSourcesButton"
                             Classes="headerIconButton"
@@ -392,9 +391,9 @@
                             IsEnabled="{Binding HasSelectedProject}"
                             IsVisible="{Binding SelectedProjectRow.IsNotEditing}"
                             Click="RefreshSelectedProjectSourcesButton_OnClick">
-                        <fi:FluentIcon Icon="ArrowSync"
-                                       IconVariant="Regular"
-                                       IconSize="Size16" />
+                        <PathIcon Data="{StaticResource Icon.Refresh}"
+                                  Width="16"
+                                  Height="16" />
                     </Button>
                 </StackPanel>
             </Grid>
@@ -429,9 +428,9 @@
                             Classes="sidebarIconButton"
                             ToolTip.Tip="Add project"
                             Command="{Binding AddProjectForInlineRenameCommand}">
-                        <fi:FluentIcon Icon="Add"
-                                       IconVariant="Regular"
-                                       IconSize="Size16" />
+                        <PathIcon Data="{StaticResource Icon.Add}"
+                                  Width="16"
+                                  Height="16" />
                     </Button>
                 </Grid>
 
@@ -470,9 +469,9 @@
                             ToolTip.Tip="Add comparison"
                             IsEnabled="{Binding CanAddComparison}"
                             Command="{Binding AddComparisonForInlineRenameCommand}">
-                        <fi:FluentIcon Icon="Add"
-                                       IconVariant="Regular"
-                                       IconSize="Size16" />
+                        <PathIcon Data="{StaticResource Icon.Add}"
+                                  Width="16"
+                                  Height="16" />
                     </Button>
                 </Grid>
 
@@ -541,17 +540,17 @@
                         <Button Classes="headerIconButton"
                                 ToolTip.Tip="Add images to comparison"
                                 Click="AddMediaButton_OnClick">
-                            <fi:FluentIcon Icon="Add"
-                                           IconVariant="Regular"
-                                           IconSize="Size16" />
+                            <PathIcon Data="{StaticResource Icon.Add}"
+                                      Width="16"
+                                      Height="16" />
                         </Button>
                         <Button Classes="headerIconButton"
                                 ToolTip.Tip="Refresh source images for selected comparison"
                                 IsEnabled="{Binding Workspace.HasSelectedComparison}"
                                 Click="RefreshSelectedComparisonSourcesButton_OnClick">
-                            <fi:FluentIcon Icon="ArrowSync"
-                                           IconVariant="Regular"
-                                           IconSize="Size16" />
+                            <PathIcon Data="{StaticResource Icon.Refresh}"
+                                      Width="16"
+                                      Height="16" />
                         </Button>
                     </StackPanel>
 
@@ -580,23 +579,23 @@
                                 ToolTip.Tip="Fit images to stage"
                                 IsEnabled="{Binding ComparisonDisplay.HasAnyImage}"
                                 Click="FitZoomButton_OnClick">
-                            <fi:FluentIcon Icon="AutoFitWidth"
-                                           IconVariant="Regular"
-                                           IconSize="Size16" />
+                            <PathIcon Data="{StaticResource Icon.AutofitContent}"
+                                      Width="16"
+                                      Height="16" />
                         </Button>
                         <Button Classes="headerIconButton"
                                 ToolTip.Tip="Actual size"
                                 IsEnabled="{Binding ComparisonDisplay.HasAnyImage}"
                                 Click="ActualSizeZoomButton_OnClick">
-                            <fi:FluentIcon Icon="FullScreenMaximize"
-                                           IconVariant="Regular"
-                                           IconSize="Size16" />
+                            <PathIcon Data="{StaticResource Icon.ActualSize}"
+                                      Width="16"
+                                      Height="16" />
                         </Button>
                         <Button Classes="headerIconButton"
                                 ToolTip.Tip="Settings">
-                            <fi:FluentIcon Icon="Settings"
-                                           IconVariant="Regular"
-                                           IconSize="Size16" />
+                            <PathIcon Data="{StaticResource Icon.Settings}"
+                                      Width="16"
+                                      Height="16" />
                         </Button>
                     </StackPanel>
                 </Grid>
@@ -650,15 +649,15 @@
                             HorizontalAlignment="Right"
                             Click="ToggleImageSetButton_OnClick">
                         <Grid>
-                            <fi:FluentIcon x:Name="CollapseImageSetIcon"
-                                           Icon="ChevronDown"
-                                           IconVariant="Regular"
-                                           IconSize="Size16" />
-                            <fi:FluentIcon x:Name="ExpandImageSetIcon"
-                                           Icon="ChevronUp"
-                                           IconVariant="Regular"
-                                           IconSize="Size16"
-                                           IsVisible="False" />
+                            <PathIcon x:Name="CollapseImageSetIcon"
+                                      Data="{StaticResource Icon.ChevronDown}"
+                                      Width="16"
+                                      Height="16" />
+                            <PathIcon x:Name="ExpandImageSetIcon"
+                                      Data="{StaticResource Icon.ChevronUp}"
+                                      Width="16"
+                                      Height="16"
+                                      IsVisible="False" />
                         </Grid>
                     </Button>
                 </Grid>
@@ -746,9 +745,9 @@
                                                 Foreground="{Binding BaselineButtonForeground}"
                                                 Command="{Binding #Root.((vm:MainWindowViewModel)DataContext).ImageSet.SetReferenceImageAndRefreshCommand}"
                                                 CommandParameter="{Binding Image}">
-                                            <fi:FluentIcon Icon="Bookmark"
-                                                           IconVariant="Regular"
-                                                           IconSize="Size16" />
+                                            <PathIcon Data="{StaticResource Icon.Bookmark}"
+                                                      Width="16"
+                                                      Height="16" />
                                         </Button>
                                         <Button Classes="imageActionIconButton"
                                                 ToolTip.Tip="Set as candidate"
@@ -758,17 +757,17 @@
                                                 Foreground="{Binding CandidateButtonForeground}"
                                                 Command="{Binding #Root.((vm:MainWindowViewModel)DataContext).ImageSet.SetCandidateImageAndRefreshCommand}"
                                                 CommandParameter="{Binding Image}">
-                                            <fi:FluentIcon Icon="Star"
-                                                           IconVariant="Regular"
-                                                           IconSize="Size16" />
+                                            <PathIcon Data="{StaticResource Icon.Star}"
+                                                      Width="16"
+                                                      Height="16" />
                                         </Button>
                                         <Button Classes="imageActionIconButton"
                                                 ToolTip.Tip="Remove image"
                                                 Command="{Binding #Root.((vm:MainWindowViewModel)DataContext).ImageSet.DeleteImageAndRefreshCommand}"
                                                 CommandParameter="{Binding Image}">
-                                            <fi:FluentIcon Icon="Delete"
-                                                           IconVariant="Regular"
-                                                           IconSize="Size16" />
+                                            <PathIcon Data="{StaticResource Icon.Delete}"
+                                                      Width="16"
+                                                      Height="16" />
                                         </Button>
                                     </StackPanel>
                                 </Grid>
