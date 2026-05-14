@@ -120,11 +120,9 @@
                                             VerticalAlignment="Center"
                                             Spacing="6">
                                     <Button Classes="imageActionIconButton"
+                                            Classes.referenceActive="{Binding IsReference}"
                                             ToolTip.Tip="Set as baseline"
                                             IsEnabled="{Binding CanSetReference}"
-                                            Background="{Binding BaselineButtonBackground}"
-                                            BorderBrush="{Binding BaselineButtonBorderBrush}"
-                                            Foreground="{Binding BaselineButtonForeground}"
                                             Command="{Binding #Root.((vm:MainWindowViewModel)DataContext)?.ImageSet.SetReferenceImageAndRefreshCommand}"
                                             CommandParameter="{Binding Image}">
                                         <PathIcon Data="{StaticResource Icon.Bookmark}"
@@ -132,11 +130,9 @@
                                                   Height="16" />
                                     </Button>
                                     <Button Classes="imageActionIconButton"
+                                            Classes.candidateActive="{Binding IsCandidate}"
                                             ToolTip.Tip="Set as candidate"
                                             IsEnabled="{Binding CanSetCandidate}"
-                                            Background="{Binding CandidateButtonBackground}"
-                                            BorderBrush="{Binding CandidateButtonBorderBrush}"
-                                            Foreground="{Binding CandidateButtonForeground}"
                                             Command="{Binding #Root.((vm:MainWindowViewModel)DataContext)?.ImageSet.SetCandidateImageAndRefreshCommand}"
                                             CommandParameter="{Binding Image}">
                                         <PathIcon Data="{StaticResource Icon.Star}"
