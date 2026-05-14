@@ -211,6 +211,29 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
+    public async Task Workspace_rows_preserve_identity_when_projects_and_comparisons_change()
+    {
+        var storage = new FakeProjectStorage();
+        var viewModel = new MainWindowViewModel(storage);
+        var firstProject = await viewModel.Workspace.AddProjectAsync("First", TestContext.Current.CancellationToken);
+        var firstProjectRow = viewModel.Workspace.ProjectRows.Single(row => ReferenceEquals(row.Project, firstProject));
+
+        await viewModel.Workspace.AddProjectAsync("Second", TestContext.Current.CancellationToken);
+
+        Assert.Same(firstProjectRow, viewModel.Workspace.ProjectRows.Single(row => ReferenceEquals(row.Project, firstProject)));
+
+        viewModel.Workspace.SelectedProject = firstProject;
+        var firstComparison = await viewModel.Workspace.AddComparisonAsync("First comparison", TestContext.Current.CancellationToken);
+        var firstComparisonRow = viewModel.Workspace.SelectedProjectComparisonRows.Single(row => ReferenceEquals(row.Comparison, firstComparison));
+
+        await viewModel.Workspace.AddComparisonAsync("Second comparison", TestContext.Current.CancellationToken);
+
+        Assert.Same(
+            firstComparisonRow,
+            viewModel.Workspace.SelectedProjectComparisonRows.Single(row => ReferenceEquals(row.Comparison, firstComparison)));
+    }
+
+    [Fact]
     public async Task AddComparisonAsync_requires_selected_project()
     {
         var viewModel = new MainWindowViewModel(new FakeProjectStorage());

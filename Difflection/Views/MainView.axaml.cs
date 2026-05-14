@@ -99,7 +99,7 @@ public partial class MainView : UserControl
             return;
         }
 
-        await _viewModel.Workspace.DeleteProjectAsync(row.Project);
+        await _viewModel.Workspace.DeleteProjectAsync(row);
         RestartImageChangeMonitor();
     }
 

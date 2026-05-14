@@ -20,7 +20,14 @@ public static class ConfirmationDialogService
 
         var completion = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         var owner = desktop.MainWindow;
-        Window dialog = null!;
+        var dialog = new Window
+        {
+            Title = title,
+            Width = 420,
+            SizeToContent = SizeToContent.Height,
+            CanResize = false,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner
+        };
 
         var cancelButton = new Button
         {
@@ -45,49 +52,41 @@ public static class ConfirmationDialogService
             dialog.Close();
         };
 
-        dialog = new Window
+        dialog.Content = new StackPanel
         {
-            Title = title,
-            Width = 420,
-            SizeToContent = SizeToContent.Height,
-            CanResize = false,
-            WindowStartupLocation = WindowStartupLocation.CenterOwner,
-            Content = new StackPanel
+            Margin = new Thickness(18),
+            Spacing = 16,
+            Children =
             {
-                Margin = new Thickness(18),
-                Spacing = 16,
-                Children =
+                new TextBlock
                 {
-                    new TextBlock
+                    Text = message,
+                    TextWrapping = TextWrapping.Wrap,
+                    FontWeight = FontWeight.SemiBold
+                },
+                new StackPanel
+                {
+                    Orientation = Orientation.Horizontal,
+                    HorizontalAlignment = HorizontalAlignment.Right,
+                    Spacing = 10,
+                    Children =
                     {
-                        Text = message,
-                        TextWrapping = TextWrapping.Wrap,
-                        FontWeight = FontWeight.SemiBold
-                    },
-                    new StackPanel
-                    {
-                        Orientation = Orientation.Horizontal,
-                        HorizontalAlignment = HorizontalAlignment.Right,
-                        Spacing = 10,
-                        Children =
-                        {
-                            cancelButton,
-                            deleteButton
-                        }
+                        cancelButton,
+                        deleteButton
                     }
                 }
             }
         };
 
-        dialog.Closed += Dialog_OnClosed;
+        dialog.Closed += DialogOnClosed;
         owner.IsEnabled = false;
         dialog.Show(owner);
 
         return await completion.Task;
 
-        void Dialog_OnClosed(object? sender, EventArgs e)
+        void DialogOnClosed(object? sender, EventArgs e)
         {
-            dialog.Closed -= Dialog_OnClosed;
+            dialog.Closed -= DialogOnClosed;
             owner.IsEnabled = true;
             owner.Activate();
             completion.TrySetResult(false);

@@ -75,7 +75,7 @@ public partial class WorkspaceSidebar : UserControl
             return;
         }
 
-        await _viewModel.Workspace.DeleteComparisonAsync(row.Comparison);
+        await _viewModel.Workspace.DeleteComparisonAsync(row);
         RequestImageChangeMonitorRestart?.Invoke();
     }
 

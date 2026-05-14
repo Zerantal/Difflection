@@ -102,6 +102,16 @@
         <Setter Property="Margin" Value="0" />
         <Setter Property="BorderThickness" Value="0" />
     </Style>
+    <Style Selector="Border.comparisonRowReview">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+    </Style>
+    <Style Selector="Border.comparisonRowReview.needsReview">
+        <Setter Property="Background" Value="#221F14" />
+        <Setter Property="BorderBrush" Value="#A16207" />
+        <Setter Property="BorderThickness" Value="1" />
+    </Style>
     <Style Selector="TextBlock.sidebarItemText">
         <Setter Property="Foreground" Value="#E5E7EB" />
         <Setter Property="FontSize" Value="13" />

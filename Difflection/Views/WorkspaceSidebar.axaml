@@ -82,9 +82,8 @@
                      SelectedItem="{Binding Workspace.SelectedComparisonRow, Mode=TwoWay}">
                 <ListBox.ItemTemplate>
                     <DataTemplate x:DataType="vm:ComparisonListItemViewModel">
-                        <Border Background="{Binding ReviewBackground}"
-                                BorderBrush="{Binding ReviewBorderBrush}"
-                                BorderThickness="{Binding ReviewBorderThickness}"
+                        <Border Classes="comparisonRowReview"
+                                Classes.needsReview="{Binding NeedsReview}"
                                 CornerRadius="4"
                                 Padding="6,4"
                                 ContextRequested="SidebarItem_OnContextRequested">
