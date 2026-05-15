@@ -316,6 +316,37 @@ public sealed class MainWindowViewModelTests
     }
 
     [AvaloniaFact]
+    public async Task ClearNonRoleImagesAndRefreshAsync_removes_only_images_outside_current_baseline_and_candidate()
+    {
+        var storage = new FakeProjectStorage();
+        var viewModel = new MainWindowViewModel(storage);
+        await viewModel.Workspace.AddProjectAsync("Project", TestContext.Current.CancellationToken);
+        var comparison = await viewModel.Workspace.AddComparisonAsync("Comparison", TestContext.Current.CancellationToken);
+        var reference = await viewModel.ImageSet.AddImageAsync(
+            "reference.png",
+            new MemoryStream(TestUiSupport.CreatePngBytes(color: SKColors.Red)),
+            cancellationToken: TestContext.Current.CancellationToken);
+        var candidate = await viewModel.ImageSet.AddImageAsync(
+            "candidate.png",
+            new MemoryStream(TestUiSupport.CreatePngBytes(color: SKColors.Blue)),
+            cancellationToken: TestContext.Current.CancellationToken);
+        var extra = await viewModel.ImageSet.AddImageAsync(
+            "extra.png",
+            new MemoryStream(TestUiSupport.CreatePngBytes(color: SKColors.Green)),
+            cancellationToken: TestContext.Current.CancellationToken);
+
+        var removedCount = await viewModel.ImageSet.ClearNonRoleImagesAndRefreshAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal(1, removedCount);
+        Assert.Equal([reference, candidate], comparison.Images);
+        Assert.Same(reference, comparison.ReferenceImage);
+        Assert.Same(candidate, comparison.CandidateImage);
+        Assert.DoesNotContain(extra.Id, storage.SavedImageContents.Keys);
+        Assert.Contains(extra.Id, storage.DeletedImageIds);
+        Assert.False(viewModel.ImageSet.CanClearNonRoleImages);
+    }
+
+    [AvaloniaFact]
     public async Task AddBrowserFilesToCurrentComparisonAsync_ensures_workspace_adds_files_and_loads_display_images()
     {
         var viewModel = new MainWindowViewModel();
@@ -927,6 +958,59 @@ public sealed class MainWindowViewModelTests
         Assert.Equal(2, capturedCount);
         Assert.Equal(firstReference.Id, first.ReferenceImage?.PreviousVersionImageId);
         Assert.Equal(secondReference.Id, second.ReferenceImage?.PreviousVersionImageId);
+    }
+
+    [AvaloniaFact]
+    public async Task ApplyCapturedImageVersionAsync_refreshes_selected_comparison_image_rows()
+    {
+        var storage = new FakeProjectStorage();
+        var viewModel = new MainWindowViewModel(storage);
+        var project = await viewModel.Workspace.AddProjectAsync("Project", TestContext.Current.CancellationToken);
+        var comparison = await viewModel.Workspace.AddComparisonAsync("Comparison", TestContext.Current.CancellationToken);
+        var reference = await viewModel.ImageSet.AddImageAsync(
+            "reference.png",
+            new MemoryStream(TestUiSupport.CreatePngBytes(color: SKColors.Red)),
+            cancellationToken: TestContext.Current.CancellationToken);
+        var candidate = await viewModel.ImageSet.AddImageAsync(
+            "candidate.png",
+            new MemoryStream(TestUiSupport.CreatePngBytes(color: SKColors.Blue)),
+            cancellationToken: TestContext.Current.CancellationToken);
+        var version = new ImageAsset
+        {
+            Label = "Image",
+            SourceName = "candidate.png",
+            PreviousVersionImageId = candidate.Id
+        };
+        await storage.SaveImageAsync(
+            project.Id,
+            comparison.Id,
+            version,
+            new MemoryStream(TestUiSupport.CreatePngBytes(color: SKColors.Green)),
+            TestContext.Current.CancellationToken);
+        comparison.AddImage(version);
+        comparison.SetCandidateImage(version.Id);
+        Assert.DoesNotContain(viewModel.ImageSet.ImageRows, row => row.Id == version.Id);
+
+        await viewModel.ApplyCapturedImageVersionAsync(project, comparison, version, TestContext.Current.CancellationToken);
+
+        Assert.Contains(viewModel.ImageSet.ImageRows, row => row.Id == version.Id && row.IsCandidate);
+        Assert.Same(reference, comparison.ReferenceImage);
+        Assert.Same(version, comparison.CandidateImage);
+    }
+
+    [Fact]
+    public async Task SetSelectedProjectSourceFileMonitoringAsync_updates_project_setting_and_saves()
+    {
+        var storage = new FakeProjectStorage();
+        var viewModel = new MainWindowViewModel(storage);
+        var project = await viewModel.Workspace.AddProjectAsync("Project", TestContext.Current.CancellationToken);
+        storage.SavedProjects.Clear();
+
+        await viewModel.SetSelectedProjectSourceFileMonitoringAsync(true, TestContext.Current.CancellationToken);
+
+        Assert.True(project.Settings.MonitorSourceFilesForChanges);
+        Assert.True(viewModel.IsSelectedProjectSourceFileMonitoringEnabled);
+        Assert.Same(project, Assert.Single(storage.SavedProjects));
     }
 
     private sealed class FakeProjectStorage(params Project[] projects) : IProjectStorage

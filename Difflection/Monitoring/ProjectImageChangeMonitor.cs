@@ -35,9 +35,9 @@ public sealed class ProjectImageChangeMonitor : IDisposable
         {
             foreach (var comparison in project.Comparisons)
             {
-                foreach (var image in comparison.Images.Where(IsMonitorable))
+                foreach (var monitoredImage in GetMonitorableImages(project, comparison))
                 {
-                    var sourceId = CreateSourceId(image);
+                    var sourceId = CreateSourceId(monitoredImage.Image);
 
                     if (!_monitoredImagesBySourceId.TryGetValue(sourceId, out var images))
                     {
@@ -45,7 +45,7 @@ public sealed class ProjectImageChangeMonitor : IDisposable
                         _monitoredImagesBySourceId[sourceId] = images;
                     }
 
-                    images.Add(new MonitoredImage(project, comparison, image));
+                    images.Add(monitoredImage);
                 }
             }
         }
@@ -68,7 +68,7 @@ public sealed class ProjectImageChangeMonitor : IDisposable
         _captureLock.Dispose();
     }
 
-    public async Task CaptureSourceChangeAsync(string sourceId, CancellationToken cancellationToken = default)
+    private async Task CaptureSourceChangeAsync(string sourceId, CancellationToken cancellationToken = default)
     {
         if (!_monitoredImagesBySourceId.TryGetValue(sourceId, out var monitoredImages))
         {
@@ -80,11 +80,18 @@ public sealed class ProjectImageChangeMonitor : IDisposable
         {
             foreach (var monitoredImage in monitoredImages.ToArray())
             {
-                var version = await _versionCapture.CaptureAsync(
-                    monitoredImage.Project,
-                    monitoredImage.Comparison,
-                    monitoredImage.Image,
-                    cancellationToken);
+                var version = monitoredImage.CaptureCurrentRole
+                    ? await _versionCapture.RefreshCurrentRoleImageAsync(
+                        monitoredImage.Project,
+                        monitoredImage.Comparison,
+                        monitoredImage.Image,
+                        monitoredImage.Role,
+                        cancellationToken)
+                    : await _versionCapture.CaptureAsync(
+                        monitoredImage.Project,
+                        monitoredImage.Comparison,
+                        monitoredImage.Image,
+                        cancellationToken);
 
                 if (version is not null)
                 {
@@ -118,6 +125,37 @@ public sealed class ProjectImageChangeMonitor : IDisposable
             && File.Exists(image.OriginalFileMetadata.Path);
     }
 
+    private static IEnumerable<MonitoredImage> GetMonitorableImages(Project project, ComparisonSet comparison)
+    {
+        if (project.Settings.MonitorSourceFilesForChanges)
+        {
+            if (comparison.ReferenceImage is { } reference && HasExistingSourcePath(reference))
+            {
+                yield return new MonitoredImage(project, comparison, reference, ImageMonitoringRole.Reference, CaptureCurrentRole: true);
+            }
+
+            if (comparison.CandidateImage is { } candidate
+                && candidate.Id != comparison.ReferenceImageId
+                && HasExistingSourcePath(candidate))
+            {
+                yield return new MonitoredImage(project, comparison, candidate, ImageMonitoringRole.Candidate, CaptureCurrentRole: true);
+            }
+
+            yield break;
+        }
+
+        foreach (var image in comparison.Images.Where(IsMonitorable))
+        {
+            yield return new MonitoredImage(project, comparison, image, image.MonitoringRole, CaptureCurrentRole: false);
+        }
+    }
+
+    private static bool HasExistingSourcePath(ImageAsset image)
+    {
+        return !string.IsNullOrWhiteSpace(image.OriginalFileMetadata?.Path)
+            && File.Exists(image.OriginalFileMetadata.Path);
+    }
+
     private static string CreateSourceId(ImageAsset image)
     {
         return CreateSourceId(image.OriginalFileMetadata?.Path ?? string.Empty);
@@ -142,7 +180,7 @@ public sealed class ProjectImageChangeMonitor : IDisposable
             return;
         }
 
-        if (IsMonitorable(current))
+        if (IsStillMonitorable(previous, current))
         {
             monitoredImages[index] = previous with { Image = current };
         }
@@ -157,7 +195,22 @@ public sealed class ProjectImageChangeMonitor : IDisposable
         _ = CaptureSourceChangeAsync(e.SourceId);
     }
 
-    private sealed record MonitoredImage(Project Project, ComparisonSet Comparison, ImageAsset Image);
+    private static bool IsStillMonitorable(MonitoredImage monitoredImage, ImageAsset current)
+    {
+        if (monitoredImage.CaptureCurrentRole)
+        {
+            return HasExistingSourcePath(current);
+        }
+
+        return IsMonitorable(current);
+    }
+
+    private sealed record MonitoredImage(
+        Project Project,
+        ComparisonSet Comparison,
+        ImageAsset Image,
+        ImageMonitoringRole Role,
+        bool CaptureCurrentRole);
 }
 
 public sealed record MonitoredImageVersionCapturedEventArgs(

@@ -61,6 +61,92 @@ public sealed class ProjectImageChangeMonitorTests : IDisposable
         Assert.Same(firstVersion, captured!.PreviousVersion);
     }
 
+    [AvaloniaFact]
+    public async Task Start_uses_project_source_file_monitoring_for_current_candidate_role()
+    {
+        var storage = new LocalFileProjectStorage(_storageRootPath);
+        var viewModel = new MainWindowViewModel(storage);
+        await viewModel.Workspace.AddProjectAsync("Project", TestContext.Current.CancellationToken);
+        var comparison = await viewModel.Workspace.AddComparisonAsync("Comparison", TestContext.Current.CancellationToken);
+        var reference = await viewModel.ImageSet.AddImageAsync(
+            TestUiSupport.CreateStorageFile("project-monitor-reference.png"),
+            cancellationToken: TestContext.Current.CancellationToken);
+        var candidateFile = TestUiSupport.CreateStorageFile("project-monitor-candidate.png");
+        var candidate = await viewModel.ImageSet.AddImageAsync(candidateFile, cancellationToken: TestContext.Current.CancellationToken);
+        await viewModel.SetImageMonitoringAsync(candidate, ImageMonitoringRole.Candidate, TestContext.Current.CancellationToken);
+        await viewModel.SetSelectedProjectSourceFileMonitoringAsync(true, TestContext.Current.CancellationToken);
+        using var watcher = new FakeImageSourceChangeWatcher();
+        using var monitor = new ProjectImageChangeMonitor(watcher, new MonitoredImageVersionCapture(storage));
+        MonitoredImageVersionCapturedEventArgs? captured = null;
+        monitor.VersionCaptured += (_, e) => captured = e;
+
+        monitor.Start(viewModel.Workspace.Projects);
+        WriteFixtureImage(candidateFile.Path.LocalPath, SKColors.CornflowerBlue);
+        watcher.RaiseChanged(Path.GetFullPath(candidateFile.Path.LocalPath));
+
+        await TestUiSupport.WaitForAsync(() => captured is not null);
+        Assert.Equal(3, comparison.Images.Count);
+        Assert.Same(reference, comparison.ReferenceImage);
+        Assert.Equal(candidate.Id, comparison.CandidateImage?.PreviousVersionImageId);
+        Assert.Equal(ImageMonitoringRole.None, candidate.MonitoringRole);
+        Assert.Equal(ImageMonitoringRole.Candidate, comparison.CandidateImage?.MonitoringRole);
+        Assert.Same(candidate, captured!.PreviousVersion);
+    }
+
+    [AvaloniaFact]
+    public async Task Start_uses_project_source_file_monitoring_for_owner_comparison_not_selected_comparison()
+    {
+        var storage = new LocalFileProjectStorage(_storageRootPath);
+        var viewModel = new MainWindowViewModel(storage);
+        await viewModel.Workspace.AddProjectAsync("Project", TestContext.Current.CancellationToken);
+        var first = await viewModel.Workspace.AddComparisonAsync("First", TestContext.Current.CancellationToken);
+        await viewModel.ImageSet.AddImageAsync(
+            TestUiSupport.CreateStorageFile("project-monitor-first.png"),
+            cancellationToken: TestContext.Current.CancellationToken);
+        var second = await viewModel.Workspace.AddComparisonAsync("Second", TestContext.Current.CancellationToken);
+        var secondFile = TestUiSupport.CreateStorageFile("project-monitor-second.png");
+        var secondReference = await viewModel.ImageSet.AddImageAsync(secondFile, cancellationToken: TestContext.Current.CancellationToken);
+        await viewModel.SetSelectedProjectSourceFileMonitoringAsync(true, TestContext.Current.CancellationToken);
+        viewModel.Workspace.SelectedComparison = first;
+        using var watcher = new FakeImageSourceChangeWatcher();
+        using var monitor = new ProjectImageChangeMonitor(watcher, new MonitoredImageVersionCapture(storage));
+        MonitoredImageVersionCapturedEventArgs? captured = null;
+        monitor.VersionCaptured += (_, e) => captured = e;
+
+        monitor.Start(viewModel.Workspace.Projects);
+        WriteFixtureImage(secondFile.Path.LocalPath, SKColors.MediumPurple);
+        watcher.RaiseChanged(Path.GetFullPath(secondFile.Path.LocalPath));
+
+        await TestUiSupport.WaitForAsync(() => captured is not null);
+        Assert.Single(first.Images);
+        Assert.Equal(2, second.Images.Count);
+        Assert.Equal(secondReference.Id, second.ReferenceImage?.PreviousVersionImageId);
+        Assert.Same(first, viewModel.Workspace.SelectedComparison);
+    }
+
+    [AvaloniaFact]
+    public async Task Start_project_source_file_monitoring_watches_files_not_directories()
+    {
+        var storage = new LocalFileProjectStorage(_storageRootPath);
+        var viewModel = new MainWindowViewModel(storage);
+        await viewModel.Workspace.AddProjectAsync("Project", TestContext.Current.CancellationToken);
+        await viewModel.Workspace.AddComparisonAsync("Comparison", TestContext.Current.CancellationToken);
+        var referenceFile = TestUiSupport.CreateStorageFile("project-monitor-watch-reference.png");
+        var candidateFile = TestUiSupport.CreateStorageFile("project-monitor-watch-candidate.png");
+        await viewModel.ImageSet.AddImageAsync(referenceFile, cancellationToken: TestContext.Current.CancellationToken);
+        await viewModel.ImageSet.AddImageAsync(candidateFile, cancellationToken: TestContext.Current.CancellationToken);
+        await viewModel.SetSelectedProjectSourceFileMonitoringAsync(true, TestContext.Current.CancellationToken);
+        using var watcher = new FakeImageSourceChangeWatcher();
+        using var monitor = new ProjectImageChangeMonitor(watcher, new MonitoredImageVersionCapture(storage));
+
+        monitor.Start(viewModel.Workspace.Projects);
+
+        Assert.Equal(2, watcher.Watches.Count);
+        Assert.Contains(watcher.Watches, watch => string.Equals(watch.LocalPath, referenceFile.Path.LocalPath, StringComparison.Ordinal));
+        Assert.Contains(watcher.Watches, watch => string.Equals(watch.LocalPath, candidateFile.Path.LocalPath, StringComparison.Ordinal));
+        Assert.DoesNotContain(watcher.Watches, watch => Directory.Exists(watch.LocalPath));
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(_storageRootPath))
@@ -86,12 +172,16 @@ public sealed class ProjectImageChangeMonitorTests : IDisposable
 
         public event EventHandler<ImageSourceChangedEventArgs>? SourceChanged;
 
+        public List<ImageSourceWatch> Watches { get; } = [];
+
         public void Watch(IEnumerable<ImageSourceWatch> sources)
         {
             _sourceIds.Clear();
+            Watches.Clear();
 
             foreach (var source in sources)
             {
+                Watches.Add(source);
                 _sourceIds.Add(source.SourceId);
             }
         }

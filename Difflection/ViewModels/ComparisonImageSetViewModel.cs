@@ -59,6 +59,9 @@ public partial class ComparisonImageSetViewModel : ViewModelBase
             && _workspace.SelectedComparison.Images.Contains(image);
     }
 
+    public bool CanClearNonRoleImages =>
+        _workspace.SelectedComparison?.Images.Any(IsNotCurrentRoleImage) == true;
+
     public async Task<ImageAsset> AddImageAsync(
         string sourceName,
         Stream content,
@@ -246,6 +249,45 @@ public partial class ComparisonImageSetViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    public async Task<int> ClearNonRoleImagesAndRefreshAsync(CancellationToken cancellationToken = default)
+    {
+        if (_workspace.SelectedProject is null || _workspace.SelectedComparison is null)
+        {
+            return 0;
+        }
+
+        var removedImages = _workspace.SelectedComparison.Images
+            .Where(IsNotCurrentRoleImage)
+            .ToArray();
+
+        if (removedImages.Length == 0)
+        {
+            return 0;
+        }
+
+        foreach (var image in removedImages)
+        {
+            _workspace.SelectedComparison.RemoveImage(image.Id);
+        }
+
+        _workspace.SelectedProject.UpdatedAt = DateTimeOffset.UtcNow;
+        await NotifySelectedComparisonImagesChangedAsync(cancellationToken);
+        await SaveProjectAsync(_workspace.SelectedProject, cancellationToken);
+
+        if (_projectStorage is not null)
+        {
+            foreach (var image in removedImages)
+            {
+                await _projectStorage.DeleteImageAsync(image, cancellationToken);
+            }
+        }
+
+        await _comparisonDisplay.RefreshCurrentComparisonImagesAsync(_workspace.SelectedComparison, _projectStorage, cancellationToken);
+        OnPropertyChanged(nameof(CanClearNonRoleImages));
+        return removedImages.Length;
+    }
+
+    [RelayCommand]
     public async Task<bool> DeleteImageAndRefreshAsync(ImageAsset image, CancellationToken cancellationToken = default)
     {
         if (!await DeleteImageAsync(image, cancellationToken))
@@ -401,12 +443,21 @@ public partial class ComparisonImageSetViewModel : ViewModelBase
 
         await RefreshImageRowsAsync(cancellationToken, force: true);
         ImageSetChanged?.Invoke(this, EventArgs.Empty);
+        OnPropertyChanged(nameof(CanClearNonRoleImages));
+    }
+
+    private bool IsNotCurrentRoleImage(ImageAsset image)
+    {
+        return _workspace.SelectedComparison is { } comparison
+            && comparison.ReferenceImageId != image.Id
+            && comparison.CandidateImageId != image.Id;
     }
 
     private void OnWorkspacePropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName is nameof(WorkspaceNavigatorViewModel.SelectedComparison))
         {
+            OnPropertyChanged(nameof(CanClearNonRoleImages));
             ScheduleImageRowsRefresh();
         }
         else if (e.PropertyName is nameof(WorkspaceNavigatorViewModel.SelectedComparisonImages) && !_suppressWorkspaceImageRefresh)

@@ -13,7 +13,7 @@
             Padding="18,12">
         <Grid RowDefinitions="Auto,Auto,Auto"
               RowSpacing="10">
-            <Grid ColumnDefinitions="*,Auto,Auto"
+            <Grid ColumnDefinitions="*,Auto,Auto,Auto"
                   ColumnSpacing="12">
                 <TextBlock Classes="imageSetHeaderText"
                            Text="IMAGE SET"
@@ -24,8 +24,18 @@
                            FontSize="12"
                            FontWeight="SemiBold"
                            VerticalAlignment="Center" />
+                <Button Grid.Column="2"
+                        Classes="headerIconButton"
+                        ToolTip.Tip="Clear extra images"
+                        HorizontalAlignment="Right"
+                        IsEnabled="{Binding ImageSet.CanClearNonRoleImages}"
+                        Command="{Binding ImageSet.ClearNonRoleImagesAndRefreshCommand}">
+                    <PathIcon Data="{StaticResource Icon.Delete}"
+                              Width="16"
+                              Height="16" />
+                </Button>
                 <Button x:Name="ToggleImageSetButton"
-                        Grid.Column="2"
+                        Grid.Column="3"
                         Classes="headerIconButton"
                         ToolTip.Tip="Collapse image set"
                         HorizontalAlignment="Right"
