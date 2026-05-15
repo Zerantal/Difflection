@@ -1,0 +1,46 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="Difflection.Views.SettingsDialog"
+        Background="#181818"
+        Width="460"
+        SizeToContent="Height"
+        CanResize="False"
+        Title="Settings"
+        WindowStartupLocation="CenterOwner">
+    <Grid RowDefinitions="Auto,Auto"
+          RowSpacing="18"
+          Margin="20">
+        <StackPanel Spacing="14">
+            <TextBlock Text="Settings"
+                       Foreground="#F3F4F6"
+                       FontSize="18"
+                       FontWeight="SemiBold" />
+            <Border Background="#101010"
+                    BorderBrush="#383838"
+                    BorderThickness="1"
+                    CornerRadius="6"
+                    Padding="14">
+                <CheckBox x:Name="MonitorSourceFilesCheckBox"
+                          Foreground="#E5E7EB"
+                          FontSize="13"
+                          Content="Monitor source file changes and add changed files to the current project" />
+            </Border>
+            <TextBlock Text="Uses the folders of local source images already added to the selected project."
+                       Foreground="#9AA1AB"
+                       FontSize="12"
+                       TextWrapping="Wrap" />
+        </StackPanel>
+
+        <StackPanel Grid.Row="1"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Spacing="8">
+            <Button Content="Cancel"
+                    Padding="16,7"
+                    Click="CancelButton_OnClick" />
+            <Button Content="Save"
+                    Padding="18,7"
+                    Click="SaveButton_OnClick" />
+        </StackPanel>
+    </Grid>
+</Window>

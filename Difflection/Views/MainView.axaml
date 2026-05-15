@@ -130,6 +130,15 @@
                                   Width="16"
                                   Height="16" />
                     </Button>
+                    <Button x:Name="SettingsButton"
+                            Classes="headerIconButton"
+                            ToolTip.Tip="Settings"
+                            IsVisible="{Binding SelectedProjectRow?.IsNotEditing}"
+                            Click="SettingsButton_OnClick">
+                        <PathIcon Data="{StaticResource Icon.Settings}"
+                                  Width="16"
+                                  Height="16" />
+                    </Button>
                 </StackPanel>
             </Grid>
         </Border>

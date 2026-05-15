@@ -52,6 +52,9 @@ public class MainWindowViewModel : ViewModelBase
 
     public IProjectStorage? ProjectStorage { get; }
 
+    public bool IsSelectedProjectSourceFileMonitoringEnabled =>
+        Workspace.SelectedProject?.Settings.MonitorSourceFilesForChanges == true;
+
     public Bitmap? LeftImage
     {
         get => ComparisonDisplay.LeftImage;
@@ -132,6 +135,26 @@ public class MainWindowViewModel : ViewModelBase
         return true;
     }
 
+    public async Task SetSelectedProjectSourceFileMonitoringAsync(
+        bool isEnabled,
+        CancellationToken cancellationToken = default)
+    {
+        if (Workspace.SelectedProject is null)
+        {
+            return;
+        }
+
+        if (Workspace.SelectedProject.Settings.MonitorSourceFilesForChanges == isEnabled)
+        {
+            return;
+        }
+
+        Workspace.SelectedProject.Settings.MonitorSourceFilesForChanges = isEnabled;
+        Workspace.SelectedProject.UpdatedAt = DateTimeOffset.UtcNow;
+        OnPropertyChanged(nameof(IsSelectedProjectSourceFileMonitoringEnabled));
+        await SaveProjectAsync(Workspace.SelectedProject, cancellationToken);
+    }
+
     public async Task<ImageAsset?> CaptureMonitoredImageChangeAsync(
         Project project,
         ComparisonSet comparison,
@@ -158,11 +181,41 @@ public class MainWindowViewModel : ViewModelBase
 
         if (!ReferenceEquals(project, Workspace.SelectedProject) ||
             !ReferenceEquals(comparison, Workspace.SelectedComparison)) return version;
-        Workspace.NotifyComparisonImagesChanged(comparison);
-        WorkspaceStatus.NotifyImageStateChanged();
-        await ComparisonDisplay.RefreshCurrentComparisonImagesAsync(Workspace.SelectedComparison, ProjectStorage, cancellationToken);
+        await ApplyCapturedImageVersionAsync(project, comparison, version, cancellationToken);
 
         return version;
+    }
+
+    public async Task ApplyCapturedImageVersionAsync(
+        Project project,
+        ComparisonSet comparison,
+        ImageAsset currentVersion,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(project);
+        ArgumentNullException.ThrowIfNull(comparison);
+        ArgumentNullException.ThrowIfNull(currentVersion);
+
+        if (!Workspace.Projects.Contains(project) || !project.Comparisons.Contains(comparison))
+        {
+            return;
+        }
+
+        if (comparison.CandidateImageId == currentVersion.Id)
+        {
+            await UpdateComparisonReviewStateAsync(project, comparison, cancellationToken);
+        }
+
+        Workspace.NotifyComparisonImagesChanged(comparison);
+        WorkspaceStatus.NotifyImageStateChanged();
+
+        if (!ReferenceEquals(project, Workspace.SelectedProject) || !ReferenceEquals(comparison, Workspace.SelectedComparison))
+        {
+            return;
+        }
+
+        await ImageSet.RefreshImageRowsAsync(cancellationToken);
+        await ComparisonDisplay.RefreshCurrentComparisonImagesAsync(Workspace.SelectedComparison, ProjectStorage, cancellationToken);
     }
 
     public async Task<int> RefreshProjectSourceImagesAsync(
@@ -356,6 +409,11 @@ public class MainWindowViewModel : ViewModelBase
             WorkspaceStatus.NotifyWorkspaceStateChanged();
         }
 
+        if (e.PropertyName is nameof(WorkspaceNavigatorViewModel.SelectedProject))
+        {
+            OnPropertyChanged(nameof(IsSelectedProjectSourceFileMonitoringEnabled));
+        }
+
         switch (e.PropertyName)
         {
             case nameof(WorkspaceNavigatorViewModel.SelectedProject)
@@ -385,6 +443,7 @@ public class MainWindowViewModel : ViewModelBase
     {
         ComparisonDisplay.Clear();
     }
+
 }
 
 public enum ImageSlot

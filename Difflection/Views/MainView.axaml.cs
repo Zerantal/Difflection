@@ -8,6 +8,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
+using Avalonia.Threading;
 using Difflection.Infrastructure;
 using Difflection.Monitoring;
 using Difflection.ViewModels;
@@ -80,6 +81,26 @@ public partial class MainView : UserControl
 
         await _viewModel.RefreshProjectSourceImagesAsync(_viewModel.Workspace.SelectedProject);
         RestartImageChangeMonitor();
+    }
+
+    // ReSharper disable once AsyncVoidEventHandlerMethod
+    private async void SettingsButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        if (_viewModel is null || TopLevel.GetTopLevel(this) is not Window owner)
+        {
+            return;
+        }
+
+        var dialog = new SettingsDialog
+        {
+            DataContext = _viewModel
+        };
+
+        if (await dialog.ShowOwnedAsync(owner))
+        {
+            await _viewModel.SetSelectedProjectSourceFileMonitoringAsync(dialog.MonitorSourceFilesForChanges);
+            RestartImageChangeMonitor();
+        }
     }
 
     // ReSharper disable once AsyncVoidEventHandlerMethod
@@ -271,17 +292,31 @@ public partial class MainView : UserControl
 
     private void ImageChangeMonitor_OnVersionCaptured(object? sender, MonitoredImageVersionCapturedEventArgs e)
     {
+        if (!Dispatcher.UIThread.CheckAccess())
+        {
+            Dispatcher.UIThread.Post(() => ImageChangeMonitor_OnVersionCaptured(sender, e));
+            return;
+        }
+
         if (_viewModel is null)
         {
             return;
         }
 
-        if (ReferenceEquals(e.Project, _viewModel.Workspace.SelectedProject)
-            && ReferenceEquals(e.Comparison, _viewModel.Workspace.SelectedComparison))
+        _ = ObservedTask.ReportFailureAsync(
+            ApplyCapturedImageVersionAndRestartMonitorAsync(e),
+            "Difflection could not display the captured source image change.");
+    }
+
+    private async Task ApplyCapturedImageVersionAndRestartMonitorAsync(MonitoredImageVersionCapturedEventArgs e)
+    {
+        if (_viewModel is null)
         {
-            _ = ObservedTask.ReportFailureAsync(
-                RefreshCurrentComparisonAndFitStageAsync(),
-                "Difflection could not display the captured source image change.");
+            return;
         }
+
+        await _viewModel.ApplyCapturedImageVersionAsync(e.Project, e.Comparison, e.CurrentVersion);
+        ComparisonStage.FitZoomToStage();
+        RestartImageChangeMonitor();
     }
 }
