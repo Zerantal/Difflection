@@ -189,7 +189,7 @@ public sealed class LocalFileProjectStorage(string rootPath) : IProjectStorage
     {
         foreach (var comparison in project.Comparisons)
         {
-            comparison.RepairRoleAssignments(updateTimestamp: false);
+            comparison.RepairChannelAssignments(updateTimestamp: false);
         }
     }
 

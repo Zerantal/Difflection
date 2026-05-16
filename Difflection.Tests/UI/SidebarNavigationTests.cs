@@ -191,17 +191,17 @@ public sealed class SidebarNavigationTests
         try
         {
             var mainView = TestUiSupport.GetMainView(window);
-            var imagesList = GetControl<ListBox>(mainView, "ComparisonImagesList");
+            var imagesList = GetControl<ListBox>(mainView, "BaselineRevisionsList");
 
-            await TestUiSupport.WaitForAsync(() => imagesList.ItemCount == 2);
+            await TestUiSupport.WaitForAsync(() => imagesList.ItemCount == 1);
 
-            Click(GetImageActionButton(imagesList, reference, "Remove image"));
+            Click(GetImageActionButton(imagesList, reference, "Remove revision"));
 
-            await TestUiSupport.WaitForAsync(() => imagesList.ItemCount == 1 && viewModel.LeftFileName == candidate.Label);
+            await TestUiSupport.WaitForAsync(() => imagesList.ItemCount == 0 && viewModel.LeftFileName == "Baseline image");
 
             Assert.DoesNotContain(reference, viewModel.Workspace.SelectedComparison!.Images);
-            Assert.Equal(candidate.Id, viewModel.Workspace.SelectedComparison.ReferenceImageId);
-            Assert.Null(viewModel.Workspace.SelectedComparison.CandidateImageId);
+            Assert.Null(viewModel.Workspace.SelectedComparison.BaselineImageId);
+            Assert.Equal(candidate.Id, viewModel.Workspace.SelectedComparison.CandidateImageId);
             Assert.Contains(reference.Id, storage.DeletedImageIds);
             Assert.Same(viewModel.Workspace.SelectedProject, Assert.Single(storage.SavedProjects));
         }

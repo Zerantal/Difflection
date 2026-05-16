@@ -17,23 +17,32 @@ public sealed class ComparisonSet
 
     public bool RequiresReview { get; set; }
 
-    [JsonInclude]
-    public Guid? ReferenceImageId { get; private set; }
+    public ComparisonChannel BaselineChannel { get; init; } = new()
+    {
+        Name = "Baseline",
+        Role = ImageMonitoringRole.Baseline
+    };
 
-    [JsonInclude]
-    public Guid? CandidateImageId { get; private set; }
-
-    public List<ImageAsset> Images { get; init; } = [];
+    public ComparisonChannel CandidateChannel { get; init; } = new()
+    {
+        Name = "Candidate",
+        Role = ImageMonitoringRole.Candidate
+    };
 
     [JsonIgnore]
-    public ImageAsset? ReferenceImage => ReferenceImageId is null
-        ? null
-        : Images.FirstOrDefault(image => image.Id == ReferenceImageId);
+    public IReadOnlyList<ImageAsset> Images => BaselineChannel.Images.Concat(CandidateChannel.Images).ToArray();
 
     [JsonIgnore]
-    public ImageAsset? CandidateImage => CandidateImageId is null
-        ? null
-        : Images.FirstOrDefault(image => image.Id == CandidateImageId);
+    public ImageAsset? BaselineImage => BaselineChannel.ActiveImage;
+
+    [JsonIgnore]
+    public ImageAsset? CandidateImage => CandidateChannel.ActiveImage;
+
+    [JsonIgnore]
+    public Guid? BaselineImageId => BaselineChannel.ActiveImageId;
+
+    [JsonIgnore]
+    public Guid? CandidateImageId => CandidateChannel.ActiveImageId;
 
     public void AddImage(ImageAsset image)
     {
@@ -44,78 +53,83 @@ public sealed class ComparisonSet
             throw new InvalidOperationException("The comparison set already contains an image with the same ID.");
         }
 
-        Images.Add(image);
-        RepairRoleAssignments();
+        GetDefaultChannelForNewImage().AddImage(image);
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
+    public void AddImageToChannel(ComparisonChannel channel, ImageAsset image, bool makeActive = true)
+    {
+        ArgumentNullException.ThrowIfNull(channel);
+        ArgumentNullException.ThrowIfNull(image);
+
+        if (!ReferenceEquals(channel, BaselineChannel) && !ReferenceEquals(channel, CandidateChannel))
+        {
+            throw new ArgumentException("The channel is not part of this comparison set.", nameof(channel));
+        }
+
+        if (Images.Any(existingImage => existingImage.Id == image.Id))
+        {
+            throw new InvalidOperationException("The comparison set already contains an image with the same ID.");
+        }
+
+        channel.AddImage(image, makeActive);
+        UpdatedAt = DateTimeOffset.UtcNow;
     }
 
     public bool RemoveImage(Guid imageId)
     {
-        var removed = Images.RemoveAll(image => image.Id == imageId) > 0;
+        var removed = BaselineChannel.RemoveImage(imageId) || CandidateChannel.RemoveImage(imageId);
 
         if (removed)
         {
-            RepairRoleAssignments();
+            UpdatedAt = DateTimeOffset.UtcNow;
         }
 
         return removed;
     }
 
-    public void SetReferenceImage(Guid imageId)
+    public void SetBaselineImage(Guid imageId)
     {
-        ThrowIfImageIsMissing(imageId);
-
-        if (CandidateImageId == imageId)
-        {
-            CandidateImageId = ReferenceImageId;
-        }
-
-        ReferenceImageId = imageId;
-        RepairRoleAssignments();
+        BaselineChannel.SetActiveImage(imageId);
+        UpdatedAt = DateTimeOffset.UtcNow;
     }
 
     public void SetCandidateImage(Guid imageId)
     {
-        ThrowIfImageIsMissing(imageId);
-
-        if (Images.Count < 2)
-        {
-            throw new InvalidOperationException("A comparison set needs at least two images before a candidate can be assigned.");
-        }
-
-        if (ReferenceImageId == imageId)
-        {
-            ReferenceImageId = CandidateImageId;
-        }
-
-        CandidateImageId = imageId;
-        RepairRoleAssignments();
+        CandidateChannel.SetActiveImage(imageId);
+        UpdatedAt = DateTimeOffset.UtcNow;
     }
 
-    public void RepairRoleAssignments(bool updateTimestamp = true)
+    public ComparisonChannel? GetChannelForImage(ImageAsset image)
     {
-        ReferenceImageId = Images.Any(image => image.Id == ReferenceImageId)
-            ? ReferenceImageId
-            : Images.FirstOrDefault()?.Id;
+        ArgumentNullException.ThrowIfNull(image);
+        return GetChannelForImage(image.Id);
+    }
 
-        CandidateImageId = Images.Count > 1 && Images.Any(image => image.Id == CandidateImageId)
-            ? CandidateImageId
-            : Images.FirstOrDefault(image => image.Id != ReferenceImageId)?.Id;
-
-        if (CandidateImageId == ReferenceImageId)
+    public ComparisonChannel? GetChannelForImage(Guid imageId)
+    {
+        if (BaselineChannel.Contains(imageId))
         {
-            CandidateImageId = Images.FirstOrDefault(image => image.Id != ReferenceImageId)?.Id;
+            return BaselineChannel;
         }
 
-        if (Images.Count == 0)
+        return CandidateChannel.Contains(imageId) ? CandidateChannel : null;
+    }
+
+    public ComparisonChannel? GetChannelForRole(ImageMonitoringRole role)
+    {
+        return role switch
         {
-            ReferenceImageId = null;
-            CandidateImageId = null;
-        }
-        else if (Images.Count == 1)
-        {
-            ReferenceImageId = Images[0].Id;
-            CandidateImageId = null;
-        }
+            ImageMonitoringRole.Baseline => BaselineChannel,
+            ImageMonitoringRole.Candidate => CandidateChannel,
+            _ => null
+        };
+    }
+
+    public void RepairChannelAssignments(bool updateTimestamp = true)
+    {
+        BaselineChannel.RepairActiveImage();
+        CandidateChannel.RepairActiveImage();
 
         if (updateTimestamp)
         {
@@ -123,11 +137,8 @@ public sealed class ComparisonSet
         }
     }
 
-    private void ThrowIfImageIsMissing(Guid imageId)
+    private ComparisonChannel GetDefaultChannelForNewImage()
     {
-        if (Images.All(image => image.Id != imageId))
-        {
-            throw new ArgumentException("The image is not part of this comparison set.", nameof(imageId));
-        }
+        return BaselineChannel.Images.Count == 0 ? BaselineChannel : CandidateChannel;
     }
 }

@@ -41,7 +41,7 @@ public sealed class LocalFileProjectStorageTests : IDisposable
         Assert.Equal("Website Checks", loaded.Name);
         var loadedComparison = Assert.Single(loaded.Comparisons);
         Assert.Equal("Landing Page", loadedComparison.Name);
-        Assert.Equal(reference.Id, loadedComparison.ReferenceImageId);
+        Assert.Equal(reference.Id, loadedComparison.BaselineImageId);
         Assert.Equal(candidate.Id, loadedComparison.CandidateImageId);
     }
 
@@ -164,14 +164,14 @@ public sealed class LocalFileProjectStorageTests : IDisposable
         var projectFilePath = GetProjectFilePath(project.Id);
         var projectJson = JsonNode.Parse(await File.ReadAllTextAsync(projectFilePath, TestContext.Current.CancellationToken))!.AsObject();
         var comparisonJson = projectJson["Comparisons"]!.AsArray()[0]!.AsObject();
-        comparisonJson["ReferenceImageId"] = Guid.NewGuid().ToString();
+        comparisonJson["BaselineImageId"] = Guid.NewGuid().ToString();
         comparisonJson["CandidateImageId"] = Guid.NewGuid().ToString();
         await File.WriteAllTextAsync(projectFilePath, projectJson.ToJsonString(), TestContext.Current.CancellationToken);
 
         var loaded = await _storage.LoadProjectAsync(project.Id, CancellationToken);
 
         var loadedComparison = Assert.Single(loaded!.Comparisons);
-        Assert.Equal(image.Id, loadedComparison.ReferenceImageId);
+        Assert.Equal(image.Id, loadedComparison.BaselineImageId);
         Assert.Null(loadedComparison.CandidateImageId);
         Assert.Equal(DateTimeOffset.UnixEpoch, loadedComparison.UpdatedAt);
     }
@@ -188,7 +188,7 @@ public sealed class LocalFileProjectStorageTests : IDisposable
 
         var projectJson = await File.ReadAllTextAsync(GetProjectFilePath(project.Id), TestContext.Current.CancellationToken);
 
-        Assert.DoesNotContain("\"ReferenceImage\":", projectJson);
+        Assert.DoesNotContain("\"BaselineImage\":", projectJson);
         Assert.DoesNotContain("\"CandidateImage\":", projectJson);
     }
 

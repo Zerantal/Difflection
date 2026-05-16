@@ -14,9 +14,16 @@ using Difflection.Storage;
 
 namespace Difflection.ViewModels;
 
-public sealed partial class ComparisonImageSetItemViewModel(ImageAsset image, ComparisonSet comparison) : ViewModelBase, IDisposable
+public sealed partial class ComparisonImageSetItemViewModel(ImageAsset image, ComparisonSet comparison, ComparisonChannel channel) : ViewModelBase, IDisposable
 {
+    public ComparisonImageSetItemViewModel(ImageAsset image, ComparisonSet comparison)
+        : this(image, comparison, comparison.GetChannelForImage(image) ?? comparison.BaselineChannel)
+    {
+    }
+
     public ImageAsset Image { get; } = image;
+
+    public ComparisonChannel Channel { get; } = channel;
 
     public Guid Id => Image.Id;
 
@@ -63,19 +70,21 @@ public sealed partial class ComparisonImageSetItemViewModel(ImageAsset image, Co
 
     public string AddedAtText => Image.AddedAt.ToLocalTime().ToString("d MMM HH:mm", CultureInfo.CurrentCulture);
 
-    public bool IsReference => comparison.ReferenceImageId == Image.Id;
+    public bool IsActive => Channel.ActiveImageId == Image.Id;
 
-    public bool IsCandidate => comparison.CandidateImageId == Image.Id;
+    public bool IsBaseline => ReferenceEquals(Channel, comparison.BaselineChannel);
 
-    public bool CanSetReference => comparison.Images.Contains(Image);
+    public bool IsCandidate => ReferenceEquals(Channel, comparison.CandidateChannel);
 
-    public bool CanSetCandidate => comparison.Images.Count >= 2 && comparison.Images.Contains(Image);
+    public bool CanSetBaseline => comparison.BaselineChannel.Contains(Image);
+
+    public bool CanSetCandidate => comparison.CandidateChannel.Contains(Image);
 
     public bool HasMonitoring => Image.MonitoringRole != ImageMonitoringRole.None;
 
     public string MonitoringText => Image.MonitoringRole switch
     {
-        ImageMonitoringRole.Reference => "Monitoring reference",
+        ImageMonitoringRole.Baseline => "Monitoring baseline",
         ImageMonitoringRole.Candidate => "Monitoring candidate",
         _ => string.Empty
     };
@@ -120,6 +129,7 @@ public sealed partial class ComparisonImageSetItemViewModel(ImageAsset image, Co
         OnPropertyChanged(nameof(AddedAtText));
         OnPropertyChanged(nameof(MonitoringText));
         OnPropertyChanged(nameof(HasMonitoring));
+        OnPropertyChanged(nameof(IsActive));
     }
 
     private static async Task<Bitmap> CreateBitmapAsync(Stream stream)
@@ -170,7 +180,7 @@ public sealed partial class ComparisonImageSetItemViewModel(ImageAsset image, Co
                && visited.Add(previousVersionImageId))
         {
             versionNumber++;
-            var previous = comparison.Images.FirstOrDefault(image => image.Id == previousVersionImageId);
+            var previous = Channel.Images.FirstOrDefault(image => image.Id == previousVersionImageId);
             if (previous is null)
             {
                 break;

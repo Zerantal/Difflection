@@ -26,7 +26,7 @@ public sealed class ProjectImageChangeMonitorTests : IDisposable
         var comparison = await viewModel.Workspace.AddComparisonAsync("Comparison", TestContext.Current.CancellationToken);
         var sourceFile = TestUiSupport.CreateStorageFile("monitor-capture.png");
         var image = await viewModel.ImageSet.AddImageAsync(sourceFile, cancellationToken: TestContext.Current.CancellationToken);
-        await viewModel.SetImageMonitoringAsync(image, ImageMonitoringRole.Reference, TestContext.Current.CancellationToken);
+        await viewModel.SetImageMonitoringAsync(image, ImageMonitoringRole.Baseline, TestContext.Current.CancellationToken);
         using var watcher = new FakeImageSourceChangeWatcher();
         using var monitor = new ProjectImageChangeMonitor(watcher, new MonitoredImageVersionCapture(storage));
         MonitoredImageVersionCapturedEventArgs? captured = null;
@@ -39,15 +39,15 @@ public sealed class ProjectImageChangeMonitorTests : IDisposable
 
         await TestUiSupport.WaitForAsync(() => captured is not null);
         Assert.Equal(2, comparison.Images.Count);
-        Assert.NotEqual(image.Id, comparison.ReferenceImageId);
-        Assert.Equal(image.Id, comparison.ReferenceImage?.PreviousVersionImageId);
-        Assert.Equal(ImageMonitoringRole.Reference, comparison.ReferenceImage?.MonitoringRole);
+        Assert.NotEqual(image.Id, comparison.BaselineImageId);
+        Assert.Equal(image.Id, comparison.BaselineImage?.PreviousVersionImageId);
+        Assert.Equal(ImageMonitoringRole.Baseline, comparison.BaselineImage?.MonitoringRole);
         Assert.Same(project, captured!.Project);
         Assert.Same(comparison, captured.Comparison);
         Assert.Same(image, captured.PreviousVersion);
         Assert.Same(project, viewModel.Workspace.SelectedProject);
 
-        var firstVersion = comparison.ReferenceImage;
+        var firstVersion = comparison.BaselineImage;
         Assert.NotNull(firstVersion);
         captured = null;
 
@@ -57,7 +57,7 @@ public sealed class ProjectImageChangeMonitorTests : IDisposable
 
         await TestUiSupport.WaitForAsync(() => captured is not null);
         Assert.Equal(3, comparison.Images.Count);
-        Assert.Equal(firstVersion.Id, comparison.ReferenceImage?.PreviousVersionImageId);
+        Assert.Equal(firstVersion.Id, comparison.BaselineImage?.PreviousVersionImageId);
         Assert.Same(firstVersion, captured!.PreviousVersion);
     }
 
@@ -86,7 +86,7 @@ public sealed class ProjectImageChangeMonitorTests : IDisposable
 
         await TestUiSupport.WaitForAsync(() => captured is not null);
         Assert.Equal(3, comparison.Images.Count);
-        Assert.Same(reference, comparison.ReferenceImage);
+        Assert.Same(reference, comparison.BaselineImage);
         Assert.Equal(candidate.Id, comparison.CandidateImage?.PreviousVersionImageId);
         Assert.Equal(ImageMonitoringRole.None, candidate.MonitoringRole);
         Assert.Equal(ImageMonitoringRole.Candidate, comparison.CandidateImage?.MonitoringRole);
@@ -120,7 +120,7 @@ public sealed class ProjectImageChangeMonitorTests : IDisposable
         await TestUiSupport.WaitForAsync(() => captured is not null);
         Assert.Single(first.Images);
         Assert.Equal(2, second.Images.Count);
-        Assert.Equal(secondReference.Id, second.ReferenceImage?.PreviousVersionImageId);
+        Assert.Equal(secondReference.Id, second.BaselineImage?.PreviousVersionImageId);
         Assert.Same(first, viewModel.Workspace.SelectedComparison);
     }
 

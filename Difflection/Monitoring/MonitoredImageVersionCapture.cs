@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Difflection.Models;
@@ -59,12 +60,12 @@ public sealed class MonitoredImageVersionCapture(IProjectStorage projectStorage)
     }
 
     /// <summary>
-    /// Refreshes a current reference or candidate image from its source file when the file is newer and its content hash differs.
+    /// Refreshes a current baseline or candidate image from its source file when the file is newer and its content hash differs.
     /// </summary>
     /// <param name="project">The project that owns the comparison.</param>
     /// <param name="comparison">The comparison that contains the current role image.</param>
     /// <param name="image">The image currently assigned to the supplied role.</param>
-    /// <param name="role">The role to refresh; only reference and candidate roles are supported.</param>
+    /// <param name="role">The role to refresh; only baseline and candidate roles are supported.</param>
     /// <param name="cancellationToken">A token used to cancel storage and file operations.</param>
     /// <returns>The newly captured image version, or <c>null</c> when no newer changed source file is available.</returns>
     public async Task<ImageAsset?> RefreshCurrentRoleImageAsync(
@@ -83,17 +84,17 @@ public sealed class MonitoredImageVersionCapture(IProjectStorage projectStorage)
             return null;
         }
 
-        if (role == ImageMonitoringRole.Reference && comparison.ReferenceImageId != image.Id)
+        if (role == ImageMonitoringRole.Baseline && !comparison.BaselineChannel.Contains(image))
         {
             return null;
         }
 
-        if (role == ImageMonitoringRole.Candidate && comparison.CandidateImageId != image.Id)
+        if (role == ImageMonitoringRole.Candidate && !comparison.CandidateChannel.Contains(image))
         {
             return null;
         }
 
-        if (role is not (ImageMonitoringRole.Reference or ImageMonitoringRole.Candidate))
+        if (role is not (ImageMonitoringRole.Baseline or ImageMonitoringRole.Candidate))
         {
             return null;
         }
@@ -173,27 +174,26 @@ public sealed class MonitoredImageVersionCapture(IProjectStorage projectStorage)
             await projectStorage.SaveImageAsync(project.Id, comparison.Id, version, stream, cancellationToken);
         }
 
-        comparison.AddImage(version);
+        var channel = comparison.GetChannelForImage(changedImage)
+                      ?? comparison.GetChannelForRole(monitoringRole)
+                      ?? comparison.CandidateChannel;
+        comparison.AddImageToChannel(channel, version);
         changedImage.MonitoringRole = ImageMonitoringRole.None;
 
         switch (monitoringRole)
         {
-            case ImageMonitoringRole.Reference:
-                comparison.SetReferenceImage(version.Id);
+            case ImageMonitoringRole.Baseline:
+                comparison.SetBaselineImage(version.Id);
                 break;
             case ImageMonitoringRole.Candidate:
-                if (comparison.Images.Count >= 2)
-                {
-                    comparison.SetCandidateImage(version.Id);
-                }
-
+                comparison.SetCandidateImage(version.Id);
                 break;
             case ImageMonitoringRole.None:
-                if (comparison.ReferenceImageId == changedImage.Id)
+                if (comparison.BaselineChannel.Contains(version))
                 {
-                    comparison.SetReferenceImage(version.Id);
+                    comparison.SetBaselineImage(version.Id);
                 }
-                else if (comparison.CandidateImageId == changedImage.Id && comparison.Images.Count >= 2)
+                else if (comparison.CandidateChannel.Contains(version))
                 {
                     comparison.SetCandidateImage(version.Id);
                 }
