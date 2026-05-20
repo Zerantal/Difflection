@@ -49,9 +49,9 @@
     <SolidColorBrush x:Key="BaselineBrush" Color="#00AFFF" />
     <SolidColorBrush x:Key="BaselineSubtleBrush" Color="#0C2530" />
     <SolidColorBrush x:Key="BaselineBorderBrush" Color="#245163" />
-    <SolidColorBrush x:Key="CandidateBrush" Color="#84CC16" />
-    <SolidColorBrush x:Key="CandidateSubtleBrush" Color="#1F2A12" />
-    <SolidColorBrush x:Key="CandidateBorderBrush" Color="#4D6A1A" />
+    <SolidColorBrush x:Key="CandidateBrush" Color="#A78BFA" />
+    <SolidColorBrush x:Key="CandidateSubtleBrush" Color="#241B3A" />
+    <SolidColorBrush x:Key="CandidateBorderBrush" Color="#5B4A8A" />
 
     <!-- Feedback states -->
     <SolidColorBrush x:Key="WarningBrush" Color="#A16207" />
