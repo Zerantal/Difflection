@@ -1,77 +1,160 @@
 <ResourceDictionary xmlns="https://github.com/avaloniaui"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <!-- Application surfaces -->
-    <SolidColorBrush x:Key="AppBackgroundBrush" Color="#151515" />
-    <SolidColorBrush x:Key="TopBarBackgroundBrush" Color="#222222" />
-    <SolidColorBrush x:Key="HeaderBackgroundBrush" Color="#202020" />
-    <SolidColorBrush x:Key="SidebarBackgroundBrush" Color="#171717" />
-    <SolidColorBrush x:Key="WorkspaceBackgroundBrush" Color="#0D0D0D" />
-    <SolidColorBrush x:Key="PanelBackgroundBrush" Color="#181818" />
-    <SolidColorBrush x:Key="SplitSurfaceBackgroundBrush" Color="#141414" />
-    <SolidColorBrush x:Key="SurfaceBackgroundBrush" Color="#131313" />
-    <SolidColorBrush x:Key="SurfaceRaisedBrush" Color="#242424" />
-    <SolidColorBrush x:Key="ImageViewportFillBrush" Color="#2C2C2C" />
-    <SolidColorBrush x:Key="ImageCanvasBrush" Color="#050505" />
+    <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Dark">
+            <!-- Application surfaces -->
+            <SolidColorBrush x:Key="AppBackgroundBrush" Color="#151515" />
+            <SolidColorBrush x:Key="TopBarBackgroundBrush" Color="#222222" />
+            <SolidColorBrush x:Key="HeaderBackgroundBrush" Color="#202020" />
+            <SolidColorBrush x:Key="SidebarBackgroundBrush" Color="#171717" />
+            <SolidColorBrush x:Key="WorkspaceBackgroundBrush" Color="#0D0D0D" />
+            <SolidColorBrush x:Key="PanelBackgroundBrush" Color="#181818" />
+            <SolidColorBrush x:Key="SplitSurfaceBackgroundBrush" Color="#141414" />
+            <SolidColorBrush x:Key="SurfaceBackgroundBrush" Color="#131313" />
+            <SolidColorBrush x:Key="SurfaceRaisedBrush" Color="#242424" />
+            <SolidColorBrush x:Key="ImageViewportFillBrush" Color="#2C2C2C" />
+            <SolidColorBrush x:Key="ImageCanvasBrush" Color="#050505" />
 
-    <!-- Borders and separators -->
-    <SolidColorBrush x:Key="BorderSubtleBrush" Color="#282828" />
-    <SolidColorBrush x:Key="BorderStageBrush" Color="#242424" />
-    <SolidColorBrush x:Key="PanelBorderBrush" Color="#2A2A2A" />
-    <SolidColorBrush x:Key="BorderFaintBrush" Color="#282828" />
-    <SolidColorBrush x:Key="TopBarBorderBrush" Color="#353535" />
-    <SolidColorBrush x:Key="HeaderBorderBrush" Color="#363636" />
-    <SolidColorBrush x:Key="BorderMutedBrush" Color="#383838" />
-    <SolidColorBrush x:Key="BorderDefaultBrush" Color="#333333" />
-    <SolidColorBrush x:Key="BorderStrongBrush" Color="#3D3D3D" />
-    <SolidColorBrush x:Key="SplitterBorderBrush" Color="#4A4A4A" />
-    <SolidColorBrush x:Key="BorderFocusBrush" Color="#525252" />
-    <SolidColorBrush x:Key="DividerBrush" Color="#333333" />
+            <!-- Borders and separators -->
+            <SolidColorBrush x:Key="BorderSubtleBrush" Color="#282828" />
+            <SolidColorBrush x:Key="BorderStageBrush" Color="#242424" />
+            <SolidColorBrush x:Key="PanelBorderBrush" Color="#2A2A2A" />
+            <SolidColorBrush x:Key="BorderFaintBrush" Color="#282828" />
+            <SolidColorBrush x:Key="TopBarBorderBrush" Color="#353535" />
+            <SolidColorBrush x:Key="HeaderBorderBrush" Color="#363636" />
+            <SolidColorBrush x:Key="BorderMutedBrush" Color="#383838" />
+            <SolidColorBrush x:Key="BorderDefaultBrush" Color="#333333" />
+            <SolidColorBrush x:Key="BorderStrongBrush" Color="#3D3D3D" />
+            <SolidColorBrush x:Key="SplitterBorderBrush" Color="#4A4A4A" />
+            <SolidColorBrush x:Key="BorderFocusBrush" Color="#525252" />
+            <SolidColorBrush x:Key="DividerBrush" Color="#333333" />
 
-    <!-- Text -->
-    <SolidColorBrush x:Key="TextPrimaryBrush" Color="#F3F4F6" />
-    <SolidColorBrush x:Key="TextSecondaryBrush" Color="#E5E7EB" />
-    <SolidColorBrush x:Key="TextTertiaryBrush" Color="#C3CBD5" />
-    <SolidColorBrush x:Key="TextToolbarBrush" Color="#BFC4CC" />
-    <SolidColorBrush x:Key="TextInteractiveBrush" Color="#A8AFB8" />
-    <SolidColorBrush x:Key="TextMutedBrush" Color="#9AA1AB" />
-    <SolidColorBrush x:Key="TextSubtleBrush" Color="#8C939D" />
-    <SolidColorBrush x:Key="TextDisabledBrush" Color="#737B86" />
+            <!-- Text -->
+            <SolidColorBrush x:Key="TextPrimaryBrush" Color="#F3F4F6" />
+            <SolidColorBrush x:Key="TextSecondaryBrush" Color="#E5E7EB" />
+            <SolidColorBrush x:Key="TextTertiaryBrush" Color="#C3CBD5" />
+            <SolidColorBrush x:Key="TextToolbarBrush" Color="#BFC4CC" />
+            <SolidColorBrush x:Key="TextInteractiveBrush" Color="#A8AFB8" />
+            <SolidColorBrush x:Key="TextMutedBrush" Color="#9AA1AB" />
+            <SolidColorBrush x:Key="TextSubtleBrush" Color="#8C939D" />
+            <SolidColorBrush x:Key="TextDisabledBrush" Color="#737B86" />
 
-    <!-- Accents and states -->
-    <SolidColorBrush x:Key="AccentBrush" Color="#F97316" />
-    <SolidColorBrush x:Key="AccentSubtleBrush" Color="#3A2A1F" />
-    <SolidColorBrush x:Key="SelectedBackgroundBrush" Color="#252A30" />
-    <SolidColorBrush x:Key="HoverBackgroundBrush" Color="#2A2A2A" />
-    <SolidColorBrush x:Key="CheckedBackgroundBrush" Color="#26313A" />
-    <SolidColorBrush x:Key="CheckedForegroundBrush" Color="#D7E8F5" />
-    <SolidColorBrush x:Key="CheckedBorderBrush" Color="#5F7788" />
-    <!-- Comparison roles -->
-    <SolidColorBrush x:Key="BaselineBrush" Color="#00AFFF" />
-    <SolidColorBrush x:Key="BaselineSubtleBrush" Color="#0C2530" />
-    <SolidColorBrush x:Key="BaselineBorderBrush" Color="#245163" />
-    <SolidColorBrush x:Key="CandidateBrush" Color="#A78BFA" />
-    <SolidColorBrush x:Key="CandidateSubtleBrush" Color="#241B3A" />
-    <SolidColorBrush x:Key="CandidateBorderBrush" Color="#5B4A8A" />
+            <!-- Accents and states -->
+            <SolidColorBrush x:Key="AccentBrush" Color="#F97316" />
+            <SolidColorBrush x:Key="AccentSubtleBrush" Color="#3A2A1F" />
+            <SolidColorBrush x:Key="SelectedBackgroundBrush" Color="#252A30" />
+            <SolidColorBrush x:Key="HoverBackgroundBrush" Color="#2A2A2A" />
+            <SolidColorBrush x:Key="CheckedBackgroundBrush" Color="#26313A" />
+            <SolidColorBrush x:Key="CheckedForegroundBrush" Color="#D7E8F5" />
+            <SolidColorBrush x:Key="CheckedBorderBrush" Color="#5F7788" />
 
-    <!-- Feedback states -->
-    <SolidColorBrush x:Key="WarningBrush" Color="#A16207" />
-    <SolidColorBrush x:Key="WarningSubtleBrush" Color="#221F14" />
-    <SolidColorBrush x:Key="DangerBrush" Color="#B91C1C" />
-    <SolidColorBrush x:Key="DangerSubtleBrush" Color="#7F1D1D" />
+            <!-- Comparison roles -->
+            <SolidColorBrush x:Key="BaselineBrush" Color="#00AFFF" />
+            <SolidColorBrush x:Key="BaselineSubtleBrush" Color="#0C2530" />
+            <SolidColorBrush x:Key="BaselineBorderBrush" Color="#245163" />
+            <SolidColorBrush x:Key="CandidateBrush" Color="#A78BFA" />
+            <SolidColorBrush x:Key="CandidateSubtleBrush" Color="#241B3A" />
+            <SolidColorBrush x:Key="CandidateBorderBrush" Color="#5B4A8A" />
 
-    <!-- Rulers -->
-    <SolidColorBrush x:Key="RulerBackgroundBrush" Color="#1B1B1B" />
-    <SolidColorBrush x:Key="RulerBorderBrush" Color="#343434" />
-    <SolidColorBrush x:Key="RulerMajorTickBrush" Color="#AEB4BC" />
-    <SolidColorBrush x:Key="RulerMinorTickBrush" Color="#6A707A" />
-    <SolidColorBrush x:Key="RulerTextBrush" Color="#D7DADF" />
+            <!-- Feedback states -->
+            <SolidColorBrush x:Key="WarningBrush" Color="#A16207" />
+            <SolidColorBrush x:Key="WarningSubtleBrush" Color="#221F14" />
+            <SolidColorBrush x:Key="DangerBrush" Color="#B91C1C" />
+            <SolidColorBrush x:Key="DangerSubtleBrush" Color="#7F1D1D" />
 
-    <!-- Overlays -->
-    <SolidColorBrush x:Key="OverlayBackgroundBrush" Color="#D0101010" />
-    <SolidColorBrush x:Key="ThumbnailOverlayBrush" Color="#050505D8" />
-    <SolidColorBrush x:Key="ThumbnailTagOverlayBrush" Color="#101010E8" />
-    <SolidColorBrush x:Key="StageLabelBackgroundBrush" Color="#101010E0" />
-    <SolidColorBrush x:Key="ControlOverlayBrush" Color="#101010D8" />
-    <SolidColorBrush x:Key="ThumbnailBackgroundBrush" Color="#0A0A0A" />
-    <SolidColorBrush x:Key="SplitHandleBrush" Color="#F1F1F1" />
+            <!-- Rulers -->
+            <SolidColorBrush x:Key="RulerBackgroundBrush" Color="#1B1B1B" />
+            <SolidColorBrush x:Key="RulerBorderBrush" Color="#343434" />
+            <SolidColorBrush x:Key="RulerMajorTickBrush" Color="#AEB4BC" />
+            <SolidColorBrush x:Key="RulerMinorTickBrush" Color="#6A707A" />
+            <SolidColorBrush x:Key="RulerTextBrush" Color="#D7DADF" />
+
+            <!-- Overlays -->
+            <SolidColorBrush x:Key="OverlayBackgroundBrush" Color="#D0101010" />
+            <SolidColorBrush x:Key="ThumbnailOverlayBrush" Color="#050505D8" />
+            <SolidColorBrush x:Key="ThumbnailTagOverlayBrush" Color="#101010E8" />
+            <SolidColorBrush x:Key="StageLabelBackgroundBrush" Color="#101010E0" />
+            <SolidColorBrush x:Key="ControlOverlayBrush" Color="#101010D8" />
+            <SolidColorBrush x:Key="ThumbnailBackgroundBrush" Color="#0A0A0A" />
+            <SolidColorBrush x:Key="SplitHandleBrush" Color="#F1F1F1" />
+        </ResourceDictionary>
+
+        <ResourceDictionary x:Key="Light">
+            <!-- Application surfaces -->
+            <SolidColorBrush x:Key="AppBackgroundBrush" Color="#F1F5F9" />
+            <SolidColorBrush x:Key="TopBarBackgroundBrush" Color="#FFFFFF" />
+            <SolidColorBrush x:Key="HeaderBackgroundBrush" Color="#F8FAFC" />
+            <SolidColorBrush x:Key="SidebarBackgroundBrush" Color="#F8FAFC" />
+            <SolidColorBrush x:Key="WorkspaceBackgroundBrush" Color="#E8EEF5" />
+            <SolidColorBrush x:Key="PanelBackgroundBrush" Color="#F8FAFC" />
+            <SolidColorBrush x:Key="SplitSurfaceBackgroundBrush" Color="#EEF2F7" />
+            <SolidColorBrush x:Key="SurfaceBackgroundBrush" Color="#FFFFFF" />
+            <SolidColorBrush x:Key="SurfaceRaisedBrush" Color="#E2E8F0" />
+            <SolidColorBrush x:Key="ImageViewportFillBrush" Color="#D8DEE6" />
+            <SolidColorBrush x:Key="ImageCanvasBrush" Color="#F7F7F8" />
+
+            <!-- Borders and separators -->
+            <SolidColorBrush x:Key="BorderSubtleBrush" Color="#D6DEE8" />
+            <SolidColorBrush x:Key="BorderStageBrush" Color="#CBD5E1" />
+            <SolidColorBrush x:Key="PanelBorderBrush" Color="#D8E0EA" />
+            <SolidColorBrush x:Key="BorderFaintBrush" Color="#E2E8F0" />
+            <SolidColorBrush x:Key="TopBarBorderBrush" Color="#D7DEE8" />
+            <SolidColorBrush x:Key="HeaderBorderBrush" Color="#D7DEE8" />
+            <SolidColorBrush x:Key="BorderMutedBrush" Color="#CBD5E1" />
+            <SolidColorBrush x:Key="BorderDefaultBrush" Color="#B8C4D2" />
+            <SolidColorBrush x:Key="BorderStrongBrush" Color="#94A3B8" />
+            <SolidColorBrush x:Key="SplitterBorderBrush" Color="#94A3B8" />
+            <SolidColorBrush x:Key="BorderFocusBrush" Color="#64748B" />
+            <SolidColorBrush x:Key="DividerBrush" Color="#CBD5E1" />
+
+            <!-- Text -->
+            <SolidColorBrush x:Key="TextPrimaryBrush" Color="#111827" />
+            <SolidColorBrush x:Key="TextSecondaryBrush" Color="#1F2937" />
+            <SolidColorBrush x:Key="TextTertiaryBrush" Color="#334155" />
+            <SolidColorBrush x:Key="TextToolbarBrush" Color="#334155" />
+            <SolidColorBrush x:Key="TextInteractiveBrush" Color="#475569" />
+            <SolidColorBrush x:Key="TextMutedBrush" Color="#64748B" />
+            <SolidColorBrush x:Key="TextSubtleBrush" Color="#64748B" />
+            <SolidColorBrush x:Key="TextDisabledBrush" Color="#94A3B8" />
+
+            <!-- Accents and states -->
+            <SolidColorBrush x:Key="AccentBrush" Color="#EA580C" />
+            <SolidColorBrush x:Key="AccentSubtleBrush" Color="#FFEDD5" />
+            <SolidColorBrush x:Key="SelectedBackgroundBrush" Color="#E2E8F0" />
+            <SolidColorBrush x:Key="HoverBackgroundBrush" Color="#E7EEF6" />
+            <SolidColorBrush x:Key="CheckedBackgroundBrush" Color="#DBEAFE" />
+            <SolidColorBrush x:Key="CheckedForegroundBrush" Color="#1E3A8A" />
+            <SolidColorBrush x:Key="CheckedBorderBrush" Color="#60A5FA" />
+
+            <!-- Comparison roles -->
+            <SolidColorBrush x:Key="BaselineBrush" Color="#0284C7" />
+            <SolidColorBrush x:Key="BaselineSubtleBrush" Color="#E0F2FE" />
+            <SolidColorBrush x:Key="BaselineBorderBrush" Color="#7DD3FC" />
+            <SolidColorBrush x:Key="CandidateBrush" Color="#7C3AED" />
+            <SolidColorBrush x:Key="CandidateSubtleBrush" Color="#EDE9FE" />
+            <SolidColorBrush x:Key="CandidateBorderBrush" Color="#C4B5FD" />
+
+            <!-- Feedback states -->
+            <SolidColorBrush x:Key="WarningBrush" Color="#B45309" />
+            <SolidColorBrush x:Key="WarningSubtleBrush" Color="#FEF3C7" />
+            <SolidColorBrush x:Key="DangerBrush" Color="#B91C1C" />
+            <SolidColorBrush x:Key="DangerSubtleBrush" Color="#FEE2E2" />
+
+            <!-- Rulers -->
+            <SolidColorBrush x:Key="RulerBackgroundBrush" Color="#EEF2F7" />
+            <SolidColorBrush x:Key="RulerBorderBrush" Color="#CBD5E1" />
+            <SolidColorBrush x:Key="RulerMajorTickBrush" Color="#475569" />
+            <SolidColorBrush x:Key="RulerMinorTickBrush" Color="#94A3B8" />
+            <SolidColorBrush x:Key="RulerTextBrush" Color="#1F2937" />
+
+            <!-- Overlays -->
+            <SolidColorBrush x:Key="OverlayBackgroundBrush" Color="#D8FFFFFF" />
+            <SolidColorBrush x:Key="ThumbnailOverlayBrush" Color="#E8FFFFFF" />
+            <SolidColorBrush x:Key="ThumbnailTagOverlayBrush" Color="#F0FFFFFF" />
+            <SolidColorBrush x:Key="StageLabelBackgroundBrush" Color="#E8FFFFFF" />
+            <SolidColorBrush x:Key="ControlOverlayBrush" Color="#E8FFFFFF" />
+            <SolidColorBrush x:Key="ThumbnailBackgroundBrush" Color="#F1F5F9" />
+            <SolidColorBrush x:Key="SplitHandleBrush" Color="#111827" />
+        </ResourceDictionary>
+    </ResourceDictionary.ThemeDictionaries>
 </ResourceDictionary>

@@ -57,7 +57,7 @@
                               HorizontalScrollBarVisibility="Auto"
                               VerticalScrollBarVisibility="Auto"
                               ScrollChanged="ScrollViewer_OnScrollChanged"
-                              Background="{StaticResource ImageViewportFillBrush}">
+                              Background="{DynamicResource ImageViewportFillBrush}">
                     <Grid HorizontalAlignment="Center"
                           VerticalAlignment="Center">
                         <LayoutTransformControl x:Name="Transform">
