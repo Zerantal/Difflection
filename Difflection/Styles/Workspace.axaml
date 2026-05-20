@@ -63,6 +63,11 @@
     <Style Selector="Button.viewModeButton:disabled">
         <Setter Property="Opacity" Value="0.58" />
     </Style>
+    <Style Selector="Button.viewModeButton.active">
+        <Setter Property="Background" Value="{DynamicResource AccentSubtleBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+    </Style>
     <Style Selector="ToggleButton.diffBaseToggle">
         <Setter Property="Background" Value="{DynamicResource AppBackgroundBrush}" />
         <Setter Property="Foreground" Value="{DynamicResource TextInteractiveBrush}" />

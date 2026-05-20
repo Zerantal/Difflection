@@ -5,7 +5,6 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
-using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using Difflection.ViewModels;
 // ReSharper disable AsyncVoidEventHandlerMethod
@@ -184,15 +183,11 @@ public partial class TopToolbar : UserControl
         ApplyViewModeButtonState(SideBySideViewButton, _viewModel.ToolState.IsSideBySideView);
         ApplyViewModeButtonState(SplitScreenViewButton, _viewModel.ToolState.IsSplitScreenView);
         ApplyViewModeButtonState(DifferenceViewButton, _viewModel.ToolState.IsDifferenceView);
-        SplitScreenViewButton.Opacity = _viewModel.ToolState.CanUseSplitScreen ? 1.0 : 0.58;
-        DifferenceViewButton.Opacity = _viewModel.ToolState.CanUseDifferenceView ? 1.0 : 0.58;
     }
 
     private static void ApplyViewModeButtonState(Button button, bool isActive)
     {
-        button.Background = Brush.Parse(isActive ? "#3A2A1F" : "#262626");
-        button.BorderBrush = Brush.Parse(isActive ? "#F97316" : "#444444");
-        button.Foreground = Brush.Parse(isActive ? "#F97316" : "#A8AFB8");
+        button.Classes.Set("active", isActive);
     }
 
     private void SubscribeViewModelEvents()
