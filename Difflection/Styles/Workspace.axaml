@@ -43,12 +43,12 @@
         <Setter Property="Opacity" Value="0.45" />
     </Style>
     <Style Selector="Button.imageActionIconButton.baselineActive">
-        <Setter Property="Background" Value="{DynamicResource AccentSubtleBrush}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+        <Setter Property="Background" Value="{DynamicResource BaselineSubtleBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BaselineBrush}" />
     </Style>
     <Style Selector="Button.imageActionIconButton.candidateActive">
-        <Setter Property="Background" Value="{DynamicResource ActiveBlueSubtleBrush}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource ActiveBlueBrush}" />
+        <Setter Property="Background" Value="{DynamicResource CandidateSubtleBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource CandidateBrush}" />
     </Style>
     <Style Selector="Button.viewModeButton">
         <Setter Property="Background" Value="{DynamicResource SurfaceRaisedBrush}" />
@@ -230,7 +230,7 @@
         <Setter Property="BorderThickness" Value="2" />
     </Style>
     <Style Selector="Border.revisionThumbnailFrame.active.candidate">
-        <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource CandidateBrush}" />
         <Setter Property="BorderThickness" Value="2" />
     </Style>
     <Style Selector="Button.revisionDeleteButton">
@@ -283,12 +283,12 @@
         <Setter Property="Padding" Value="6,2" />
     </Style>
     <Style Selector="Border.baselineBadge">
-        <Setter Property="Background" Value="{DynamicResource AccentSubtleBrush}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+        <Setter Property="Background" Value="{DynamicResource BaselineSubtleBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BaselineBrush}" />
     </Style>
     <Style Selector="Border.candidateBadge">
-        <Setter Property="Background" Value="{DynamicResource ActiveBlueSubtleBrush}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource ActiveBlueBrush}" />
+        <Setter Property="Background" Value="{DynamicResource CandidateSubtleBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource CandidateBrush}" />
     </Style>
     <Style Selector="TextBlock.roleBadgeText">
         <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />

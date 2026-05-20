@@ -121,7 +121,7 @@ For the first pass, these can preserve the existing dark palette. The main win i
 4. [x] Include `Theme.axaml` from `App.axaml`.
 5. [x] Replace high-frequency hardcoded colors in `Workspace.axaml` with `{DynamicResource ...}`.
 6. [x] Replace view-level shell colors in `MainView.axaml`, `WorkspaceSidebar.axaml`, `ImageSetPanel.axaml`, `ComparisonStage.axaml`, and ruler views.
-7. Normalize baseline/candidate colors across badges, channel frames, thumbnail borders, and action states.
+7. [x] Normalize baseline/candidate colors across badges, channel frames, thumbnail borders, and action states.
 8. Move active view-mode button styling out of `TopToolbar.axaml.cs` and into XAML styles.
 9. Point `PixelRuler` usage at theme resources; keep code defaults only as fallback values.
 10. Run existing UI snapshot tests and update baselines only after visually reviewing the intentional changes.

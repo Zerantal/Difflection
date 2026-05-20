@@ -45,9 +45,6 @@
     <SolidColorBrush x:Key="CheckedBackgroundBrush" Color="#26313A" />
     <SolidColorBrush x:Key="CheckedForegroundBrush" Color="#D7E8F5" />
     <SolidColorBrush x:Key="CheckedBorderBrush" Color="#5F7788" />
-    <SolidColorBrush x:Key="ActiveBlueBrush" Color="#38BDF8" />
-    <SolidColorBrush x:Key="ActiveBlueSubtleBrush" Color="#1F2C3A" />
-
     <!-- Comparison roles -->
     <SolidColorBrush x:Key="BaselineBrush" Color="#00AFFF" />
     <SolidColorBrush x:Key="BaselineSubtleBrush" Color="#0C2530" />
