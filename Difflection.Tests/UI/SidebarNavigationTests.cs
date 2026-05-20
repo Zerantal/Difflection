@@ -212,6 +212,35 @@ public sealed class SidebarNavigationTests
     }
 
     [AvaloniaFact]
+    public async Task Image_revision_context_menu_exposes_tag_action()
+    {
+        var viewModel = new MainWindowViewModel(new FakeProjectStorage());
+        await viewModel.Workspace.AddProjectAsync("Project", TestContext.Current.CancellationToken);
+        await viewModel.Workspace.AddComparisonAsync("Comparison", TestContext.Current.CancellationToken);
+        var baseline = await viewModel.ImageSet.AddImageAsync(TestUiSupport.CreateStorageFile("tag-baseline.png"), cancellationToken: TestContext.Current.CancellationToken);
+
+        var window = TestUiSupport.CreateWindow(viewModel);
+        try
+        {
+            var mainView = TestUiSupport.GetMainView(window);
+            var revisionsList = GetControl<ListBox>(mainView, "BaselineRevisionsList");
+
+            await TestUiSupport.WaitForAsync(() => revisionsList.ItemCount == 1);
+
+            var thumbnailButton = GetImageThumbnailButton(revisionsList, baseline);
+            var contextMenu = thumbnailButton.ContextMenu ?? throw new InvalidOperationException("Revision context menu not found.");
+
+            Assert.Contains(contextMenu.Items.OfType<MenuItem>(), item => string.Equals(item.Header?.ToString(), "Tag Image", StringComparison.Ordinal));
+            Assert.Contains(contextMenu.Items.OfType<MenuItem>(), item => string.Equals(item.Header?.ToString(), "Set Active Revision", StringComparison.Ordinal));
+            Assert.Contains(contextMenu.Items.OfType<MenuItem>(), item => string.Equals(item.Header?.ToString(), "Remove Revision", StringComparison.Ordinal));
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
     public async Task Selecting_comparison_refreshes_main_display_images()
     {
         var storage = new FakeProjectStorage();
@@ -505,8 +534,22 @@ public sealed class SidebarNavigationTests
         return list.ContainerFromItem(row)
             ?.GetVisualDescendants()
             .OfType<Button>()
-            .FirstOrDefault(button => string.Equals(ToolTip.GetTip(button)?.ToString(), tooltip, StringComparison.Ordinal))
+            .FirstOrDefault(button => ToolTip.GetTip(button)?.ToString()?.Contains(tooltip, StringComparison.Ordinal) == true)
             ?? throw new InvalidOperationException($"Image action button '{tooltip}' not found.");
+    }
+
+    private static Button GetImageThumbnailButton(ItemsControl list, ImageAsset image)
+    {
+        var row = list.Items
+            .OfType<ComparisonImageSetItemViewModel>()
+            .FirstOrDefault(item => ReferenceEquals(item.Image, image))
+            ?? throw new InvalidOperationException($"Image row for '{image.SourceName}' not found.");
+
+        return list.ContainerFromItem(row)
+            ?.GetVisualDescendants()
+            .OfType<Button>()
+            .FirstOrDefault(button => button.ContextMenu is not null)
+            ?? throw new InvalidOperationException($"Image thumbnail button for '{image.SourceName}' not found.");
     }
 
     private static MenuItem GetContextMenuItem(ItemsControl list, object item, string header)

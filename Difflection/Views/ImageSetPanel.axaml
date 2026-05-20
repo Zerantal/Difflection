@@ -2,6 +2,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Difflection.ViewModels"
+             xmlns:views="using:Difflection.Views"
              x:Class="Difflection.Views.ImageSetPanel"
              x:Name="Root"
              x:DataType="vm:MainWindowViewModel"
@@ -15,8 +16,8 @@
               RowSpacing="8">
             <Grid ColumnDefinitions="*,Auto,Auto,Auto"
                   ColumnSpacing="12">
-                <TextBlock Classes="imageSetHeaderText"
-                           Text="IMAGE SET"
+                <TextBlock Classes="imageSetTitleText"
+                           Text="Image Channels"
                            VerticalAlignment="Center" />
                 <TextBlock Grid.Column="1"
                            Text="{Binding Workspace.SelectedComparisonImageCountText}"
@@ -58,128 +59,18 @@
                   Grid.Row="1"
                   RowDefinitions="Auto,Auto"
                   RowSpacing="8">
-                <Grid RowDefinitions="Auto,Auto"
-                      RowSpacing="4"
-                      IsVisible="{Binding ImageSet.HasBaselineRevisionRows}">
-                    <TextBlock Classes="imageSetHeaderText"
-                               Text="BASELINE REVISIONS" />
-                    <ListBox x:Name="BaselineRevisionsList"
-                             Grid.Row="1"
-                             Classes="sidebarList"
-                             ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                             ScrollViewer.VerticalScrollBarVisibility="Disabled"
-                             ItemsSource="{Binding ImageSet.BaselineRevisionRows}">
-                        <ListBox.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <VirtualizingStackPanel Orientation="Horizontal" />
-                            </ItemsPanelTemplate>
-                        </ListBox.ItemsPanel>
-                        <ListBox.ItemTemplate>
-                            <DataTemplate x:DataType="vm:ComparisonImageSetItemViewModel">
-                                <Grid Classes="revisionTile">
-                                    <Button Classes="revisionThumbnailButton"
-                                            ToolTip.Tip="Set active baseline revision"
-                                            Command="{Binding #Root.((vm:MainWindowViewModel)DataContext)?.ImageSet.SetActiveImageAndRefreshCommand}"
-                                            CommandParameter="{Binding}">
-                                        <Border Classes="revisionThumbnailFrame"
-                                                Classes.active="{Binding IsActive}">
-                                            <Grid>
-                                                <Image Source="{Binding Thumbnail}"
-                                                       Stretch="UniformToFill"
-                                                       RenderOptions.BitmapInterpolationMode="None"
-                                                       IsVisible="{Binding HasThumbnail}" />
-                                                <TextBlock Classes="imageSourceText"
-                                                           Text="No preview"
-                                                           HorizontalAlignment="Center"
-                                                           VerticalAlignment="Center"
-                                                           FontSize="10"
-                                                           IsVisible="{Binding HasNoThumbnail}" />
-                                                <Border Classes="revisionMetaOverlay"
-                                                        HorizontalAlignment="Left"
-                                                        VerticalAlignment="Bottom">
-                                                    <TextBlock Classes="revisionMetaText"
-                                                               Text="{Binding RevisionText}" />
-                                                </Border>
-                                            </Grid>
-                                        </Border>
-                                    </Button>
-                                    <Button Classes="revisionDeleteButton"
-                                            ToolTip.Tip="Remove revision"
-                                            HorizontalAlignment="Right"
-                                            VerticalAlignment="Top"
-                                            Command="{Binding #Root.((vm:MainWindowViewModel)DataContext)?.ImageSet.DeleteImageAndRefreshCommand}"
-                                            CommandParameter="{Binding Image}">
-                                        <PathIcon Data="{StaticResource Icon.Delete}"
-                                                  Width="11"
-                                                  Height="11" />
-                                    </Button>
-                                </Grid>
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                    </ListBox>
-                </Grid>
+                <views:ImageChannelFrame ChannelName="Baseline"
+                                         ListName="BaselineRevisionsList"
+                                         IsBaselineChannel="True"
+                                         IsVisible="{Binding ImageSet.HasBaselineRevisionRows}"
+                                         Items="{Binding ImageSet.BaselineRevisionRows}" />
 
-                <Grid Grid.Row="1"
-                      RowDefinitions="Auto,Auto"
-                      RowSpacing="4"
-                      IsVisible="{Binding ImageSet.HasCandidateRevisionRows}">
-                    <TextBlock Classes="imageSetHeaderText"
-                               Text="CANDIDATE REVISIONS" />
-                    <ListBox x:Name="CandidateRevisionsList"
-                             Grid.Row="1"
-                             Classes="sidebarList"
-                             ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                             ScrollViewer.VerticalScrollBarVisibility="Disabled"
-                             ItemsSource="{Binding ImageSet.CandidateRevisionRows}">
-                        <ListBox.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <VirtualizingStackPanel Orientation="Horizontal" />
-                            </ItemsPanelTemplate>
-                        </ListBox.ItemsPanel>
-                        <ListBox.ItemTemplate>
-                            <DataTemplate x:DataType="vm:ComparisonImageSetItemViewModel">
-                                <Grid Classes="revisionTile">
-                                    <Button Classes="revisionThumbnailButton"
-                                            ToolTip.Tip="Set active candidate revision"
-                                            Command="{Binding #Root.((vm:MainWindowViewModel)DataContext)?.ImageSet.SetActiveImageAndRefreshCommand}"
-                                            CommandParameter="{Binding}">
-                                        <Border Classes="revisionThumbnailFrame"
-                                                Classes.active="{Binding IsActive}">
-                                            <Grid>
-                                                <Image Source="{Binding Thumbnail}"
-                                                       Stretch="UniformToFill"
-                                                       RenderOptions.BitmapInterpolationMode="None"
-                                                       IsVisible="{Binding HasThumbnail}" />
-                                                <TextBlock Classes="imageSourceText"
-                                                           Text="No preview"
-                                                           HorizontalAlignment="Center"
-                                                           VerticalAlignment="Center"
-                                                           FontSize="10"
-                                                           IsVisible="{Binding HasNoThumbnail}" />
-                                                <Border Classes="revisionMetaOverlay"
-                                                        HorizontalAlignment="Left"
-                                                        VerticalAlignment="Bottom">
-                                                    <TextBlock Classes="revisionMetaText"
-                                                               Text="{Binding RevisionText}" />
-                                                </Border>
-                                            </Grid>
-                                        </Border>
-                                    </Button>
-                                    <Button Classes="revisionDeleteButton"
-                                            ToolTip.Tip="Remove revision"
-                                            HorizontalAlignment="Right"
-                                            VerticalAlignment="Top"
-                                            Command="{Binding #Root.((vm:MainWindowViewModel)DataContext)?.ImageSet.DeleteImageAndRefreshCommand}"
-                                            CommandParameter="{Binding Image}">
-                                        <PathIcon Data="{StaticResource Icon.Delete}"
-                                                  Width="11"
-                                                  Height="11" />
-                                    </Button>
-                                </Grid>
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                    </ListBox>
-                </Grid>
+                <views:ImageChannelFrame Grid.Row="1"
+                                         ChannelName="Candidate"
+                                         ListName="CandidateRevisionsList"
+                                         IsCandidateChannel="True"
+                                         IsVisible="{Binding ImageSet.HasCandidateRevisionRows}"
+                                         Items="{Binding ImageSet.CandidateRevisionRows}" />
             </Grid>
 
             <TextBlock x:Name="DifferenceStatusTextBlock"

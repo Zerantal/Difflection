@@ -41,6 +41,7 @@ public sealed partial class ComparisonImageSetItemViewModel(ImageAsset image, Co
             OnPropertyChanged();
             OnPropertyChanged(nameof(DisplayLabel));
             OnPropertyChanged(nameof(HasDisplayLabel));
+            OnMetadataChanged();
         }
     }
 
@@ -58,6 +59,7 @@ public sealed partial class ComparisonImageSetItemViewModel(ImageAsset image, Co
             OnPropertyChanged();
             OnPropertyChanged(nameof(Label));
             OnPropertyChanged(nameof(HasDisplayLabel));
+            OnMetadataChanged();
         }
     }
 
@@ -69,6 +71,8 @@ public sealed partial class ComparisonImageSetItemViewModel(ImageAsset image, Co
     public string RevisionText => $"r{GetRevisionNumber()}";
 
     public string AddedAtText => Image.AddedAt.ToLocalTime().ToString("d MMM HH:mm", CultureInfo.CurrentCulture);
+
+    public string FileLocationText => GetFileLocationText();
 
     public bool IsActive => Channel.ActiveImageId == Image.Id;
 
@@ -125,6 +129,7 @@ public sealed partial class ComparisonImageSetItemViewModel(ImageAsset image, Co
         OnPropertyChanged(nameof(Label));
         OnPropertyChanged(nameof(DisplayLabel));
         OnPropertyChanged(nameof(HasDisplayLabel));
+        OnMetadataChanged();
         OnPropertyChanged(nameof(RevisionText));
         OnPropertyChanged(nameof(AddedAtText));
         OnPropertyChanged(nameof(MonitoringText));
@@ -168,6 +173,29 @@ public sealed partial class ComparisonImageSetItemViewModel(ImageAsset image, Co
 
         var fileName = Path.GetFileName(sourceName?.Trim());
         return string.IsNullOrWhiteSpace(fileName) ? "Image" : fileName;
+    }
+
+    private string GetFileLocationText()
+    {
+        var path = Image.OriginalFileMetadata?.Path;
+        if (!string.IsNullOrWhiteSpace(path))
+        {
+            var directory = Path.GetDirectoryName(path);
+            return string.IsNullOrWhiteSpace(directory) ? "Not available" : directory;
+        }
+
+        if (string.IsNullOrWhiteSpace(Image.StorageKey))
+        {
+            return "Not available";
+        }
+
+        var storageDirectory = Path.GetDirectoryName(Image.StorageKey);
+        return string.IsNullOrWhiteSpace(storageDirectory) ? "Not available" : storageDirectory;
+    }
+
+    private void OnMetadataChanged()
+    {
+        OnPropertyChanged(nameof(FileLocationText));
     }
 
     private int GetRevisionNumber()
