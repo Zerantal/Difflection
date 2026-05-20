@@ -3,7 +3,7 @@
              xmlns:views="using:Difflection.Views"
              x:Class="Difflection.Views.RuledImagePane"
              x:Name="Root"
-             Background="#1B1B1B">
+             Background="{DynamicResource RulerBackgroundBrush}">
 
     <UserControl.Styles>
         <Style Selector="Border.imageLayer">
@@ -15,9 +15,9 @@
           ClipToBounds="True"
           RowDefinitions="28,*"
           ColumnDefinitions="44,*"
-          Background="#1B1B1B">
-        <Border Background="#1B1B1B"
-                BorderBrush="#343434"
+          Background="{DynamicResource RulerBackgroundBrush}">
+        <Border Background="{DynamicResource RulerBackgroundBrush}"
+                BorderBrush="{DynamicResource RulerBorderBrush}"
                 BorderThickness="0,0,1,1"
                 IsHitTestVisible="False" />
 
@@ -27,11 +27,11 @@
                           Height="28"
                           Orientation="Horizontal"
                           Mode="Continuous"
-                          Background="#1B1B1B"
-                          BorderBrush="#343434"
-                          MajorTickBrush="#AEB4BC"
-                          MinorTickBrush="#6A707A"
-                          Foreground="#D7DADF"
+                          Background="{DynamicResource RulerBackgroundBrush}"
+                          BorderBrush="{DynamicResource RulerBorderBrush}"
+                          MajorTickBrush="{DynamicResource RulerMajorTickBrush}"
+                          MinorTickBrush="{DynamicResource RulerMinorTickBrush}"
+                          Foreground="{DynamicResource RulerTextBrush}"
                           IsHitTestVisible="False" />
 
         <views:PixelRuler Grid.Row="1"
@@ -40,18 +40,18 @@
                           Width="44"
                           Orientation="Vertical"
                           Mode="Continuous"
-                          Background="#1B1B1B"
-                          BorderBrush="#343434"
-                          MajorTickBrush="#AEB4BC"
-                          MinorTickBrush="#6A707A"
-                          Foreground="#D7DADF"
+                          Background="{DynamicResource RulerBackgroundBrush}"
+                          BorderBrush="{DynamicResource RulerBorderBrush}"
+                          MajorTickBrush="{DynamicResource RulerMajorTickBrush}"
+                          MinorTickBrush="{DynamicResource RulerMinorTickBrush}"
+                          Foreground="{DynamicResource RulerTextBrush}"
                           IsHitTestVisible="False" />
 
         <Border Grid.Row="1"
                 Grid.Column="1"
-                BorderBrush="#242424"
+                BorderBrush="{DynamicResource BorderStageBrush}"
                 BorderThickness="1"
-                Background="#050505">
+                Background="{DynamicResource ImageCanvasBrush}">
             <Grid ClipToBounds="True">
                 <ScrollViewer x:Name="ScrollViewer"
                               HorizontalScrollBarVisibility="Auto"

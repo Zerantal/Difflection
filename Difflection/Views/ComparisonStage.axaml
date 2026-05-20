@@ -7,25 +7,25 @@
              x:DataType="vm:MainWindowViewModel"
              d:DesignWidth="400"
              d:DesignHeight="200"
-             Background="#1B1B1B">
+             Background="{DynamicResource RulerBackgroundBrush}">
         
         <Grid ClipToBounds="True"
           RowDefinitions="28,*"
           ColumnDefinitions="44,*"
-          Background="#1B1B1B">
+          Background="{DynamicResource RulerBackgroundBrush}">
         <Border Grid.Row="1"
                 Grid.Column="1"
                 IsVisible="{Binding ToolState.IsSideBySideView}"
-                BorderBrush="#242424"
+                BorderBrush="{DynamicResource BorderStageBrush}"
                 BorderThickness="1"
-                Background="#050505">
+                Background="{DynamicResource ImageCanvasBrush}">
             <Grid x:Name="SideBySideSurface"
                   ClipToBounds="True"
                   RowDefinitions="Auto,*"
                   ColumnDefinitions="*,16,*">
                 <Border Grid.Row="0"
                         Grid.Column="0"
-                        Background="#101010E0"
+                        Background="{DynamicResource StageLabelBackgroundBrush}"
                         CornerRadius="4"
                         Margin="8,8,8,0"
                         Padding="8,2"
@@ -33,14 +33,14 @@
                         VerticalAlignment="Top"
                         IsHitTestVisible="False">
                     <TextBlock Text="Baseline"
-                               Foreground="#F3F4F6"
+                               Foreground="{DynamicResource TextPrimaryBrush}"
                                FontSize="11"
                                FontWeight="SemiBold" />
                 </Border>
 
                 <Border Grid.Row="0"
                         Grid.Column="2"
-                        Background="#101010E0"
+                        Background="{DynamicResource StageLabelBackgroundBrush}"
                         CornerRadius="4"
                         Margin="8,8,8,0"
                         Padding="8,2"
@@ -48,7 +48,7 @@
                         VerticalAlignment="Top"
                         IsHitTestVisible="False">
                     <TextBlock Text="Candidate"
-                               Foreground="#F3F4F6"
+                               Foreground="{DynamicResource TextPrimaryBrush}"
                                FontSize="11"
                                FontWeight="SemiBold" />
                 </Border>
@@ -65,7 +65,7 @@
                         Grid.Row="1"
                         Grid.Column="1"
                         Width="16"
-                        Background="#101010"
+                        Background="{DynamicResource WorkspaceBackgroundBrush}"
                         IsVisible="{Binding ComparisonDisplay.HasBothImages}" />
 
                 <views:RuledImagePane x:Name="SideBySideRightPane"
@@ -94,9 +94,9 @@
         <Border Grid.Row="1"
                 Grid.Column="1"
                 IsVisible="{Binding ToolState.IsSplitScreenView}"
-                BorderBrush="#242424"
+                BorderBrush="{DynamicResource BorderStageBrush}"
                 BorderThickness="1"
-                Background="#050505">
+                Background="{DynamicResource ImageCanvasBrush}">
             <Grid ClipToBounds="True">
                 <views:RuledSplitImagePane x:Name="SplitPane"
                                            IsVisible="{Binding ToolState.IsSplitScreenView}"
@@ -111,13 +111,13 @@
         <Border Grid.Row="1"
                 Grid.Column="1"
                 IsVisible="{Binding ToolState.IsDifferenceView}"
-                BorderBrush="#242424"
+                BorderBrush="{DynamicResource BorderStageBrush}"
                 BorderThickness="1"
-                Background="#050505">
+                Background="{DynamicResource ImageCanvasBrush}">
             <Grid ClipToBounds="True"
                   RowDefinitions="Auto,*">
                 <Border Grid.Row="0"
-                        Background="#101010E0"
+                        Background="{DynamicResource StageLabelBackgroundBrush}"
                         CornerRadius="4"
                         Margin="8,8,8,0"
                         Padding="8,2"
@@ -125,7 +125,7 @@
                         VerticalAlignment="Top"
                         IsHitTestVisible="False">
                     <TextBlock Text="Difference"
-                               Foreground="#F3F4F6"
+                               Foreground="{DynamicResource TextPrimaryBrush}"
                                FontSize="11"
                                FontWeight="SemiBold" />
                 </Border>

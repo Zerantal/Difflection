@@ -52,7 +52,7 @@
                         Spacing="6">
                 <TextBlock Text="{Binding ToolState.SplitPercentageText}"
                            IsVisible="{Binding ToolState.IsSplitScreenView}"
-                           Foreground="#BFC4CC"
+                           Foreground="{DynamicResource TextToolbarBrush}"
                            FontSize="13"
                            FontWeight="SemiBold"
                            VerticalAlignment="Center" />
@@ -113,7 +113,7 @@
                         Spacing="6"
                         VerticalAlignment="Center">
                 <TextBlock Text="Opacity"
-                           Foreground="#BFC4CC"
+                           Foreground="{DynamicResource TextToolbarBrush}"
                            FontSize="12"
                            FontWeight="SemiBold"
                            VerticalAlignment="Center" />
@@ -127,7 +127,7 @@
                         Value="{Binding ComparisonDisplay.DifferenceOverlayOpacity, Mode=TwoWay}" />
                 <TextBlock Text="{Binding ComparisonDisplay.DifferenceOverlayOpacityText}"
                            Width="38"
-                           Foreground="#F97316"
+                           Foreground="{DynamicResource AccentBrush}"
                            FontSize="12"
                            FontWeight="SemiBold"
                            TextAlignment="Center"

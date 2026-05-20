@@ -3,7 +3,7 @@
              xmlns:views="using:Difflection.Views"
              x:Class="Difflection.Views.RuledSplitImagePane"
              x:Name="Root"
-             Background="#1B1B1B">
+             Background="{DynamicResource RulerBackgroundBrush}">
 
     <UserControl.Styles>
         <Style Selector="Border.imageLayer">
@@ -15,44 +15,44 @@
           ClipToBounds="True"
           RowDefinitions="24,28,*"
           ColumnDefinitions="44,*"
-          Background="#1B1B1B"
+          Background="{DynamicResource RulerBackgroundBrush}"
           DragDrop.AllowDrop="True"
           DragDrop.DragOver="Pane_OnDragOver"
           DragDrop.Drop="Pane_OnDrop">
-        <Border Background="#1B1B1B"
-                BorderBrush="#343434"
+        <Border Background="{DynamicResource RulerBackgroundBrush}"
+                BorderBrush="{DynamicResource RulerBorderBrush}"
                 BorderThickness="0,0,1,1"
                 IsHitTestVisible="False" />
 
         <Border Grid.Row="0"
                 Grid.Column="1"
-                Background="#141414"
-                BorderBrush="#2A2A2A"
+                Background="{DynamicResource SplitSurfaceBackgroundBrush}"
+                BorderBrush="{DynamicResource HoverBackgroundBrush}"
                 BorderThickness="0,0,0,1"
                 IsHitTestVisible="False">
             <Grid Margin="8,0">
-                <Border Background="#101010"
-                        BorderBrush="#3A2A1F"
+                <Border Background="{DynamicResource WorkspaceBackgroundBrush}"
+                        BorderBrush="{DynamicResource AccentSubtleBrush}"
                         BorderThickness="1"
                         CornerRadius="4"
                         Padding="8,2"
                         HorizontalAlignment="Left"
                         VerticalAlignment="Center">
                     <TextBlock Text="Baseline"
-                               Foreground="#F3F4F6"
+                               Foreground="{DynamicResource TextPrimaryBrush}"
                                FontSize="11"
                                FontWeight="SemiBold" />
                 </Border>
 
-                <Border Background="#101010"
-                        BorderBrush="#1F2C3A"
+                <Border Background="{DynamicResource WorkspaceBackgroundBrush}"
+                        BorderBrush="{DynamicResource ActiveBlueSubtleBrush}"
                         BorderThickness="1"
                         CornerRadius="4"
                         Padding="8,2"
                         HorizontalAlignment="Right"
                         VerticalAlignment="Center">
                     <TextBlock Text="Candidate"
-                               Foreground="#F3F4F6"
+                               Foreground="{DynamicResource TextPrimaryBrush}"
                                FontSize="11"
                                FontWeight="SemiBold" />
                 </Border>
@@ -61,8 +61,8 @@
 
         <Border Grid.Row="0"
                 Grid.Column="0"
-                Background="#141414"
-                BorderBrush="#343434"
+                Background="{DynamicResource SplitSurfaceBackgroundBrush}"
+                BorderBrush="{DynamicResource RulerBorderBrush}"
                 BorderThickness="0,0,1,1"
                 IsHitTestVisible="False" />
 
@@ -72,17 +72,17 @@
                           Height="28"
                           Orientation="Horizontal"
                           Mode="Continuous"
-                          Background="#1B1B1B"
-                          BorderBrush="#343434"
-                          MajorTickBrush="#AEB4BC"
-                          MinorTickBrush="#6A707A"
-                          Foreground="#D7DADF"
+                          Background="{DynamicResource RulerBackgroundBrush}"
+                          BorderBrush="{DynamicResource RulerBorderBrush}"
+                          MajorTickBrush="{DynamicResource RulerMajorTickBrush}"
+                          MinorTickBrush="{DynamicResource RulerMinorTickBrush}"
+                          Foreground="{DynamicResource RulerTextBrush}"
                           IsHitTestVisible="False" />
 
         <Border Grid.Row="1"
                 Grid.Column="0"
-                Background="#1B1B1B"
-                BorderBrush="#343434"
+                Background="{DynamicResource RulerBackgroundBrush}"
+                BorderBrush="{DynamicResource RulerBorderBrush}"
                 BorderThickness="0,0,1,1"
                 IsHitTestVisible="False" />
 
@@ -92,18 +92,18 @@
                           Width="44"
                           Orientation="Vertical"
                           Mode="Continuous"
-                          Background="#1B1B1B"
-                          BorderBrush="#343434"
-                          MajorTickBrush="#AEB4BC"
-                          MinorTickBrush="#6A707A"
-                          Foreground="#D7DADF"
+                          Background="{DynamicResource RulerBackgroundBrush}"
+                          BorderBrush="{DynamicResource RulerBorderBrush}"
+                          MajorTickBrush="{DynamicResource RulerMajorTickBrush}"
+                          MinorTickBrush="{DynamicResource RulerMinorTickBrush}"
+                          Foreground="{DynamicResource RulerTextBrush}"
                           IsHitTestVisible="False" />
 
         <Border Grid.Row="2"
                 Grid.Column="1"
-                BorderBrush="#242424"
+                BorderBrush="{DynamicResource BorderStageBrush}"
                 BorderThickness="1"
-                Background="#050505">
+                Background="{DynamicResource ImageCanvasBrush}">
             <Grid x:Name="SplitPaneRoot"
                   ClipToBounds="True">
                 <ScrollViewer x:Name="ScrollViewer"
@@ -141,7 +141,7 @@
 
                                 <Border x:Name="SplitDivider"
                                         Width="1"
-                                        Background="#F1F1F1"
+                                        Background="{DynamicResource SplitHandleBrush}"
                                         HorizontalAlignment="Left"
                                         VerticalAlignment="Stretch"
                                         IsHitTestVisible="False"
