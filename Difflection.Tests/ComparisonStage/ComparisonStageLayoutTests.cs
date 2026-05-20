@@ -65,4 +65,33 @@ public sealed partial class ComparisonStageTests
             window.Close();
         }
     }
+
+    [AvaloniaFact]
+    public async Task Difference_view_shows_generated_difference_pane()
+    {
+        var viewModel = new MainWindowViewModel();
+        await viewModel.ComparisonDisplay.LoadImageAsync(ImageSlot.Left, TestUiSupport.CreateStorageFile("left.png", 24, 20));
+        await viewModel.ComparisonDisplay.LoadImageAsync(ImageSlot.Right, TestUiSupport.CreateStorageFile("right.png", 24, 20));
+        viewModel.ToolState.SelectDifferenceView();
+
+        var window = TestUiSupport.CreateWindow(viewModel);
+        try
+        {
+            var stage = TestUiSupport.GetComparisonStage(window);
+            var pane = stage.FindControl<RuledImagePane>("DifferencePane") ?? throw new InvalidOperationException("DifferencePane not found.");
+            var surface = pane.FindControl<Grid>("Surface") ?? throw new InvalidOperationException("Surface not found.");
+
+            await TestUiSupport.WaitForAsync(() => pane.IsVisible && surface.Bounds.Width > 0);
+
+            Assert.True(viewModel.ToolState.IsDifferenceView);
+            Assert.NotNull(viewModel.ComparisonDisplay.DifferenceImage);
+            Assert.True(pane.IsVisible);
+            Assert.Equal(24, surface.Bounds.Width);
+            Assert.Equal(20, surface.Bounds.Height);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
 }

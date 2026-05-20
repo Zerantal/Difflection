@@ -6,75 +6,133 @@
              x:Name="Root"
              x:DataType="vm:MainWindowViewModel"
              Background="Transparent">
-    <Grid ColumnDefinitions="*,Auto"
-          ColumnSpacing="12">
-        <StackPanel Orientation="Horizontal"
-                    VerticalAlignment="Center"
-                    Spacing="6">
-            <Button x:Name="SideBySideViewButton"
-                    Classes="viewModeButton"
-                    Content="Side-by-side"
-                    Click="SideBySideViewButton_OnClick" />
-            <Button x:Name="SplitScreenViewButton"
-                    Classes="viewModeButton"
-                    Content="Split screen"
-                    IsEnabled="{Binding ToolState.CanUseSplitScreen}"
-                    Click="SplitScreenViewButton_OnClick" />
-            <Border Classes="toolbarSeparator" />
-            <Button Classes="headerIconButton"
-                    ToolTip.Tip="Add images to comparison"
-                    Click="AddMediaButton_OnClick">
-                <PathIcon Data="{StaticResource Icon.Add}"
-                          Width="16"
-                          Height="16" />
-            </Button>
-            <Button Classes="headerIconButton"
-                    ToolTip.Tip="Refresh source images for selected comparison"
-                    IsEnabled="{Binding Workspace.HasSelectedComparison}"
-                    Click="RefreshSelectedComparisonSourcesButton_OnClick">
-                <PathIcon Data="{StaticResource Icon.Refresh}"
-                          Width="16"
-                          Height="16" />
-            </Button>
-        </StackPanel>
+    <Grid RowDefinitions="Auto,Auto"
+          RowSpacing="8">
+        <Grid ColumnDefinitions="*,Auto"
+              ColumnSpacing="12">
+            <StackPanel Orientation="Horizontal"
+                        VerticalAlignment="Center"
+                        Spacing="6">
+                <Button x:Name="SideBySideViewButton"
+                        Classes="viewModeButton"
+                        Content="Side-by-side"
+                        Click="SideBySideViewButton_OnClick" />
+                <Button x:Name="SplitScreenViewButton"
+                        Classes="viewModeButton"
+                        Content="Split screen"
+                        IsEnabled="{Binding ToolState.CanUseSplitScreen}"
+                        Click="SplitScreenViewButton_OnClick" />
+                <Button x:Name="DifferenceViewButton"
+                        Classes="viewModeButton"
+                        Content="Difference"
+                        IsEnabled="{Binding ToolState.CanUseDifferenceView}"
+                        Click="DifferenceViewButton_OnClick" />
+                <Border Classes="toolbarSeparator" />
+                <Button Classes="headerIconButton"
+                        ToolTip.Tip="Add images to comparison"
+                        Click="AddMediaButton_OnClick">
+                    <PathIcon Data="{StaticResource Icon.Add}"
+                              Width="16"
+                              Height="16" />
+                </Button>
+                <Button Classes="headerIconButton"
+                        ToolTip.Tip="Refresh source images for selected comparison"
+                        IsEnabled="{Binding Workspace.HasSelectedComparison}"
+                        Click="RefreshSelectedComparisonSourcesButton_OnClick">
+                    <PathIcon Data="{StaticResource Icon.Refresh}"
+                              Width="16"
+                              Height="16" />
+                </Button>
+            </StackPanel>
 
-        <StackPanel Grid.Column="1"
-                    Orientation="Horizontal"
-                    HorizontalAlignment="Right"
-                    VerticalAlignment="Center"
-                    Spacing="6">
-            <TextBlock Text="{Binding ToolState.SplitPercentageText}"
-                       IsVisible="{Binding ToolState.IsSplitScreenView}"
-                       Foreground="#BFC4CC"
-                       FontSize="13"
-                       FontWeight="SemiBold"
-                       VerticalAlignment="Center" />
-            <TextBox x:Name="ZoomTextBox"
-                     Classes="toolbarZoomBox"
-                     Width="64"
-                     ToolTip.Tip="Zoom percentage"
-                     Text="{Binding ToolState.ZoomText, Mode=TwoWay}"
-                     HorizontalContentAlignment="Center"
-                     VerticalContentAlignment="Center"
-                     VerticalAlignment="Center"
-                     LostFocus="ZoomTextBox_OnLostFocus"
-                     KeyDown="ZoomTextBox_OnKeyDown" />
-            <Button Classes="headerIconButton"
-                    ToolTip.Tip="Fit images to stage"
-                    IsEnabled="{Binding ComparisonDisplay.HasAnyImage}"
-                    Click="FitZoomButton_OnClick">
-                <PathIcon Data="{StaticResource Icon.AutofitContent}"
-                          Width="16"
-                          Height="16" />
-            </Button>
-            <Button Classes="headerIconButton"
-                    ToolTip.Tip="Actual size"
-                    IsEnabled="{Binding ComparisonDisplay.HasAnyImage}"
-                    Click="ActualSizeZoomButton_OnClick">
-                <PathIcon Data="{StaticResource Icon.ActualSize}"
-                          Width="16"
-                          Height="16" />
-            </Button>
-        </StackPanel>
+            <StackPanel Grid.Column="1"
+                        Orientation="Horizontal"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center"
+                        Spacing="6">
+                <TextBlock Text="{Binding ToolState.SplitPercentageText}"
+                           IsVisible="{Binding ToolState.IsSplitScreenView}"
+                           Foreground="#BFC4CC"
+                           FontSize="13"
+                           FontWeight="SemiBold"
+                           VerticalAlignment="Center" />
+                <TextBox x:Name="ZoomTextBox"
+                         Classes="toolbarZoomBox"
+                         Width="64"
+                         ToolTip.Tip="Zoom percentage"
+                         Text="{Binding ToolState.ZoomText, Mode=TwoWay}"
+                         HorizontalContentAlignment="Center"
+                         VerticalContentAlignment="Center"
+                         VerticalAlignment="Center"
+                         LostFocus="ZoomTextBox_OnLostFocus"
+                         KeyDown="ZoomTextBox_OnKeyDown" />
+                <Button Classes="headerIconButton"
+                        ToolTip.Tip="Fit images to stage"
+                        IsEnabled="{Binding ComparisonDisplay.HasAnyImage}"
+                        Click="FitZoomButton_OnClick">
+                    <PathIcon Data="{StaticResource Icon.AutofitContent}"
+                              Width="16"
+                              Height="16" />
+                </Button>
+                <Button Classes="headerIconButton"
+                        ToolTip.Tip="Actual size"
+                        IsEnabled="{Binding ComparisonDisplay.HasAnyImage}"
+                        Click="ActualSizeZoomButton_OnClick">
+                    <PathIcon Data="{StaticResource Icon.ActualSize}"
+                              Width="16"
+                              Height="16" />
+                </Button>
+            </StackPanel>
+        </Grid>
+
+        <WrapPanel Grid.Row="1"
+                   Orientation="Horizontal"
+                   IsVisible="{Binding ToolState.IsDifferenceView}">
+            <StackPanel Orientation="Horizontal"
+                        Spacing="4"
+                        Margin="0,0,12,0"
+                        VerticalAlignment="Center">
+                <ToggleButton x:Name="DifferenceBaseBaselineButton"
+                              Classes="diffBaseToggle"
+                              Content="Baseline"
+                              IsChecked="{Binding ComparisonDisplay.IsDifferenceBaseBaseline}"
+                              Click="DifferenceBaseBaselineButton_OnClick" />
+                <ToggleButton x:Name="DifferenceBaseCandidateButton"
+                              Classes="diffBaseToggle"
+                              Content="Candidate"
+                              IsChecked="{Binding ComparisonDisplay.IsDifferenceBaseCandidate}"
+                              Click="DifferenceBaseCandidateButton_OnClick" />
+                <ToggleButton x:Name="DifferenceBaseMapButton"
+                              Classes="diffBaseToggle"
+                              Content="Map"
+                              IsChecked="{Binding ComparisonDisplay.IsDifferenceBaseMap}"
+                              Click="DifferenceBaseMapButton_OnClick" />
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal"
+                        Spacing="6"
+                        VerticalAlignment="Center">
+                <TextBlock Text="Opacity"
+                           Foreground="#BFC4CC"
+                           FontSize="12"
+                           FontWeight="SemiBold"
+                           VerticalAlignment="Center" />
+                <Slider x:Name="DifferenceOpacitySlider"
+                        Width="132"
+                        Minimum="0"
+                        Maximum="1"
+                        TickFrequency="0.1"
+                        IsSnapToTickEnabled="False"
+                        ToolTip.Tip="Difference overlay opacity"
+                        Value="{Binding ComparisonDisplay.DifferenceOverlayOpacity, Mode=TwoWay}" />
+                <TextBlock Text="{Binding ComparisonDisplay.DifferenceOverlayOpacityText}"
+                           Width="38"
+                           Foreground="#F97316"
+                           FontSize="12"
+                           FontWeight="SemiBold"
+                           TextAlignment="Center"
+                           VerticalAlignment="Center" />
+            </StackPanel>
+        </WrapPanel>
     </Grid>
 </UserControl>

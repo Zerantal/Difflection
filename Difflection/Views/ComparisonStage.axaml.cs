@@ -229,16 +229,18 @@ public partial class ComparisonStage : UserControl
                 return;
             }
 
-            var scrollViewer = _viewModel.ToolState.IsSplitScreenView
-                ? SplitPane.ActiveScrollViewer
-                : SideBySideLeftPane.ActiveScrollViewer;
+            var scrollViewer = GetActiveFitScrollViewer();
             if (scrollViewer.Bounds.Width <= 0 || scrollViewer.Bounds.Height <= 0)
             {
                 return;
             }
 
-            var targetWidth = Math.Max(_viewModel.ComparisonDisplay.LeftImageWidth, _viewModel.ComparisonDisplay.RightImageWidth);
-            var targetHeight = Math.Max(_viewModel.ComparisonDisplay.LeftImageHeight, _viewModel.ComparisonDisplay.RightImageHeight);
+            var targetWidth = _viewModel.ToolState.IsDifferenceView
+                ? _viewModel.ComparisonDisplay.DifferenceImageWidth
+                : Math.Max(_viewModel.ComparisonDisplay.LeftImageWidth, _viewModel.ComparisonDisplay.RightImageWidth);
+            var targetHeight = _viewModel.ToolState.IsDifferenceView
+                ? _viewModel.ComparisonDisplay.DifferenceImageHeight
+                : Math.Max(_viewModel.ComparisonDisplay.LeftImageHeight, _viewModel.ComparisonDisplay.RightImageHeight);
 
             var scaleX = scrollViewer.Bounds.Width / Math.Max(1, targetWidth);
             var scaleY = scrollViewer.Bounds.Height / Math.Max(1, targetHeight);
@@ -279,6 +281,11 @@ public partial class ComparisonStage : UserControl
             return (SplitPane.ActiveScrollViewer, SplitPane.ActiveSurface);
         }
 
+        if (_viewModel?.ToolState.IsDifferenceView == true)
+        {
+            return (DifferencePane.ActiveScrollViewer, DifferencePane.ActiveSurface);
+        }
+
         if (!HasSecondPane)
         {
             return (SideBySideLeftPane.ActiveScrollViewer, SideBySideLeftPane.ActiveSurface);
@@ -309,6 +316,21 @@ public partial class ComparisonStage : UserControl
     }
 
     private bool HasSecondPane => _viewModel?.ComparisonDisplay.HasBothImages == true;
+
+    private ScrollViewer GetActiveFitScrollViewer()
+    {
+        if (_viewModel?.ToolState.IsSplitScreenView == true)
+        {
+            return SplitPane.ActiveScrollViewer;
+        }
+
+        if (_viewModel?.ToolState.IsDifferenceView == true)
+        {
+            return DifferencePane.ActiveScrollViewer;
+        }
+
+        return SideBySideLeftPane.ActiveScrollViewer;
+    }
 
     private void OnDetachedFromVisualTree(object? sender, VisualTreeAttachmentEventArgs e)
     {

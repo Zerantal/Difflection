@@ -455,5 +455,13 @@ public enum ImageSlot
 public enum ComparisonViewMode
 {
     SideBySide,
-    SplitScreen
+    SplitScreen,
+    Difference
+}
+
+public enum DifferenceBaseImage
+{
+    Baseline,
+    Candidate,
+    Map
 }

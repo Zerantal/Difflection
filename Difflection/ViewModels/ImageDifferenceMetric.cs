@@ -79,7 +79,99 @@ internal sealed record ImageDifferenceMetric(
         return new ImageDifferenceMetric(width, height, differentPixels, totalPixels, differentPixelRatio, rmsError);
     }
 
+    public static Bitmap? CreateDifferenceBitmap(
+        Bitmap? left,
+        Bitmap? right,
+        DifferenceBaseImage baseImage = DifferenceBaseImage.Candidate,
+        double overlayOpacity = 0.75)
+    {
+        if (left is null || right is null)
+        {
+            return null;
+        }
+
+        var width = Math.Min(left.PixelSize.Width, right.PixelSize.Width);
+        var height = Math.Min(left.PixelSize.Height, right.PixelSize.Height);
+        if (width <= 0 || height <= 0)
+        {
+            return null;
+        }
+
+        overlayOpacity = Math.Clamp(overlayOpacity, 0.0, 1.0);
+        var leftPixels = CopyPixels(left);
+        var rightPixels = CopyPixels(right);
+        var leftStride = left.PixelSize.Width * BytesPerPixel;
+        var rightStride = right.PixelSize.Width * BytesPerPixel;
+        var outputStride = width * BytesPerPixel;
+        var outputPixels = new byte[outputStride * height];
+
+        for (var y = 0; y < height; y++)
+        {
+            var leftRow = y * leftStride;
+            var rightRow = y * rightStride;
+            var outputRow = y * outputStride;
+
+            for (var x = 0; x < width; x++)
+            {
+                var leftIndex = leftRow + x * BytesPerPixel;
+                var rightIndex = rightRow + x * BytesPerPixel;
+                var outputIndex = outputRow + x * BytesPerPixel;
+                var blueDelta = Math.Abs(leftPixels[leftIndex] - rightPixels[rightIndex]);
+                var greenDelta = Math.Abs(leftPixels[leftIndex + 1] - rightPixels[rightIndex + 1]);
+                var redDelta = Math.Abs(leftPixels[leftIndex + 2] - rightPixels[rightIndex + 2]);
+                var maxDelta = Math.Max(redDelta, Math.Max(greenDelta, blueDelta));
+
+                var (baseBlue, baseGreen, baseRed) = baseImage switch
+                {
+                    DifferenceBaseImage.Baseline => (
+                        leftPixels[leftIndex],
+                        leftPixels[leftIndex + 1],
+                        leftPixels[leftIndex + 2]),
+                    DifferenceBaseImage.Candidate => (
+                        rightPixels[rightIndex],
+                        rightPixels[rightIndex + 1],
+                        rightPixels[rightIndex + 2]),
+                    _ => (12, 12, 12)
+                };
+
+                var mapAlpha = maxDelta == 0
+                    ? 0.0
+                    : overlayOpacity * (0.35 + 0.65 * maxDelta / 255.0);
+
+                outputPixels[outputIndex] = Blend(baseBlue, 32, mapAlpha);
+                outputPixels[outputIndex + 1] = Blend(baseGreen, 28, mapAlpha);
+                outputPixels[outputIndex + 2] = Blend(baseRed, 255, mapAlpha);
+                outputPixels[outputIndex + 3] = 255;
+            }
+        }
+
+        var bitmap = new WriteableBitmap(
+            new PixelSize(width, height),
+            new Vector(96, 96),
+            PixelFormats.Bgra8888,
+            AlphaFormat.Premul);
+
+        using (var framebuffer = bitmap.Lock())
+        {
+            for (var y = 0; y < height; y++)
+            {
+                Marshal.Copy(
+                    outputPixels,
+                    y * outputStride,
+                    framebuffer.Address + y * framebuffer.RowBytes,
+                    outputStride);
+            }
+        }
+
+        return bitmap;
+    }
+
     private const int BytesPerPixel = 4;
+
+    private static byte Blend(int baseChannel, int overlayChannel, double alpha)
+    {
+        return (byte)Math.Clamp(baseChannel * (1.0 - alpha) + overlayChannel * alpha, 0, 255);
+    }
 
     private static byte[] CopyPixels(Bitmap bitmap)
     {

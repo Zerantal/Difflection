@@ -162,7 +162,7 @@
         <Border Grid.Row="2"
                 Grid.Column="2"
                 Background="#101010"
-                Padding="24">
+                Padding="16">
             <Grid RowDefinitions="Auto,*"
                   RowSpacing="12">
                 <views:TopToolbar Grid.Row="0"

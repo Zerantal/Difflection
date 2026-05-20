@@ -107,5 +107,46 @@
                                            RightImage="{Binding ComparisonDisplay.RightImage}" />
             </Grid>
         </Border>
+
+        <Border Grid.Row="1"
+                Grid.Column="1"
+                IsVisible="{Binding ToolState.IsDifferenceView}"
+                BorderBrush="#242424"
+                BorderThickness="1"
+                Background="#050505">
+            <Grid ClipToBounds="True"
+                  RowDefinitions="Auto,*">
+                <Border Grid.Row="0"
+                        Background="#101010E0"
+                        CornerRadius="4"
+                        Margin="8,8,8,0"
+                        Padding="8,2"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Top"
+                        IsHitTestVisible="False">
+                    <TextBlock Text="Difference"
+                               Foreground="#F3F4F6"
+                               FontSize="11"
+                               FontWeight="SemiBold" />
+                </Border>
+
+                <views:RuledImagePane x:Name="DifferencePane"
+                                      Grid.Row="1"
+                                      SurfaceWidth="{Binding ComparisonDisplay.DifferenceImageWidth}"
+                                      SurfaceHeight="{Binding ComparisonDisplay.DifferenceImageHeight}"
+                                      ImageSource="{Binding ComparisonDisplay.DifferenceImage}"
+                                      ZoomScale="{Binding ToolState.ZoomScale}" />
+
+                <Border x:Name="DifferenceDropOverlay"
+                        Grid.Row="1"
+                        Background="Transparent"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch"
+                        IsVisible="{Binding ToolState.IsDifferenceView}"
+                        DragDrop.AllowDrop="True"
+                        DragDrop.DragOver="StageOverlay_OnDragOver"
+                        DragDrop.Drop="StageOverlay_OnDrop" />
+            </Grid>
+        </Border>
     </Grid>
 </UserControl>
