@@ -115,11 +115,11 @@ For the first pass, these can preserve the existing dark palette. The main win i
 
 ## Implementation Plan
 
-1. Add `Styles/Theme.axaml`.
-2. Move `ImageViewportFillBrush` from `App.axaml` into the new theme dictionary.
-3. Define the semantic brushes listed above using the current palette.
-4. Include `Theme.axaml` from `App.axaml`.
-5. Replace high-frequency hardcoded colors in `Workspace.axaml` with `{DynamicResource ...}`.
+1. [x] Add `Styles/Theme.axaml`.
+2. [x] Move `ImageViewportFillBrush` from `App.axaml` into the new theme dictionary.
+3. [x] Define the semantic brushes listed above using the current palette.
+4. [x] Include `Theme.axaml` from `App.axaml`.
+5. [x] Replace high-frequency hardcoded colors in `Workspace.axaml` with `{DynamicResource ...}`.
 6. Replace view-level shell colors in `MainView.axaml`, `WorkspaceSidebar.axaml`, `ImageSetPanel.axaml`, `ComparisonStage.axaml`, and ruler views.
 7. Normalize baseline/candidate colors across badges, channel frames, thumbnail borders, and action states.
 8. Move active view-mode button styling out of `TopToolbar.axaml.cs` and into XAML styles.

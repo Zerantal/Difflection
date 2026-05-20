@@ -13,14 +13,18 @@
 
     <!-- Borders and separators -->
     <SolidColorBrush x:Key="BorderSubtleBrush" Color="#303030" />
+    <SolidColorBrush x:Key="BorderFaintBrush" Color="#282828" />
+    <SolidColorBrush x:Key="BorderMutedBrush" Color="#383838" />
     <SolidColorBrush x:Key="BorderDefaultBrush" Color="#3A3A3A" />
     <SolidColorBrush x:Key="BorderStrongBrush" Color="#444444" />
+    <SolidColorBrush x:Key="BorderFocusBrush" Color="#525252" />
     <SolidColorBrush x:Key="DividerBrush" Color="#3A3A3A" />
 
     <!-- Text -->
     <SolidColorBrush x:Key="TextPrimaryBrush" Color="#F3F4F6" />
     <SolidColorBrush x:Key="TextSecondaryBrush" Color="#E5E7EB" />
     <SolidColorBrush x:Key="TextTertiaryBrush" Color="#C3CBD5" />
+    <SolidColorBrush x:Key="TextInteractiveBrush" Color="#A8AFB8" />
     <SolidColorBrush x:Key="TextMutedBrush" Color="#9AA1AB" />
     <SolidColorBrush x:Key="TextSubtleBrush" Color="#8C939D" />
     <SolidColorBrush x:Key="TextDisabledBrush" Color="#737B86" />
@@ -30,6 +34,11 @@
     <SolidColorBrush x:Key="AccentSubtleBrush" Color="#3A2A1F" />
     <SolidColorBrush x:Key="SelectedBackgroundBrush" Color="#3A2A1F" />
     <SolidColorBrush x:Key="HoverBackgroundBrush" Color="#2A2A2A" />
+    <SolidColorBrush x:Key="CheckedBackgroundBrush" Color="#26313A" />
+    <SolidColorBrush x:Key="CheckedForegroundBrush" Color="#D7E8F5" />
+    <SolidColorBrush x:Key="CheckedBorderBrush" Color="#5F7788" />
+    <SolidColorBrush x:Key="ActiveBlueBrush" Color="#38BDF8" />
+    <SolidColorBrush x:Key="ActiveBlueSubtleBrush" Color="#1F2C3A" />
 
     <!-- Comparison roles -->
     <SolidColorBrush x:Key="BaselineBrush" Color="#00AFFF" />
@@ -57,4 +66,6 @@
     <SolidColorBrush x:Key="ThumbnailOverlayBrush" Color="#050505D8" />
     <SolidColorBrush x:Key="ThumbnailTagOverlayBrush" Color="#101010E8" />
     <SolidColorBrush x:Key="StageLabelBackgroundBrush" Color="#101010E0" />
+    <SolidColorBrush x:Key="ControlOverlayBrush" Color="#101010D8" />
+    <SolidColorBrush x:Key="ThumbnailBackgroundBrush" Color="#0A0A0A" />
 </ResourceDictionary>
