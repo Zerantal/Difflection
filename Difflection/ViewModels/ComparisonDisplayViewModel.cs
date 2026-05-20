@@ -47,6 +47,11 @@ public partial class ComparisonDisplayViewModel : ViewModelBase
     public partial Bitmap? RightImage { get; set; }
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(DifferenceImageWidth))]
+    [NotifyPropertyChangedFor(nameof(DifferenceImageHeight))]
+    public partial Bitmap? DifferenceImage { get; private set; }
+
+    [ObservableProperty]
     public partial string LeftFileName { get; set; } = "Baseline image";
 
     [ObservableProperty]
@@ -54,6 +59,16 @@ public partial class ComparisonDisplayViewModel : ViewModelBase
 
     [ObservableProperty]
     public partial string DifferenceStatusText { get; set; } = "Load two images to compare";
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsDifferenceBaseBaseline))]
+    [NotifyPropertyChangedFor(nameof(IsDifferenceBaseCandidate))]
+    [NotifyPropertyChangedFor(nameof(IsDifferenceBaseMap))]
+    public partial DifferenceBaseImage DifferenceBaseImage { get; set; } = DifferenceBaseImage.Candidate;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(DifferenceOverlayOpacityText))]
+    public partial double DifferenceOverlayOpacity { get; set; } = 0.75;
 
     public bool HasLeftImage => LeftImage is not null;
 
@@ -70,6 +85,23 @@ public partial class ComparisonDisplayViewModel : ViewModelBase
     public double RightImageWidth => RightImage?.PixelSize.Width ?? StageWidth;
 
     public double RightImageHeight => RightImage?.PixelSize.Height ?? StageHeight;
+
+    public double DifferenceImageWidth => DifferenceImage?.PixelSize.Width ?? StageWidth;
+
+    public double DifferenceImageHeight => DifferenceImage?.PixelSize.Height ?? StageHeight;
+
+    public bool IsDifferenceBaseBaseline => DifferenceBaseImage == DifferenceBaseImage.Baseline;
+
+    public bool IsDifferenceBaseCandidate => DifferenceBaseImage == DifferenceBaseImage.Candidate;
+
+    public bool IsDifferenceBaseMap => DifferenceBaseImage == DifferenceBaseImage.Map;
+
+    public string DifferenceOverlayOpacityText => $"{Math.Round(DifferenceOverlayOpacity * 100):0}%";
+
+    public void SelectDifferenceBaseImage(DifferenceBaseImage baseImage)
+    {
+        DifferenceBaseImage = baseImage;
+    }
 
     public double SideBySideStageWidth => HasBothImages
         ? LeftImageWidth + 16 + RightImageWidth
@@ -198,6 +230,7 @@ public partial class ComparisonDisplayViewModel : ViewModelBase
     {
         LeftImage = null;
         RightImage = null;
+        DifferenceImage = null;
     }
 
     private static async Task<Bitmap> CreateBitmapAsync(Stream stream)
@@ -234,6 +267,7 @@ public partial class ComparisonDisplayViewModel : ViewModelBase
         _differenceStatusVersion++;
         DifferenceStatusText = ImageDifferenceMetric.Compare(LeftImage, RightImage)?.ToStatusText()
             ?? "Load two images to compare";
+        UpdateDifferenceImage();
     }
 
     private void ScheduleDifferenceStatusUpdate()
@@ -250,8 +284,39 @@ public partial class ComparisonDisplayViewModel : ViewModelBase
 
                 DifferenceStatusText = ImageDifferenceMetric.Compare(LeftImage, RightImage)?.ToStatusText()
                     ?? "Load two images to compare";
+                UpdateDifferenceImage();
             },
             DispatcherPriority.Background);
+    }
+
+    private void UpdateDifferenceImage()
+    {
+        DifferenceImage = ImageDifferenceMetric.CreateDifferenceBitmap(
+            LeftImage,
+            RightImage,
+            DifferenceBaseImage,
+            DifferenceOverlayOpacity);
+    }
+
+    // ReSharper disable once UnusedParameterInPartialMethod
+    partial void OnDifferenceImageChanged(Bitmap? oldValue, Bitmap? newValue)
+    {
+        if (oldValue is not null)
+        {
+            Dispatcher.UIThread.Post(oldValue.Dispose, DispatcherPriority.Background);
+        }
+    }
+
+    // ReSharper disable once UnusedParameterInPartialMethod
+    partial void OnDifferenceBaseImageChanged(DifferenceBaseImage value)
+    {
+        UpdateDifferenceImage();
+    }
+
+    // ReSharper disable once UnusedParameterInPartialMethod
+    partial void OnDifferenceOverlayOpacityChanged(double value)
+    {
+        UpdateDifferenceImage();
     }
 
     // ReSharper disable once UnusedParameterInPartialMethod

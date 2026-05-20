@@ -32,6 +32,41 @@ public sealed class MainWindowViewModelTests
         Assert.Contains("Compared 8x8", viewModel.DifferenceStatusText);
     }
 
+    [AvaloniaFact]
+    public async Task Difference_image_updates_when_both_images_are_loaded()
+    {
+        var viewModel = new MainWindowViewModel();
+
+        await viewModel.ComparisonDisplay.LoadImageAsync(ImageSlot.Left, TestUiSupport.CreateStorageFile("left-reference.png", 12, 10));
+
+        Assert.Null(viewModel.ComparisonDisplay.DifferenceImage);
+
+        await viewModel.ComparisonDisplay.LoadImageAsync(ImageSlot.Right, TestUiSupport.CreateStorageFile("candidate.png", 8, 6));
+
+        Assert.NotNull(viewModel.ComparisonDisplay.DifferenceImage);
+        Assert.Equal(8, viewModel.ComparisonDisplay.DifferenceImage.PixelSize.Width);
+        Assert.Equal(6, viewModel.ComparisonDisplay.DifferenceImage.PixelSize.Height);
+    }
+
+    [AvaloniaFact]
+    public async Task Difference_image_updates_when_overlay_options_change()
+    {
+        var viewModel = new MainWindowViewModel();
+        await viewModel.ComparisonDisplay.LoadImageAsync(ImageSlot.Left, TestUiSupport.CreateStorageFile("left-reference.png", 8, 8));
+        await viewModel.ComparisonDisplay.LoadImageAsync(ImageSlot.Right, TestUiSupport.CreateStorageFile("candidate.png", 8, 8));
+        var neutralDifference = viewModel.ComparisonDisplay.DifferenceImage;
+
+        viewModel.ComparisonDisplay.SelectDifferenceBaseImage(DifferenceBaseImage.Baseline);
+        var baselineDifference = viewModel.ComparisonDisplay.DifferenceImage;
+        viewModel.ComparisonDisplay.DifferenceOverlayOpacity = 0.4;
+
+        Assert.Equal("40%", viewModel.ComparisonDisplay.DifferenceOverlayOpacityText);
+        Assert.True(viewModel.ComparisonDisplay.IsDifferenceBaseBaseline);
+        Assert.NotNull(viewModel.ComparisonDisplay.DifferenceImage);
+        Assert.NotSame(neutralDifference, baselineDifference);
+        Assert.NotSame(baselineDifference, viewModel.ComparisonDisplay.DifferenceImage);
+    }
+
     [Fact]
     public async Task LoadProjectsAsync_populates_projects_and_selects_first_project_and_comparison()
     {

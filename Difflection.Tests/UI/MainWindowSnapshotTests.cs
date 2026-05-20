@@ -122,6 +122,32 @@ public sealed class MainWindowSnapshotTests
     }
 
     [AvaloniaFact]
+    public async Task Workspace_difference_with_project_image_set_matches_snapshot()
+    {
+        var storage = new SnapshotProjectStorage();
+        var viewModel = new MainWindowViewModel(storage);
+        await viewModel.Workspace.AddProjectAsync("Client Redesign");
+        await viewModel.Workspace.AddComparisonAsync("Homepage Header");
+        await AddFixtureImageAsync(viewModel, "reference.png", "Approved Header", new SKColor(34, 89, 165), new SKColor(249, 115, 22));
+        await AddFixtureImageAsync(viewModel, "candidate.png", "Current Header", new SKColor(92, 42, 145), new SKColor(14, 165, 233));
+        await viewModel.ComparisonDisplay.RefreshCurrentComparisonImagesAsync(viewModel.Workspace.SelectedComparison, viewModel.ProjectStorage);
+        viewModel.ToolState.SelectDifferenceView();
+        viewModel.ComparisonDisplay.SelectDifferenceBaseImage(DifferenceBaseImage.Candidate);
+        viewModel.ComparisonDisplay.DifferenceOverlayOpacity = 0.7;
+
+        var window = TestUiSupport.CreateWindow(viewModel);
+        viewModel.ToolState.TrySetZoomText("50%");
+        try
+        {
+            AssertSnapshot(window, "main-window-workspace-difference-image-set");
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
     public async Task Narrow_workspace_with_project_image_set_matches_snapshot()
     {
         var storage = new SnapshotProjectStorage();

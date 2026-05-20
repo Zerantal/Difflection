@@ -43,6 +43,13 @@ public partial class TopToolbar : UserControl
         FitZoomToStage?.Invoke();
     }
 
+    private void DifferenceViewButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        _viewModel?.ToolState.SelectDifferenceView();
+        UpdateViewControls();
+        FitZoomToStage?.Invoke();
+    }
+
     private async void AddMediaButton_OnClick(object? sender, RoutedEventArgs e)
     {
         await OpenFilePickerAndAddImagesAsync();
@@ -121,6 +128,24 @@ public partial class TopToolbar : UserControl
         _viewModel?.ToolState.SetZoomScale(1.0);
     }
 
+    private void DifferenceBaseBaselineButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        _viewModel?.ComparisonDisplay.SelectDifferenceBaseImage(DifferenceBaseImage.Baseline);
+        UpdateViewControls();
+    }
+
+    private void DifferenceBaseCandidateButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        _viewModel?.ComparisonDisplay.SelectDifferenceBaseImage(DifferenceBaseImage.Candidate);
+        UpdateViewControls();
+    }
+
+    private void DifferenceBaseMapButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        _viewModel?.ComparisonDisplay.SelectDifferenceBaseImage(DifferenceBaseImage.Map);
+        UpdateViewControls();
+    }
+
     private void OnDataContextChanged(object? sender, EventArgs e)
     {
         UnsubscribeViewModelEvents();
@@ -136,7 +161,14 @@ public partial class TopToolbar : UserControl
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName is nameof(ComparisonToolStateViewModel.SelectedViewMode) or nameof(ComparisonToolStateViewModel.CanUseSplitScreen))
+        if (e.PropertyName is nameof(ComparisonToolStateViewModel.SelectedViewMode)
+            or nameof(ComparisonToolStateViewModel.CanUseSplitScreen)
+            or nameof(ComparisonToolStateViewModel.CanUseDifferenceView))
+        {
+            UpdateViewControls();
+        }
+
+        if (e.PropertyName is nameof(ComparisonDisplayViewModel.DifferenceBaseImage))
         {
             UpdateViewControls();
         }
@@ -151,7 +183,9 @@ public partial class TopToolbar : UserControl
 
         ApplyViewModeButtonState(SideBySideViewButton, _viewModel.ToolState.IsSideBySideView);
         ApplyViewModeButtonState(SplitScreenViewButton, _viewModel.ToolState.IsSplitScreenView);
+        ApplyViewModeButtonState(DifferenceViewButton, _viewModel.ToolState.IsDifferenceView);
         SplitScreenViewButton.Opacity = _viewModel.ToolState.CanUseSplitScreen ? 1.0 : 0.58;
+        DifferenceViewButton.Opacity = _viewModel.ToolState.CanUseDifferenceView ? 1.0 : 0.58;
     }
 
     private static void ApplyViewModeButtonState(Button button, bool isActive)
@@ -169,6 +203,7 @@ public partial class TopToolbar : UserControl
         }
 
         _viewModel.ToolState.PropertyChanged += OnViewModelPropertyChanged;
+        _viewModel.ComparisonDisplay.PropertyChanged += OnViewModelPropertyChanged;
     }
 
     private void UnsubscribeViewModelEvents()
@@ -179,5 +214,6 @@ public partial class TopToolbar : UserControl
         }
 
         _viewModel.ToolState.PropertyChanged -= OnViewModelPropertyChanged;
+        _viewModel.ComparisonDisplay.PropertyChanged -= OnViewModelPropertyChanged;
     }
 }

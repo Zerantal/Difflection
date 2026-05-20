@@ -8,6 +8,7 @@ public partial class ComparisonToolStateViewModel(Func<bool> canUseSplitScreenPr
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsSideBySideView))]
     [NotifyPropertyChangedFor(nameof(IsSplitScreenView))]
+    [NotifyPropertyChangedFor(nameof(IsDifferenceView))]
     [NotifyPropertyChangedFor(nameof(CurrentViewTitle))]
     public partial ComparisonViewMode SelectedViewMode { get; set; } = ComparisonViewMode.SideBySide;
 
@@ -25,11 +26,16 @@ public partial class ComparisonToolStateViewModel(Func<bool> canUseSplitScreenPr
 
     public bool IsSplitScreenView => SelectedViewMode == ComparisonViewMode.SplitScreen;
 
+    public bool IsDifferenceView => SelectedViewMode == ComparisonViewMode.Difference;
+
     public bool CanUseSplitScreen => canUseSplitScreenProvider();
+
+    public bool CanUseDifferenceView => canUseSplitScreenProvider();
 
     public string CurrentViewTitle => SelectedViewMode switch
     {
         ComparisonViewMode.SplitScreen => "Split screen",
+        ComparisonViewMode.Difference => "Difference",
         _ => "Side-by-side"
     };
 
@@ -72,11 +78,20 @@ public partial class ComparisonToolStateViewModel(Func<bool> canUseSplitScreenPr
         }
     }
 
+    public void SelectDifferenceView()
+    {
+        if (CanUseDifferenceView)
+        {
+            SelectedViewMode = ComparisonViewMode.Difference;
+        }
+    }
+
     public void NotifyCanUseSplitScreenChanged()
     {
         OnPropertyChanged(nameof(CanUseSplitScreen));
+        OnPropertyChanged(nameof(CanUseDifferenceView));
 
-        if (!CanUseSplitScreen && IsSplitScreenView)
+        if (!CanUseSplitScreen && (IsSplitScreenView || IsDifferenceView))
         {
             SelectSideBySideView();
         }
