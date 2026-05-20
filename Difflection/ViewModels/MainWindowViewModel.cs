@@ -201,7 +201,7 @@ public class MainWindowViewModel : ViewModelBase
             return;
         }
 
-        if (comparison.CandidateImageId == currentVersion.Id)
+        if (comparison.CandidateChannel.Contains(currentVersion))
         {
             await UpdateComparisonReviewStateAsync(project, comparison, cancellationToken);
         }
@@ -324,25 +324,25 @@ public class MainWindowViewModel : ViewModelBase
         ComparisonSet comparison,
         CancellationToken cancellationToken)
     {
-        if (ProjectStorage is null || comparison.ReferenceImage is not { } reference || comparison.CandidateImage is not { } candidate)
+        if (ProjectStorage is null || comparison.BaselineImage is not { } baseline || comparison.CandidateImage is not { } candidate)
         {
             return false;
         }
 
-        await using var referenceStream = await ProjectStorage.LoadImageAsync(reference, cancellationToken);
+        await using var baselineStream = await ProjectStorage.LoadImageAsync(baseline, cancellationToken);
         await using var candidateStream = await ProjectStorage.LoadImageAsync(candidate, cancellationToken);
-        using var referenceBitmap = new Bitmap(referenceStream);
+        using var baselineBitmap = new Bitmap(baselineStream);
         using var candidateBitmap = new Bitmap(candidateStream);
-        return ImageDifferenceMetric.Compare(referenceBitmap, candidateBitmap)?.DifferentPixels > 0;
+        return ImageDifferenceMetric.Compare(baselineBitmap, candidateBitmap)?.DifferentPixels > 0;
     }
 
     private static IReadOnlyList<(ImageAsset Image, ImageMonitoringRole Role)> GetCurrentRoleImages(ComparisonSet comparison)
     {
         List<(ImageAsset Image, ImageMonitoringRole Role)> roleImages = [];
 
-        if (comparison.ReferenceImage is { } reference)
+        if (comparison.BaselineImage is { } baseline)
         {
-            roleImages.Add((reference, ImageMonitoringRole.Reference));
+            roleImages.Add((baseline, ImageMonitoringRole.Baseline));
         }
 
         if (comparison.CandidateImage is { } candidate && roleImages.All(item => item.Image.Id != candidate.Id))
@@ -422,7 +422,7 @@ public class MainWindowViewModel : ViewModelBase
                 break;
             case nameof(WorkspaceNavigatorViewModel.SelectedComparison):
                 {
-                    if (Workspace.SelectedComparison?.ReferenceImage is null)
+                    if (Workspace.SelectedComparison?.BaselineImage is null)
                     {
                         LeftImage = null;
                         LeftFileName = "Baseline image";

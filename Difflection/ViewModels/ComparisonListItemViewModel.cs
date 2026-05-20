@@ -27,7 +27,7 @@ public class ComparisonListItemViewModel(ComparisonSet comparison) : SidebarList
                 return "No images";
             }
 
-            if (Comparison.ReferenceImage is null)
+            if (Comparison.BaselineImage is null)
             {
                 return "Needs baseline";
             }

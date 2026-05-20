@@ -1,0 +1,135 @@
+<!-- ReSharper disable Xaml.StyleClassNotFound -->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Difflection.ViewModels"
+             xmlns:views="using:Difflection.Views"
+             x:Class="Difflection.Views.ImageChannelFrame"
+             x:Name="Root">
+    <Border Classes="channelFrame"
+            Classes.baselineChannelFrame="{Binding #Root.IsBaselineChannel}"
+            Classes.candidateChannelFrame="{Binding #Root.IsCandidateChannel}">
+        <Grid ColumnDefinitions="30,*"
+              ColumnSpacing="8">
+            <Border Classes="channelLabel"
+                    Classes.baselineChannelLabel="{Binding #Root.IsBaselineChannel}"
+                    Classes.candidateChannelLabel="{Binding #Root.IsCandidateChannel}">
+                <TextBlock Classes="channelLabelText"
+                           Text="{Binding #Root.ChannelName}">
+                    <TextBlock.RenderTransform>
+                        <RotateTransform Angle="-90" />
+                    </TextBlock.RenderTransform>
+                </TextBlock>
+            </Border>
+            <ListBox Grid.Column="1"
+                     Name="{Binding #Root.ListName}"
+                     Classes="sidebarList"
+                     ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                     ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                     ItemsSource="{Binding #Root.Items}">
+                <ListBox.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <VirtualizingStackPanel Orientation="Horizontal" />
+                    </ItemsPanelTemplate>
+                </ListBox.ItemsPanel>
+                <ListBox.ItemTemplate>
+                    <DataTemplate x:DataType="vm:ComparisonImageSetItemViewModel">
+                        <Grid Classes="revisionTile">
+                            <ToolTip.Tip>
+                                <StackPanel MaxWidth="520"
+                                            Spacing="3">
+                                    <Grid ColumnDefinitions="Auto,*"
+                                          ColumnSpacing="4">
+                                        <TextBlock Text="Filename:"
+                                                   FontWeight="Bold" />
+                                        <views:MiddleEllipsisTextBlock FullText="{Binding SourceName}"
+                                                                       Grid.Column="1"
+                                                                       TextWrapping="NoWrap"
+                                                                       ToolTip.Tip="{Binding SourceName}" />
+                                    </Grid>
+                                    <Grid ColumnDefinitions="Auto,*"
+                                          ColumnSpacing="4">
+                                        <TextBlock Text="File location:"
+                                                   FontWeight="Bold" />
+                                        <views:MiddleEllipsisTextBlock FullText="{Binding FileLocationText}"
+                                                                       Grid.Column="1"
+                                                                       TextWrapping="NoWrap"
+                                                                       ToolTip.Tip="{Binding FileLocationText}" />
+                                    </Grid>
+                                    <StackPanel Orientation="Horizontal"
+                                                Spacing="4">
+                                        <TextBlock Text="Date:"
+                                                   FontWeight="Bold" />
+                                        <TextBlock Text="{Binding AddedAtText}" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal"
+                                                Spacing="4"
+                                                IsVisible="{Binding HasDisplayLabel}">
+                                        <TextBlock Text="Image tag:"
+                                                   FontWeight="Bold" />
+                                        <TextBlock Text="{Binding DisplayLabel}" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </ToolTip.Tip>
+                            <Button Classes="revisionThumbnailButton"
+                                    Command="{Binding #Root.((vm:MainWindowViewModel)DataContext)?.ImageSet.SetActiveImageAndRefreshCommand}"
+                                    CommandParameter="{Binding}">
+                                <Button.ContextMenu>
+                                    <ContextMenu>
+                                        <MenuItem Header="Tag Image"
+                                                  Click="TagImageMenuItem_OnClick" />
+                                        <MenuItem Header="Set Active Revision"
+                                                  Command="{Binding #Root.((vm:MainWindowViewModel)DataContext)?.ImageSet.SetActiveImageAndRefreshCommand}"
+                                                  CommandParameter="{Binding}" />
+                                        <MenuItem Header="Remove Revision"
+                                                  Command="{Binding #Root.((vm:MainWindowViewModel)DataContext)?.ImageSet.DeleteImageAndRefreshCommand}"
+                                                  CommandParameter="{Binding Image}" />
+                                    </ContextMenu>
+                                </Button.ContextMenu>
+                                <Border Classes="revisionThumbnailFrame"
+                                        Classes.active="{Binding IsActive}"
+                                        Classes.baseline="{Binding IsBaseline}"
+                                        Classes.candidate="{Binding IsCandidate}">
+                                    <Grid>
+                                        <Image Source="{Binding Thumbnail}"
+                                               Stretch="UniformToFill"
+                                               RenderOptions.BitmapInterpolationMode="None"
+                                               IsVisible="{Binding HasThumbnail}" />
+                                        <TextBlock Classes="imageSourceText"
+                                                   Text="No preview"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center"
+                                                   FontSize="10"
+                                                   IsVisible="{Binding HasNoThumbnail}" />
+                                        <Border Classes="revisionTagOverlay"
+                                                HorizontalAlignment="Left"
+                                                VerticalAlignment="Top"
+                                                IsVisible="{Binding HasDisplayLabel}">
+                                            <TextBlock Classes="revisionTagText"
+                                                       Text="{Binding DisplayLabel}" />
+                                        </Border>
+                                        <Border Classes="revisionMetaOverlay"
+                                                HorizontalAlignment="Left"
+                                                VerticalAlignment="Bottom">
+                                            <TextBlock Classes="revisionMetaText"
+                                                       Text="{Binding RevisionText}" />
+                                        </Border>
+                                    </Grid>
+                                </Border>
+                            </Button>
+                            <Button Classes="revisionDeleteButton"
+                                    ToolTip.Tip="Remove revision"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Top"
+                                    Command="{Binding #Root.((vm:MainWindowViewModel)DataContext)?.ImageSet.DeleteImageAndRefreshCommand}"
+                                    CommandParameter="{Binding Image}">
+                                <PathIcon Data="{StaticResource Icon.Delete}"
+                                          Width="11"
+                                          Height="11" />
+                            </Button>
+                        </Grid>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </Grid>
+    </Border>
+</UserControl>

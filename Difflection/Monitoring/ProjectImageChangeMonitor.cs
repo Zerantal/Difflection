@@ -129,14 +129,12 @@ public sealed class ProjectImageChangeMonitor : IDisposable
     {
         if (project.Settings.MonitorSourceFilesForChanges)
         {
-            if (comparison.ReferenceImage is { } reference && HasExistingSourcePath(reference))
+            if (comparison.BaselineImage is { } baseline && HasExistingSourcePath(baseline))
             {
-                yield return new MonitoredImage(project, comparison, reference, ImageMonitoringRole.Reference, CaptureCurrentRole: true);
+                yield return new MonitoredImage(project, comparison, baseline, ImageMonitoringRole.Baseline, CaptureCurrentRole: true);
             }
 
-            if (comparison.CandidateImage is { } candidate
-                && candidate.Id != comparison.ReferenceImageId
-                && HasExistingSourcePath(candidate))
+            if (comparison.CandidateImage is { } candidate && HasExistingSourcePath(candidate))
             {
                 yield return new MonitoredImage(project, comparison, candidate, ImageMonitoringRole.Candidate, CaptureCurrentRole: true);
             }

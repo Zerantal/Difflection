@@ -29,7 +29,7 @@ public sealed class ProjectModelTests
         comparison.AddImage(candidate);
 
         Assert.Equal("Landing Page", comparison.Name);
-        Assert.Equal(reference.Id, comparison.ReferenceImageId);
+        Assert.Equal(reference.Id, comparison.BaselineImageId);
         Assert.Equal(candidate.Id, comparison.CandidateImageId);
         Assert.Collection(
             comparison.Images,

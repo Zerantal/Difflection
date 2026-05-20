@@ -62,7 +62,7 @@ public class WorkspaceStatusViewModel(
 
             return workspace.SelectedComparison.Images.Count switch
             {
-                0 => "Add or drop a reference image.",
+                0 => "Add or drop a baseline image.",
                 1 => "Add or drop a candidate image.",
                 _ => string.Empty
             };
@@ -115,7 +115,7 @@ public class WorkspaceStatusViewModel(
                 return "Create a comparison, or drop images to create one automatically.";
             }
 
-            return "Add or drop a reference image to begin.";
+            return "Add or drop a baseline image to begin.";
         }
     }
 

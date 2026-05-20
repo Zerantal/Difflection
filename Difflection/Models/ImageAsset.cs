@@ -39,6 +39,6 @@ public sealed class ImageSourceMetadata
 public enum ImageMonitoringRole
 {
     None,
-    Reference,
+    Baseline,
     Candidate
 }

@@ -265,7 +265,7 @@ public sealed class MainWindowViewModelTests
         Assert.Equal("image/png", image.MediaType);
         Assert.Equal("stored/reference.png", image.StorageKey);
         Assert.Same(image, Assert.Single(comparison.Images));
-        Assert.Equal(image.Id, comparison.ReferenceImageId);
+        Assert.Equal(image.Id, comparison.BaselineImageId);
         Assert.Null(comparison.CandidateImageId);
         Assert.Equal("Needs candidate", viewModel.Workspace.SelectedComparisonRow?.DetailText);
         Assert.Equal([1, 2, 3], storage.SavedImageContents[image.Id]);
@@ -288,7 +288,7 @@ public sealed class MainWindowViewModelTests
         Assert.Equal(2, addedImages.Count);
         Assert.Equal(2, comparison.Images.Count);
         Assert.Equal("reference-drop", comparison.Name);
-        Assert.Equal(comparison.Images[0].Id, comparison.ReferenceImageId);
+        Assert.Equal(comparison.Images[0].Id, comparison.BaselineImageId);
         Assert.Equal(comparison.Images[1].Id, comparison.CandidateImageId);
         Assert.Equal("reference-drop.png", viewModel.LeftFileName);
         Assert.Equal("candidate-drop.png", viewModel.RightFileName);
@@ -338,11 +338,11 @@ public sealed class MainWindowViewModelTests
         var removedCount = await viewModel.ImageSet.ClearNonRoleImagesAndRefreshAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(1, removedCount);
-        Assert.Equal([reference, candidate], comparison.Images);
-        Assert.Same(reference, comparison.ReferenceImage);
-        Assert.Same(candidate, comparison.CandidateImage);
-        Assert.DoesNotContain(extra.Id, storage.SavedImageContents.Keys);
-        Assert.Contains(extra.Id, storage.DeletedImageIds);
+        Assert.Equal([reference, extra], comparison.Images);
+        Assert.Same(reference, comparison.BaselineImage);
+        Assert.Same(extra, comparison.CandidateImage);
+        Assert.DoesNotContain(candidate.Id, storage.SavedImageContents.Keys);
+        Assert.Contains(candidate.Id, storage.DeletedImageIds);
         Assert.False(viewModel.ImageSet.CanClearNonRoleImages);
     }
 
@@ -424,7 +424,7 @@ public sealed class MainWindowViewModelTests
         Assert.Equal("0 images in image set", viewModel.WorkspaceStatus.WorkspaceContextDetail);
         Assert.True(viewModel.WorkspaceStatus.ShowMainEmptyState);
         Assert.Equal("No images in this comparison", viewModel.WorkspaceStatus.MainEmptyStateTitle);
-        Assert.Equal("Add or drop a reference image.", viewModel.WorkspaceStatus.WorkspaceActionHint);
+        Assert.Equal("Add or drop a baseline image.", viewModel.WorkspaceStatus.WorkspaceActionHint);
 
         await viewModel.ImageSet.AddImageAsync("reference.png", new MemoryStream([1]), cancellationToken: TestContext.Current.CancellationToken);
 
@@ -466,8 +466,8 @@ public sealed class MainWindowViewModelTests
 
         Assert.True(deleted);
         Assert.DoesNotContain(reference, comparison.Images);
-        Assert.Equal(candidate.Id, comparison.ReferenceImageId);
-        Assert.Null(comparison.CandidateImageId);
+        Assert.Null(comparison.BaselineImageId);
+        Assert.Equal(candidate.Id, comparison.CandidateImageId);
         Assert.Contains(reference.Id, storage.DeletedImageIds);
         Assert.Same(project, Assert.Single(storage.SavedProjects));
     }
@@ -543,7 +543,7 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
-    public async Task SetReferenceImageAsync_sets_reference_and_saves_project()
+    public async Task SetBaselineImageAsync_sets_reference_and_saves_project()
     {
         var storage = new FakeProjectStorage();
         var viewModel = new MainWindowViewModel(storage);
@@ -551,15 +551,16 @@ public sealed class MainWindowViewModelTests
         var comparison = await viewModel.Workspace.AddComparisonAsync("Comparison", TestContext.Current.CancellationToken);
         var reference = await viewModel.ImageSet.AddImageAsync("reference.png", new MemoryStream([1]), cancellationToken: TestContext.Current.CancellationToken);
         var candidate = await viewModel.ImageSet.AddImageAsync("candidate.png", new MemoryStream([2]), cancellationToken: TestContext.Current.CancellationToken);
-        var alternate = await viewModel.ImageSet.AddImageAsync("alternate.png", new MemoryStream([3]), cancellationToken: TestContext.Current.CancellationToken);
+        var alternate = new ImageAsset { Label = "alternate", SourceName = "alternate.png" };
+        comparison.AddImageToChannel(comparison.BaselineChannel, alternate);
         storage.SavedProjects.Clear();
 
-        var changed = await viewModel.ImageSet.SetReferenceImageAsync(alternate, TestContext.Current.CancellationToken);
+        var changed = await viewModel.ImageSet.SetBaselineImageAsync(alternate, TestContext.Current.CancellationToken);
 
         Assert.True(changed);
-        Assert.Equal(alternate.Id, comparison.ReferenceImageId);
+        Assert.Equal(alternate.Id, comparison.BaselineImageId);
         Assert.Equal(candidate.Id, comparison.CandidateImageId);
-        Assert.NotEqual(reference.Id, comparison.ReferenceImageId);
+        Assert.NotEqual(reference.Id, comparison.BaselineImageId);
         Assert.Same(project, Assert.Single(storage.SavedProjects));
     }
 
@@ -578,14 +579,14 @@ public sealed class MainWindowViewModelTests
         var changed = await viewModel.ImageSet.SetCandidateImageAsync(alternate, TestContext.Current.CancellationToken);
 
         Assert.True(changed);
-        Assert.Equal(reference.Id, comparison.ReferenceImageId);
+        Assert.Equal(reference.Id, comparison.BaselineImageId);
         Assert.Equal(alternate.Id, comparison.CandidateImageId);
         Assert.NotEqual(candidate.Id, comparison.CandidateImageId);
         Assert.Same(project, Assert.Single(storage.SavedProjects));
     }
 
     [Fact]
-    public async Task SetReferenceImageAsync_swaps_roles_when_image_is_current_candidate()
+    public async Task SetBaselineImageAsync_returns_false_for_candidate_channel_image()
     {
         var storage = new FakeProjectStorage();
         var viewModel = new MainWindowViewModel(storage);
@@ -594,15 +595,15 @@ public sealed class MainWindowViewModelTests
         var reference = await viewModel.ImageSet.AddImageAsync("reference.png", new MemoryStream([1]), cancellationToken: TestContext.Current.CancellationToken);
         var candidate = await viewModel.ImageSet.AddImageAsync("candidate.png", new MemoryStream([2]), cancellationToken: TestContext.Current.CancellationToken);
 
-        var changed = await viewModel.ImageSet.SetReferenceImageAsync(candidate, TestContext.Current.CancellationToken);
+        var changed = await viewModel.ImageSet.SetBaselineImageAsync(candidate, TestContext.Current.CancellationToken);
 
-        Assert.True(changed);
-        Assert.Equal(candidate.Id, comparison.ReferenceImageId);
-        Assert.Equal(reference.Id, comparison.CandidateImageId);
+        Assert.False(changed);
+        Assert.Equal(reference.Id, comparison.BaselineImageId);
+        Assert.Equal(candidate.Id, comparison.CandidateImageId);
     }
 
     [Fact]
-    public async Task SetCandidateImageAsync_swaps_roles_when_image_is_current_reference()
+    public async Task SetCandidateImageAsync_returns_false_for_baseline_channel_image()
     {
         var storage = new FakeProjectStorage();
         var viewModel = new MainWindowViewModel(storage);
@@ -613,9 +614,9 @@ public sealed class MainWindowViewModelTests
 
         var changed = await viewModel.ImageSet.SetCandidateImageAsync(reference, TestContext.Current.CancellationToken);
 
-        Assert.True(changed);
-        Assert.Equal(candidate.Id, comparison.ReferenceImageId);
-        Assert.Equal(reference.Id, comparison.CandidateImageId);
+        Assert.False(changed);
+        Assert.Equal(reference.Id, comparison.BaselineImageId);
+        Assert.Equal(candidate.Id, comparison.CandidateImageId);
     }
 
     [Fact]
@@ -638,17 +639,16 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
-    public async Task SetCandidateImageAsync_requires_at_least_two_images()
+    public async Task SetCandidateImageAsync_returns_false_for_baseline_only_image()
     {
         var viewModel = new MainWindowViewModel(new FakeProjectStorage());
         await viewModel.Workspace.AddProjectAsync("Project", TestContext.Current.CancellationToken);
         await viewModel.Workspace.AddComparisonAsync("Comparison", TestContext.Current.CancellationToken);
         var image = await viewModel.ImageSet.AddImageAsync("reference.png", new MemoryStream([1]), cancellationToken: TestContext.Current.CancellationToken);
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => viewModel.ImageSet.SetCandidateImageAsync(image, TestContext.Current.CancellationToken));
+        var changed = await viewModel.ImageSet.SetCandidateImageAsync(image, TestContext.Current.CancellationToken);
 
-        Assert.Contains("at least two images", exception.Message);
+        Assert.False(changed);
     }
 
     [Fact]
@@ -661,7 +661,7 @@ public sealed class MainWindowViewModelTests
         var missing = new ImageAsset();
         storage.SavedProjects.Clear();
 
-        var referenceChanged = await viewModel.ImageSet.SetReferenceImageAsync(missing, TestContext.Current.CancellationToken);
+        var referenceChanged = await viewModel.ImageSet.SetBaselineImageAsync(missing, TestContext.Current.CancellationToken);
         var candidateChanged = await viewModel.ImageSet.SetCandidateImageAsync(missing, TestContext.Current.CancellationToken);
 
         Assert.False(referenceChanged);
@@ -679,11 +679,11 @@ public sealed class MainWindowViewModelTests
         var candidate = await viewModel.ImageSet.AddImageAsync("candidate.png", new MemoryStream([2]), cancellationToken: TestContext.Current.CancellationToken);
         var missing = new ImageAsset();
 
-        Assert.True(viewModel.ImageSet.CanSetReferenceImage(reference));
+        Assert.True(viewModel.ImageSet.CanSetBaselineImage(reference));
         Assert.True(viewModel.ImageSet.CanSetCandidateImage(candidate));
-        Assert.False(viewModel.ImageSet.CanSetReferenceImage(missing));
+        Assert.False(viewModel.ImageSet.CanSetBaselineImage(missing));
         Assert.False(viewModel.ImageSet.CanSetCandidateImage(missing));
-        Assert.False(viewModel.ImageSet.CanSetReferenceImage(null));
+        Assert.False(viewModel.ImageSet.CanSetBaselineImage(null));
         Assert.False(viewModel.ImageSet.CanSetCandidateImage(null));
     }
 
@@ -717,8 +717,8 @@ public sealed class MainWindowViewModelTests
         };
 
         comparison.AddImage(oldest);
-        comparison.AddImage(middle);
-        comparison.AddImage(newest);
+        comparison.AddImageToChannel(comparison.BaselineChannel, middle);
+        comparison.AddImageToChannel(comparison.BaselineChannel, newest);
 
         await viewModel.ImageSet.RefreshImageRowsAsync(TestContext.Current.CancellationToken);
 
@@ -778,7 +778,7 @@ public sealed class MainWindowViewModelTests
         var comparison = await viewModel.Workspace.AddComparisonAsync("Comparison", TestContext.Current.CancellationToken);
         var file = TestUiSupport.CreateStorageFile("monitored-reference.png");
         var image = await viewModel.ImageSet.AddImageAsync(file, cancellationToken: TestContext.Current.CancellationToken);
-        await viewModel.SetImageMonitoringAsync(image, ImageMonitoringRole.Reference, TestContext.Current.CancellationToken);
+        await viewModel.SetImageMonitoringAsync(image, ImageMonitoringRole.Baseline, TestContext.Current.CancellationToken);
         storage.SavedProjects.Clear();
 
         WriteFixtureImage(file.Path.LocalPath, SKColors.DarkGreen);
@@ -788,8 +788,8 @@ public sealed class MainWindowViewModelTests
         Assert.NotNull(version);
         Assert.Equal(image.Id, version.PreviousVersionImageId);
         Assert.Equal(ImageMonitoringRole.None, image.MonitoringRole);
-        Assert.Equal(ImageMonitoringRole.Reference, version.MonitoringRole);
-        Assert.Equal(version.Id, comparison.ReferenceImageId);
+        Assert.Equal(ImageMonitoringRole.Baseline, version.MonitoringRole);
+        Assert.Equal(version.Id, comparison.BaselineImageId);
         Assert.Equal(2, comparison.Images.Count);
         Assert.Same(project, Assert.Single(storage.SavedProjects));
     }
@@ -812,7 +812,7 @@ public sealed class MainWindowViewModelTests
         var version = await viewModel.CaptureMonitoredImageChangeAsync(project, comparison, candidate, TestContext.Current.CancellationToken);
 
         Assert.NotNull(version);
-        Assert.Equal(reference.Id, comparison.ReferenceImageId);
+        Assert.Equal(reference.Id, comparison.BaselineImageId);
         Assert.Equal(version.Id, comparison.CandidateImageId);
         Assert.Equal(candidate.Id, version.PreviousVersionImageId);
         Assert.Equal(ImageMonitoringRole.None, candidate.MonitoringRole);
@@ -830,7 +830,7 @@ public sealed class MainWindowViewModelTests
         var project = await viewModel.Workspace.AddProjectAsync("Project", TestContext.Current.CancellationToken);
         var comparison = await viewModel.Workspace.AddComparisonAsync("Comparison", TestContext.Current.CancellationToken);
         var image = await viewModel.ImageSet.AddImageAsync(TestUiSupport.CreateStorageFile("unchanged-source.png"), cancellationToken: TestContext.Current.CancellationToken);
-        await viewModel.SetImageMonitoringAsync(image, ImageMonitoringRole.Reference, TestContext.Current.CancellationToken);
+        await viewModel.SetImageMonitoringAsync(image, ImageMonitoringRole.Baseline, TestContext.Current.CancellationToken);
         storage.SavedProjects.Clear();
 
         var version = await viewModel.CaptureMonitoredImageChangeAsync(project, comparison, image, TestContext.Current.CancellationToken);
@@ -864,11 +864,11 @@ public sealed class MainWindowViewModelTests
 
         Assert.Equal(2, capturedCount);
         Assert.Equal(4, comparison.Images.Count);
-        Assert.NotEqual(reference.Id, comparison.ReferenceImageId);
+        Assert.NotEqual(reference.Id, comparison.BaselineImageId);
         Assert.NotEqual(candidate.Id, comparison.CandidateImageId);
-        Assert.Equal(reference.Id, comparison.ReferenceImage?.PreviousVersionImageId);
+        Assert.Equal(reference.Id, comparison.BaselineImage?.PreviousVersionImageId);
         Assert.Equal(candidate.Id, comparison.CandidateImage?.PreviousVersionImageId);
-        Assert.Equal(ImageMonitoringRole.None, comparison.ReferenceImage?.MonitoringRole);
+        Assert.Equal(ImageMonitoringRole.None, comparison.BaselineImage?.MonitoringRole);
         Assert.Equal(ImageMonitoringRole.None, comparison.CandidateImage?.MonitoringRole);
         Assert.True(comparison.RequiresReview);
         Assert.True(viewModel.Workspace.SelectedComparisonRow?.NeedsReview);
@@ -889,6 +889,7 @@ public sealed class MainWindowViewModelTests
         var reference = await viewModel.ImageSet.AddImageAsync(referenceFile, cancellationToken: TestContext.Current.CancellationToken);
         var candidate = await viewModel.ImageSet.AddImageAsync(candidateFile, cancellationToken: TestContext.Current.CancellationToken);
         var alternate = await viewModel.ImageSet.AddImageAsync(alternateFile, cancellationToken: TestContext.Current.CancellationToken);
+        comparison.SetCandidateImage(candidate.Id);
         var referenceModifiedAt = reference.OriginalFileMetadata?.LastModifiedAt ?? DateTimeOffset.UtcNow;
         var alternateModifiedAt = alternate.OriginalFileMetadata?.LastModifiedAt ?? DateTimeOffset.UtcNow;
         storage.SavedProjects.Clear();
@@ -902,7 +903,7 @@ public sealed class MainWindowViewModelTests
 
         Assert.Equal(0, capturedCount);
         Assert.Equal(3, comparison.Images.Count);
-        Assert.Equal(reference.Id, comparison.ReferenceImageId);
+        Assert.Equal(reference.Id, comparison.BaselineImageId);
         Assert.Equal(candidate.Id, comparison.CandidateImageId);
         Assert.Empty(storage.SavedProjects);
     }
@@ -956,8 +957,8 @@ public sealed class MainWindowViewModelTests
         var capturedCount = await viewModel.RefreshProjectSourceImagesAsync(project, TestContext.Current.CancellationToken);
 
         Assert.Equal(2, capturedCount);
-        Assert.Equal(firstReference.Id, first.ReferenceImage?.PreviousVersionImageId);
-        Assert.Equal(secondReference.Id, second.ReferenceImage?.PreviousVersionImageId);
+        Assert.Equal(firstReference.Id, first.BaselineImage?.PreviousVersionImageId);
+        Assert.Equal(secondReference.Id, second.BaselineImage?.PreviousVersionImageId);
     }
 
     [AvaloniaFact]
@@ -994,7 +995,7 @@ public sealed class MainWindowViewModelTests
         await viewModel.ApplyCapturedImageVersionAsync(project, comparison, version, TestContext.Current.CancellationToken);
 
         Assert.Contains(viewModel.ImageSet.ImageRows, row => row.Id == version.Id && row.IsCandidate);
-        Assert.Same(reference, comparison.ReferenceImage);
+        Assert.Same(reference, comparison.BaselineImage);
         Assert.Same(version, comparison.CandidateImage);
     }
 

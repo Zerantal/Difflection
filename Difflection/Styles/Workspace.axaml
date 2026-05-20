@@ -42,7 +42,7 @@
     <Style Selector="Button.imageActionIconButton:disabled">
         <Setter Property="Opacity" Value="0.45" />
     </Style>
-    <Style Selector="Button.imageActionIconButton.referenceActive">
+    <Style Selector="Button.imageActionIconButton.baselineActive">
         <Setter Property="Background" Value="#3A2A1F" />
         <Setter Property="BorderBrush" Value="#F97316" />
     </Style>
@@ -190,6 +190,67 @@
         <Setter Property="Width" Value="238" />
         <Setter Property="MinHeight" Value="168" />
     </Style>
+    <Style Selector="Grid.revisionTile">
+        <Setter Property="Width" Value="96" />
+        <Setter Property="Height" Value="70" />
+        <Setter Property="Margin" Value="0,0,8,0" />
+    </Style>
+    <Style Selector="Button.revisionThumbnailButton">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+        <Setter Property="VerticalAlignment" Value="Stretch" />
+    </Style>
+    <Style Selector="Border.revisionThumbnailFrame">
+        <Setter Property="Background" Value="#0A0A0A" />
+        <Setter Property="BorderBrush" Value="#343434" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="4" />
+        <Setter Property="ClipToBounds" Value="True" />
+    </Style>
+    <Style Selector="Border.revisionThumbnailFrame.active.baseline">
+        <Setter Property="BorderBrush" Value="#00AFFF" />
+        <Setter Property="BorderThickness" Value="2" />
+    </Style>
+    <Style Selector="Border.revisionThumbnailFrame.active.candidate">
+        <Setter Property="BorderBrush" Value="#F97316" />
+        <Setter Property="BorderThickness" Value="2" />
+    </Style>
+    <Style Selector="Button.revisionDeleteButton">
+        <Setter Property="Background" Value="#101010D8" />
+        <Setter Property="Foreground" Value="#F3F4F6" />
+        <Setter Property="BorderBrush" Value="#3A3A3A" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="Width" Value="18" />
+        <Setter Property="Height" Value="18" />
+    </Style>
+    <Style Selector="Border.revisionMetaOverlay">
+        <Setter Property="Background" Value="#050505D8" />
+        <Setter Property="Padding" Value="5,1" />
+        <Setter Property="CornerRadius" Value="0,4,0,0" />
+    </Style>
+    <Style Selector="Border.revisionTagOverlay">
+        <Setter Property="Background" Value="#101010E8" />
+        <Setter Property="BorderBrush" Value="#525252" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Padding" Value="5,1" />
+        <Setter Property="CornerRadius" Value="0,0,4,0" />
+        <Setter Property="MaxWidth" Value="78" />
+    </Style>
+    <Style Selector="TextBlock.revisionTagText">
+        <Setter Property="Foreground" Value="#F3F4F6" />
+        <Setter Property="FontSize" Value="10" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    </Style>
+    <Style Selector="TextBlock.revisionMetaText">
+        <Setter Property="Foreground" Value="#F3F4F6" />
+        <Setter Property="FontSize" Value="10" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
     <Style Selector="Border.imageThumbnailFrame">
         <Setter Property="Background" Value="#0A0A0A" />
         <Setter Property="BorderBrush" Value="#282828" />
@@ -205,7 +266,7 @@
         <Setter Property="CornerRadius" Value="4" />
         <Setter Property="Padding" Value="6,2" />
     </Style>
-    <Style Selector="Border.referenceBadge">
+    <Style Selector="Border.baselineBadge">
         <Setter Property="Background" Value="#3A2A1F" />
         <Setter Property="BorderBrush" Value="#F97316" />
     </Style>
@@ -234,6 +295,51 @@
         <Setter Property="FontSize" Value="11" />
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="LetterSpacing" Value="0.4" />
+    </Style>
+    <Style Selector="TextBlock.imageSetTitleText">
+        <Setter Property="Foreground" Value="#C3CBD5" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="Border.channelFrame">
+        <Setter Property="Background" Value="#121212" />
+        <Setter Property="BorderBrush" Value="#343434" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="5" />
+        <Setter Property="Padding" Value="6" />
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+    </Style>
+    <Style Selector="Border.baselineChannelFrame">
+        <Setter Property="BorderBrush" Value="#245163" />
+    </Style>
+    <Style Selector="Border.candidateChannelFrame">
+        <Setter Property="BorderBrush" Value="#65401F" />
+    </Style>
+    <Style Selector="Border.channelLabel">
+        <Setter Property="Width" Value="30" />
+        <Setter Property="Height" Value="70" />
+        <Setter Property="CornerRadius" Value="3" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="ClipToBounds" Value="True" />
+    </Style>
+    <Style Selector="Border.baselineChannelLabel">
+        <Setter Property="Background" Value="#0C2530" />
+        <Setter Property="BorderBrush" Value="#00AFFF" />
+    </Style>
+    <Style Selector="Border.candidateChannelLabel">
+        <Setter Property="Background" Value="#302012" />
+        <Setter Property="BorderBrush" Value="#F97316" />
+    </Style>
+    <Style Selector="TextBlock.channelLabelText">
+        <Setter Property="Foreground" Value="#F3F4F6" />
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="Width" Value="70" />
+        <Setter Property="TextAlignment" Value="Center" />
     </Style>
     <Style Selector="TextBlock.workspaceContextTitle">
         <Setter Property="Foreground" Value="#F3F4F6" />

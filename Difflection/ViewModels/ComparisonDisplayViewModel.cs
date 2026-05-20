@@ -114,9 +114,9 @@ public partial class ComparisonDisplayViewModel : ViewModelBase
         _suppressDifferenceStatusUpdates = true;
         try
         {
-            if (selectedComparison?.ReferenceImage is { } reference)
+            if (selectedComparison?.BaselineImage is { } baseline)
             {
-                await LoadImageAssetAsync(ImageSlot.Left, reference, projectStorage, cancellationToken);
+                await LoadImageAssetAsync(ImageSlot.Left, baseline, projectStorage, cancellationToken);
             }
             else
             {

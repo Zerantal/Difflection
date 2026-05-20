@@ -6,8 +6,8 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Avalonia.Threading;
 using Avalonia.Platform.Storage;
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.Input;
 using Difflection.Infrastructure;
 using Difflection.Models;
@@ -44,23 +44,30 @@ public partial class ComparisonImageSetViewModel : ViewModelBase
 
     public ObservableCollection<ComparisonImageSetItemViewModel> ImageRows { get; } = [];
 
-    public bool CanSetReferenceImage(ImageAsset? image)
+    public ObservableCollection<ComparisonImageSetItemViewModel> BaselineRevisionRows { get; } = [];
+
+    public ObservableCollection<ComparisonImageSetItemViewModel> CandidateRevisionRows { get; } = [];
+
+    public bool HasBaselineRevisionRows => BaselineRevisionRows.Count > 0;
+
+    public bool HasCandidateRevisionRows => CandidateRevisionRows.Count > 0;
+
+    public bool CanClearNonRoleImages =>
+        _workspace.SelectedComparison?.Images.Any(IsNotCurrentRoleImage) == true;
+
+    public bool CanSetBaselineImage(ImageAsset? image)
     {
         return _workspace.SelectedComparison is not null
             && image is not null
-            && _workspace.SelectedComparison.Images.Contains(image);
+            && _workspace.SelectedComparison.BaselineChannel.Contains(image);
     }
 
     public bool CanSetCandidateImage(ImageAsset? image)
     {
         return _workspace.SelectedComparison is not null
             && image is not null
-            && _workspace.SelectedComparison.Images.Count >= 2
-            && _workspace.SelectedComparison.Images.Contains(image);
+            && _workspace.SelectedComparison.CandidateChannel.Contains(image);
     }
-
-    public bool CanClearNonRoleImages =>
-        _workspace.SelectedComparison?.Images.Any(IsNotCurrentRoleImage) == true;
 
     public async Task<ImageAsset> AddImageAsync(
         string sourceName,
@@ -148,15 +155,7 @@ public partial class ComparisonImageSetViewModel : ViewModelBase
         {
             var image = await AddImageAsync(file, cancellationToken: cancellationToken);
             addedImages.Add(image);
-
-            if (_workspace.SelectedComparison?.ReferenceImageId == image.Id)
-            {
-                await _comparisonDisplay.LoadImageAsync(ImageSlot.Left, file);
-            }
-            else if (_workspace.SelectedComparison?.CandidateImageId == image.Id)
-            {
-                await _comparisonDisplay.LoadImageAsync(ImageSlot.Right, file);
-            }
+            await LoadAddedImageIntoActiveSlotAsync(image, file, cancellationToken);
         }
 
         return addedImages;
@@ -204,12 +203,12 @@ public partial class ComparisonImageSetViewModel : ViewModelBase
             var image = await AddImageAsync(file.Name, addStream, cancellationToken: cancellationToken);
             addedImages.Add(image);
 
-            if (_workspace.SelectedComparison?.ReferenceImageId == image.Id)
+            if (_workspace.SelectedComparison?.BaselineChannel.Contains(image) == true)
             {
                 using var displayStream = new MemoryStream(file.Bytes, writable: false);
                 await _comparisonDisplay.LoadImageAsync(ImageSlot.Left, image.Label, displayStream);
             }
-            else if (_workspace.SelectedComparison?.CandidateImageId == image.Id)
+            else if (_workspace.SelectedComparison?.CandidateChannel.Contains(image) == true)
             {
                 using var displayStream = new MemoryStream(file.Bytes, writable: false);
                 await _comparisonDisplay.LoadImageAsync(ImageSlot.Right, image.Label, displayStream);
@@ -318,16 +317,16 @@ public partial class ComparisonImageSetViewModel : ViewModelBase
         return true;
     }
 
-    public async Task<bool> SetReferenceImageAsync(ImageAsset image, CancellationToken cancellationToken = default)
+    public async Task<bool> SetBaselineImageAsync(ImageAsset image, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(image);
 
-        if (_workspace.SelectedProject is null || _workspace.SelectedComparison is null || !_workspace.SelectedComparison.Images.Contains(image))
+        if (_workspace.SelectedProject is null || _workspace.SelectedComparison is null || !_workspace.SelectedComparison.BaselineChannel.Contains(image))
         {
             return false;
         }
 
-        _workspace.SelectedComparison.SetReferenceImage(image.Id);
+        _workspace.SelectedComparison.SetBaselineImage(image.Id);
         _workspace.SelectedProject.UpdatedAt = DateTimeOffset.UtcNow;
         await NotifySelectedComparisonImagesChangedAsync(cancellationToken);
 
@@ -336,9 +335,9 @@ public partial class ComparisonImageSetViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    public async Task<bool> SetReferenceImageAndRefreshAsync(ImageAsset image, CancellationToken cancellationToken = default)
+    public async Task<bool> SetBaselineImageAndRefreshAsync(ImageAsset image, CancellationToken cancellationToken = default)
     {
-        if (!await SetReferenceImageAsync(image, cancellationToken))
+        if (!await SetBaselineImageAsync(image, cancellationToken))
         {
             return false;
         }
@@ -351,14 +350,9 @@ public partial class ComparisonImageSetViewModel : ViewModelBase
     {
         ArgumentNullException.ThrowIfNull(image);
 
-        if (_workspace.SelectedProject is null || _workspace.SelectedComparison is null || !_workspace.SelectedComparison.Images.Contains(image))
+        if (_workspace.SelectedProject is null || _workspace.SelectedComparison is null || !_workspace.SelectedComparison.CandidateChannel.Contains(image))
         {
             return false;
-        }
-
-        if (_workspace.SelectedComparison.Images.Count < 2)
-        {
-            throw new InvalidOperationException("Setting a candidate image requires at least two images in the comparison.");
         }
 
         _workspace.SelectedComparison.SetCandidateImage(image.Id);
@@ -373,6 +367,24 @@ public partial class ComparisonImageSetViewModel : ViewModelBase
     public async Task<bool> SetCandidateImageAndRefreshAsync(ImageAsset image, CancellationToken cancellationToken = default)
     {
         if (!await SetCandidateImageAsync(image, cancellationToken))
+        {
+            return false;
+        }
+
+        await _comparisonDisplay.RefreshCurrentComparisonImagesAsync(_workspace.SelectedComparison, _projectStorage, cancellationToken);
+        return true;
+    }
+
+    [RelayCommand]
+    public async Task<bool> SetActiveImageAndRefreshAsync(ComparisonImageSetItemViewModel row, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(row);
+
+        var changed = row.IsBaseline
+            ? await SetBaselineImageAsync(row.Image, cancellationToken)
+            : await SetCandidateImageAsync(row.Image, cancellationToken);
+
+        if (!changed)
         {
             return false;
         }
@@ -397,20 +409,31 @@ public partial class ComparisonImageSetViewModel : ViewModelBase
             return;
         }
 
-        foreach (var image in comparison.Images
-                     .OrderByDescending(image => image.AddedAt)
-                     .ThenByDescending(image => image.SourceName, StringComparer.Ordinal))
-        {
-            var row = new ComparisonImageSetItemViewModel(image, comparison);
-            ImageRows.Add(row);
-
-            if (_projectStorage is not null)
-            {
-                await row.LoadThumbnailAsync(_projectStorage, cancellationToken);
-            }
-        }
+        await AddRevisionRowsAsync(BaselineRevisionRows, comparison.BaselineChannel, comparison, cancellationToken);
+        await AddRevisionRowsAsync(CandidateRevisionRows, comparison.CandidateChannel, comparison, cancellationToken);
 
         OnPropertyChanged(nameof(ImageRows));
+        OnPropertyChanged(nameof(BaselineRevisionRows));
+        OnPropertyChanged(nameof(CandidateRevisionRows));
+        OnPropertyChanged(nameof(HasBaselineRevisionRows));
+        OnPropertyChanged(nameof(HasCandidateRevisionRows));
+    }
+
+    private async Task LoadAddedImageIntoActiveSlotAsync(
+        ImageAsset image,
+        IStorageFile file,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        if (_workspace.SelectedComparison?.BaselineChannel.Contains(image) == true)
+        {
+            await _comparisonDisplay.LoadImageAsync(ImageSlot.Left, file);
+        }
+        else if (_workspace.SelectedComparison?.CandidateChannel.Contains(image) == true)
+        {
+            await _comparisonDisplay.LoadImageAsync(ImageSlot.Right, file);
+        }
     }
 
     private static string NormalizeName(string? name, string fallback)
@@ -449,7 +472,7 @@ public partial class ComparisonImageSetViewModel : ViewModelBase
     private bool IsNotCurrentRoleImage(ImageAsset image)
     {
         return _workspace.SelectedComparison is { } comparison
-            && comparison.ReferenceImageId != image.Id
+            && comparison.BaselineImageId != image.Id
             && comparison.CandidateImageId != image.Id;
     }
 
@@ -515,5 +538,30 @@ public partial class ComparisonImageSetViewModel : ViewModelBase
         }
 
         ImageRows.Clear();
+        BaselineRevisionRows.Clear();
+        CandidateRevisionRows.Clear();
+        OnPropertyChanged(nameof(HasBaselineRevisionRows));
+        OnPropertyChanged(nameof(HasCandidateRevisionRows));
+    }
+
+    private async Task AddRevisionRowsAsync(
+        ObservableCollection<ComparisonImageSetItemViewModel> rows,
+        ComparisonChannel channel,
+        ComparisonSet comparison,
+        CancellationToken cancellationToken)
+    {
+        foreach (var image in channel.Images
+                     .OrderByDescending(image => image.AddedAt)
+                     .ThenByDescending(image => image.SourceName, StringComparer.Ordinal))
+        {
+            var row = new ComparisonImageSetItemViewModel(image, comparison, channel);
+            ImageRows.Add(row);
+            rows.Add(row);
+
+            if (_projectStorage is not null)
+            {
+                await row.LoadThumbnailAsync(_projectStorage, cancellationToken);
+            }
+        }
     }
 }
