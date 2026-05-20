@@ -123,8 +123,8 @@ For the first pass, these can preserve the existing dark palette. The main win i
 6. [x] Replace view-level shell colors in `MainView.axaml`, `WorkspaceSidebar.axaml`, `ImageSetPanel.axaml`, `ComparisonStage.axaml`, and ruler views.
 7. [x] Normalize baseline/candidate colors across badges, channel frames, thumbnail borders, and action states.
 8. [x] Move active view-mode button styling out of `TopToolbar.axaml.cs` and into XAML styles.
-9. Point `PixelRuler` usage at theme resources; keep code defaults only as fallback values.
-10. Run existing UI snapshot tests and update baselines only after visually reviewing the intentional changes.
+9. [x] Point `PixelRuler` usage at theme resources; keep code defaults only as fallback values.
+10. [x] Run existing UI snapshot tests and update baselines only after visually reviewing the intentional changes.
 
 ## Suggested Priorities
 
