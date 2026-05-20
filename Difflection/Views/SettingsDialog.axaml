@@ -20,15 +20,19 @@
                     BorderThickness="1"
                     CornerRadius="6"
                     Padding="14">
-                <CheckBox x:Name="MonitorSourceFilesCheckBox"
-                          Foreground="{DynamicResource TextSecondaryBrush}"
-                          FontSize="13"
-                          Content="Monitor source file changes and add changed files to the current project" />
+                <StackPanel Spacing="10">
+                    <CheckBox x:Name="LightThemeCheckBox"
+                              Foreground="{DynamicResource TextSecondaryBrush}"
+                              FontSize="13"
+                              Content="Light theme"
+                              ToolTip.Tip="Use the light color palette." />
+                    <CheckBox x:Name="MonitorSourceFilesCheckBox"
+                              Foreground="{DynamicResource TextSecondaryBrush}"
+                              FontSize="13"
+                              Content="Monitor source files"
+                              ToolTip.Tip="Watch source folders for local image changes and add changed files to the current project." />
+                </StackPanel>
             </Border>
-            <TextBlock Text="Uses the folders of local source images already added to the selected project."
-                       Foreground="{DynamicResource TextMutedBrush}"
-                       FontSize="12"
-                       TextWrapping="Wrap" />
         </StackPanel>
 
         <StackPanel Grid.Row="1"

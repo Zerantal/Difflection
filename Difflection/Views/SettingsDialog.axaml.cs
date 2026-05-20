@@ -18,6 +18,8 @@ public partial class SettingsDialog : Window
 
     public bool MonitorSourceFilesForChanges => MonitorSourceFilesCheckBox.IsChecked == true;
 
+    public bool UseLightTheme => LightThemeCheckBox.IsChecked == true;
+
     public Task<bool> ShowOwnedAsync(Window owner)
     {
         _completion = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -30,6 +32,7 @@ public partial class SettingsDialog : Window
     {
         if (DataContext is MainWindowViewModel viewModel)
         {
+            LightThemeCheckBox.IsChecked = viewModel.IsLightThemeEnabled;
             MonitorSourceFilesCheckBox.IsChecked = viewModel.IsSelectedProjectSourceFileMonitoringEnabled;
             MonitorSourceFilesCheckBox.IsEnabled = viewModel.Workspace.HasSelectedProject;
         }

@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
+using Avalonia.Styling;
 using Difflection.Models;
 using Difflection.Storage;
 using Difflection.Tests.Infrastructure;
@@ -38,6 +39,20 @@ public sealed class MainWindowSnapshotTests
     }
 
     [AvaloniaFact]
+    public void Default_side_by_side_shell_matches_light_snapshot()
+    {
+        var window = TestUiSupport.CreateWindow(new MainWindowViewModel(), themeVariant: ThemeVariant.Light);
+        try
+        {
+            AssertSnapshot(window, "main-window-default-side-by-side-light");
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
     public async Task Workspace_with_project_and_no_comparisons_matches_snapshot()
     {
         var project = new Project { Name = "Client Redesign" };
@@ -49,6 +64,25 @@ public sealed class MainWindowSnapshotTests
             await TestUiSupport.WaitForAsync(() => viewModel.Workspace.SelectedProject is not null);
 
             AssertSnapshot(window, "main-window-workspace-no-comparisons");
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task Workspace_with_project_and_no_comparisons_matches_light_snapshot()
+    {
+        var project = new Project { Name = "Client Redesign" };
+        var viewModel = new MainWindowViewModel(new SnapshotProjectStorage(project));
+
+        var window = TestUiSupport.CreateWindow(viewModel, themeVariant: ThemeVariant.Light);
+        try
+        {
+            await TestUiSupport.WaitForAsync(() => viewModel.Workspace.SelectedProject is not null);
+
+            AssertSnapshot(window, "main-window-workspace-no-comparisons-light");
         }
         finally
         {
@@ -78,6 +112,27 @@ public sealed class MainWindowSnapshotTests
     }
 
     [AvaloniaFact]
+    public async Task Workspace_with_project_and_empty_comparison_matches_light_snapshot()
+    {
+        var project = new Project { Name = "Client Redesign" };
+        project.Comparisons.Add(new ComparisonSet { Name = "Homepage Header" });
+        project.Comparisons.Add(new ComparisonSet { Name = "Checkout Empty State" });
+        var viewModel = new MainWindowViewModel(new SnapshotProjectStorage(project));
+
+        var window = TestUiSupport.CreateWindow(viewModel, themeVariant: ThemeVariant.Light);
+        try
+        {
+            await TestUiSupport.WaitForAsync(() => viewModel.Workspace.SelectedComparison is not null);
+
+            AssertSnapshot(window, "main-window-workspace-empty-comparison-light");
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
     public async Task Workspace_with_one_image_matches_snapshot()
     {
         var storage = new SnapshotProjectStorage();
@@ -91,6 +146,22 @@ public sealed class MainWindowSnapshotTests
         try
         {
             AssertSnapshot(window, "main-window-workspace-one-image");
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task Workspace_with_one_image_matches_light_snapshot()
+    {
+        var viewModel = await CreateImageSetViewModelAsync(addCandidate: false);
+
+        var window = TestUiSupport.CreateWindow(viewModel, themeVariant: ThemeVariant.Light);
+        try
+        {
+            AssertSnapshot(window, "main-window-workspace-one-image-light");
         }
         finally
         {
@@ -114,6 +185,59 @@ public sealed class MainWindowSnapshotTests
         try
         {
             AssertSnapshot(window, "main-window-workspace-side-by-side-image-set");
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task Workspace_side_by_side_with_project_image_set_matches_light_snapshot()
+    {
+        var viewModel = await CreateImageSetViewModelAsync();
+
+        var window = TestUiSupport.CreateWindow(viewModel, themeVariant: ThemeVariant.Light);
+        viewModel.ToolState.TrySetZoomText("50%");
+        try
+        {
+            AssertSnapshot(window, "main-window-workspace-side-by-side-image-set-light");
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task Workspace_split_screen_with_project_image_set_matches_snapshot()
+    {
+        var viewModel = await CreateImageSetViewModelAsync();
+        viewModel.ToolState.SelectSplitScreenView();
+
+        var window = TestUiSupport.CreateWindow(viewModel);
+        viewModel.ToolState.TrySetZoomText("50%");
+        try
+        {
+            AssertSnapshot(window, "main-window-workspace-split-screen-image-set");
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task Workspace_split_screen_with_project_image_set_matches_light_snapshot()
+    {
+        var viewModel = await CreateImageSetViewModelAsync();
+        viewModel.ToolState.SelectSplitScreenView();
+
+        var window = TestUiSupport.CreateWindow(viewModel, themeVariant: ThemeVariant.Light);
+        viewModel.ToolState.TrySetZoomText("50%");
+        try
+        {
+            AssertSnapshot(window, "main-window-workspace-split-screen-image-set-light");
         }
         finally
         {
@@ -148,6 +272,26 @@ public sealed class MainWindowSnapshotTests
     }
 
     [AvaloniaFact]
+    public async Task Workspace_difference_with_project_image_set_matches_light_snapshot()
+    {
+        var viewModel = await CreateImageSetViewModelAsync();
+        viewModel.ToolState.SelectDifferenceView();
+        viewModel.ComparisonDisplay.SelectDifferenceBaseImage(DifferenceBaseImage.Candidate);
+        viewModel.ComparisonDisplay.DifferenceOverlayOpacity = 0.7;
+
+        var window = TestUiSupport.CreateWindow(viewModel, themeVariant: ThemeVariant.Light);
+        viewModel.ToolState.TrySetZoomText("50%");
+        try
+        {
+            AssertSnapshot(window, "main-window-workspace-difference-image-set-light");
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
     public async Task Narrow_workspace_with_project_image_set_matches_snapshot()
     {
         var storage = new SnapshotProjectStorage();
@@ -162,6 +306,26 @@ public sealed class MainWindowSnapshotTests
         try
         {
             AssertSnapshot(window, "main-window-workspace-narrow-image-set");
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task Narrow_workspace_with_project_image_set_matches_light_snapshot()
+    {
+        var viewModel = await CreateImageSetViewModelAsync(
+            projectName: "Mobile Review",
+            comparisonName: "Receipt Screen",
+            referenceLabel: "Reference Receipt",
+            candidateLabel: "Candidate Receipt");
+
+        var window = TestUiSupport.CreateWindow(viewModel, width: 820, height: 700, themeVariant: ThemeVariant.Light);
+        try
+        {
+            AssertSnapshot(window, "main-window-workspace-narrow-image-set-light");
         }
         finally
         {
@@ -187,6 +351,27 @@ public sealed class MainWindowSnapshotTests
         var addedAt = SnapshotTimestamp.AddMinutes(viewModel.Workspace.SelectedComparison?.Images.Count ?? 0);
         await using var stream = new MemoryStream(CreateFixtureImageBytes(background, accent));
         await viewModel.ImageSet.AddImageAsync(sourceName, stream, mediaType: "image/png", label: label, addedAt: addedAt);
+    }
+
+    private static async Task<MainWindowViewModel> CreateImageSetViewModelAsync(
+        string projectName = "Client Redesign",
+        string comparisonName = "Homepage Header",
+        string referenceLabel = "Approved Header",
+        string candidateLabel = "Current Header",
+        bool addCandidate = true)
+    {
+        var storage = new SnapshotProjectStorage();
+        var viewModel = new MainWindowViewModel(storage);
+        await viewModel.Workspace.AddProjectAsync(projectName);
+        await viewModel.Workspace.AddComparisonAsync(comparisonName);
+        await AddFixtureImageAsync(viewModel, "reference.png", referenceLabel, new SKColor(34, 89, 165), new SKColor(249, 115, 22));
+        if (addCandidate)
+        {
+            await AddFixtureImageAsync(viewModel, "candidate.png", candidateLabel, new SKColor(92, 42, 145), new SKColor(14, 165, 233));
+        }
+
+        await viewModel.ComparisonDisplay.RefreshCurrentComparisonImagesAsync(viewModel.Workspace.SelectedComparison, viewModel.ProjectStorage);
+        return viewModel;
     }
 
     private static byte[] CreateFixtureImageBytes(SKColor background, SKColor accent)

@@ -19,16 +19,23 @@ namespace Difflection.Tests.Infrastructure;
 
 internal static class TestUiSupport
 {
-    internal static MainWindow CreateWindow(MainWindowViewModel viewModel, double width = 1100, double height = 700, double renderScale = 1.0)
+    internal static MainWindow CreateWindow(
+        MainWindowViewModel viewModel,
+        double width = 1100,
+        double height = 700,
+        double renderScale = 1.0,
+        ThemeVariant? themeVariant = null)
     {
+        themeVariant ??= ThemeVariant.Dark;
+        viewModel.SetLightThemeEnabled(themeVariant == ThemeVariant.Light);
         if (Application.Current is { } application)
         {
-            application.RequestedThemeVariant = ThemeVariant.Dark;
+            application.RequestedThemeVariant = themeVariant;
         }
 
         var window = new MainWindow
         {
-            RequestedThemeVariant = ThemeVariant.Dark,
+            RequestedThemeVariant = themeVariant,
             Width = width,
             Height = height,
             DataContext = viewModel

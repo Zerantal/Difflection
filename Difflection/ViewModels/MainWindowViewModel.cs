@@ -55,6 +55,8 @@ public class MainWindowViewModel : ViewModelBase
     public bool IsSelectedProjectSourceFileMonitoringEnabled =>
         Workspace.SelectedProject?.Settings.MonitorSourceFilesForChanges == true;
 
+    public bool IsLightThemeEnabled { get; private set; }
+
     public Bitmap? LeftImage
     {
         get => ComparisonDisplay.LeftImage;
@@ -153,6 +155,17 @@ public class MainWindowViewModel : ViewModelBase
         Workspace.SelectedProject.UpdatedAt = DateTimeOffset.UtcNow;
         OnPropertyChanged(nameof(IsSelectedProjectSourceFileMonitoringEnabled));
         await SaveProjectAsync(Workspace.SelectedProject, cancellationToken);
+    }
+
+    public void SetLightThemeEnabled(bool isEnabled)
+    {
+        if (IsLightThemeEnabled == isEnabled)
+        {
+            return;
+        }
+
+        IsLightThemeEnabled = isEnabled;
+        OnPropertyChanged(nameof(IsLightThemeEnabled));
     }
 
     public async Task<ImageAsset?> CaptureMonitoredImageChangeAsync(

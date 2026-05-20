@@ -8,6 +8,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
+using Avalonia.Styling;
 using Avalonia.Threading;
 using Difflection.Infrastructure;
 using Difflection.Monitoring;
@@ -98,6 +99,8 @@ public partial class MainView : UserControl
 
         if (await dialog.ShowOwnedAsync(owner))
         {
+            _viewModel.SetLightThemeEnabled(dialog.UseLightTheme);
+            ApplyThemeVariant(_viewModel);
             await _viewModel.SetSelectedProjectSourceFileMonitoringAsync(dialog.MonitorSourceFilesForChanges);
             RestartImageChangeMonitor();
         }
@@ -168,6 +171,7 @@ public partial class MainView : UserControl
         _projectsLoaded = false;
 
         SubscribeViewModelEvents();
+        ApplyThemeVariant(_viewModel);
     }
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -184,6 +188,11 @@ public partial class MainView : UserControl
             or nameof(WorkspaceNavigatorViewModel.SelectedComparisonImages))
         {
             RestartImageChangeMonitor();
+        }
+
+        if (e.PropertyName is nameof(MainWindowViewModel.IsLightThemeEnabled) && sender is MainWindowViewModel viewModel)
+        {
+            ApplyThemeVariant(viewModel);
         }
     }
 
@@ -225,6 +234,7 @@ public partial class MainView : UserControl
         }
 
         _viewModel.Workspace.PropertyChanged += OnViewModelPropertyChanged;
+        _viewModel.PropertyChanged += OnViewModelPropertyChanged;
     }
 
     private void UnsubscribeViewModelEvents()
@@ -235,6 +245,26 @@ public partial class MainView : UserControl
         }
 
         _viewModel.Workspace.PropertyChanged -= OnViewModelPropertyChanged;
+        _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
+    }
+
+    private void ApplyThemeVariant(MainWindowViewModel? viewModel)
+    {
+        if (viewModel is null)
+        {
+            return;
+        }
+
+        var themeVariant = viewModel.IsLightThemeEnabled ? ThemeVariant.Light : ThemeVariant.Dark;
+        if (Application.Current is { } application)
+        {
+            application.RequestedThemeVariant = themeVariant;
+        }
+
+        if (TopLevel.GetTopLevel(this) is Window window)
+        {
+            window.RequestedThemeVariant = themeVariant;
+        }
     }
 
     // ReSharper disable once AsyncVoidEventHandlerMethod
