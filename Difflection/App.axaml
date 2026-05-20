@@ -5,12 +5,11 @@
     <!-- Difflection is currently designed against the dark Fluent theme. Light theme support should be added deliberately. -->
 
     <Application.Resources>
-        <ResourceDictionary>
+            <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
+                <ResourceInclude Source="avares://Difflection/Styles/Theme.axaml" />
                 <ResourceInclude Source="avares://Difflection/Styles/Icons.axaml" />
             </ResourceDictionary.MergedDictionaries>
-
-            <SolidColorBrush x:Key="ImageViewportFillBrush" Color="#2A2A2A" />
         </ResourceDictionary>
     </Application.Resources>
 
