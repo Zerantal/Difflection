@@ -34,11 +34,13 @@ public class App : Application
         {
             case IClassicDesktopStyleApplicationLifetime desktop:
                 {
-                    var projectStorage = CreateDesktopProjectStorage();
+                    var storageRootPath = GetDesktopStorageRootPath();
+                    var projectStorage = new LocalFileProjectStorage(storageRootPath);
+                    var applicationSettingsStorage = new LocalFileApplicationSettingsStorage(storageRootPath);
                     projectStorage.ProjectLoadIssue += ProjectStorage_OnProjectLoadIssue;
                     desktop.MainWindow = new MainWindow
                     {
-                        DataContext = new MainWindowViewModel(projectStorage)
+                        DataContext = new MainWindowViewModel(projectStorage, applicationSettingsStorage)
                     };
                     break;
                 }
@@ -53,13 +55,11 @@ public class App : Application
         base.OnFrameworkInitializationCompleted();
     }
 
-    private static LocalFileProjectStorage CreateDesktopProjectStorage()
+    private static string GetDesktopStorageRootPath()
     {
-        var rootPath = Path.Combine(
+        return Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "Difflection");
-
-        return new LocalFileProjectStorage(rootPath);
     }
 
     private static void ProjectStorage_OnProjectLoadIssue(object? sender, ProjectStorageLoadIssueEventArgs e)

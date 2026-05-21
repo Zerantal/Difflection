@@ -31,7 +31,7 @@ public sealed class ProjectImageChangeMonitorTests : IDisposable
         using var monitor = new ProjectImageChangeMonitor(watcher, new MonitoredImageVersionCapture(storage));
         MonitoredImageVersionCapturedEventArgs? captured = null;
         monitor.VersionCaptured += (_, e) => captured = e;
-        monitor.Start(viewModel.Workspace.Projects);
+        monitor.Start(viewModel.Workspace.Projects, monitorSourceFilesForChanges: false);
 
         WriteFixtureImage(sourceFile.Path.LocalPath, SKColors.CornflowerBlue);
 
@@ -80,7 +80,7 @@ public sealed class ProjectImageChangeMonitorTests : IDisposable
         MonitoredImageVersionCapturedEventArgs? captured = null;
         monitor.VersionCaptured += (_, e) => captured = e;
 
-        monitor.Start(viewModel.Workspace.Projects);
+        monitor.Start(viewModel.Workspace.Projects, viewModel.ApplicationSettings.MonitorSourceFilesForChanges);
         WriteFixtureImage(candidateFile.Path.LocalPath, SKColors.CornflowerBlue);
         watcher.RaiseChanged(Path.GetFullPath(candidateFile.Path.LocalPath));
 
@@ -113,7 +113,7 @@ public sealed class ProjectImageChangeMonitorTests : IDisposable
         MonitoredImageVersionCapturedEventArgs? captured = null;
         monitor.VersionCaptured += (_, e) => captured = e;
 
-        monitor.Start(viewModel.Workspace.Projects);
+        monitor.Start(viewModel.Workspace.Projects, viewModel.ApplicationSettings.MonitorSourceFilesForChanges);
         WriteFixtureImage(secondFile.Path.LocalPath, SKColors.MediumPurple);
         watcher.RaiseChanged(Path.GetFullPath(secondFile.Path.LocalPath));
 
@@ -139,7 +139,7 @@ public sealed class ProjectImageChangeMonitorTests : IDisposable
         using var watcher = new FakeImageSourceChangeWatcher();
         using var monitor = new ProjectImageChangeMonitor(watcher, new MonitoredImageVersionCapture(storage));
 
-        monitor.Start(viewModel.Workspace.Projects);
+        monitor.Start(viewModel.Workspace.Projects, viewModel.ApplicationSettings.MonitorSourceFilesForChanges);
 
         Assert.Equal(2, watcher.Watches.Count);
         Assert.Contains(watcher.Watches, watch => string.Equals(watch.LocalPath, referenceFile.Path.LocalPath, StringComparison.Ordinal));

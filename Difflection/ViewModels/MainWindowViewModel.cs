@@ -15,6 +15,7 @@ namespace Difflection.ViewModels;
 public class MainWindowViewModel : ViewModelBase
 {
     private readonly MonitoredImageVersionCapture? _monitoredImageVersionCapture;
+    private bool _themePreferenceOverridden;
 
     public MainWindowViewModel()
     {
@@ -27,9 +28,10 @@ public class MainWindowViewModel : ViewModelBase
         ImageSet.ImageSetChanged += OnImageSetChanged;
     }
 
-    public MainWindowViewModel(IProjectStorage projectStorage)
+    public MainWindowViewModel(IProjectStorage projectStorage, IApplicationSettingsStorage? applicationSettingsStorage = null)
     {
         ProjectStorage = projectStorage;
+        ApplicationSettingsStorage = applicationSettingsStorage;
         Workspace = new WorkspaceNavigatorViewModel(projectStorage);
         ToolState = new ComparisonToolStateViewModel(() => HasBothImages);
         WorkspaceStatus = new WorkspaceStatusViewModel(Workspace, ComparisonDisplay);
@@ -52,8 +54,14 @@ public class MainWindowViewModel : ViewModelBase
 
     public IProjectStorage? ProjectStorage { get; }
 
+    public IApplicationSettingsStorage? ApplicationSettingsStorage { get; }
+
+    public ApplicationSettings ApplicationSettings { get; private set; } = new();
+
     public bool IsSelectedProjectSourceFileMonitoringEnabled =>
-        Workspace.SelectedProject?.Settings.MonitorSourceFilesForChanges == true;
+        ApplicationSettings.MonitorSourceFilesForChanges;
+
+    public AppThemePreference ThemePreference => ApplicationSettings.ThemePreference;
 
     public Bitmap? LeftImage
     {
@@ -93,12 +101,31 @@ public class MainWindowViewModel : ViewModelBase
 
     public async Task LoadProjectsAsync(CancellationToken cancellationToken = default)
     {
+        await LoadApplicationSettingsAsync(cancellationToken);
         await Workspace.LoadProjectsAsync(cancellationToken);
 
         if (ProjectStorage is not null)
         {
             await ComparisonDisplay.RefreshCurrentComparisonImagesAsync(Workspace.SelectedComparison, ProjectStorage, cancellationToken);
         }
+    }
+
+    public async Task LoadApplicationSettingsAsync(CancellationToken cancellationToken = default)
+    {
+        if (ApplicationSettingsStorage is null)
+        {
+            return;
+        }
+
+        var loadedSettings = await ApplicationSettingsStorage.LoadApplicationSettingsAsync(cancellationToken);
+        if (_themePreferenceOverridden)
+        {
+            loadedSettings.ThemePreference = ApplicationSettings.ThemePreference;
+        }
+
+        ApplicationSettings = loadedSettings;
+        OnPropertyChanged(nameof(ThemePreference));
+        OnPropertyChanged(nameof(IsSelectedProjectSourceFileMonitoringEnabled));
     }
 
     public async Task<bool> SetImageMonitoringAsync(
@@ -139,20 +166,49 @@ public class MainWindowViewModel : ViewModelBase
         bool isEnabled,
         CancellationToken cancellationToken = default)
     {
-        if (Workspace.SelectedProject is null)
+        if (ApplicationSettings.MonitorSourceFilesForChanges == isEnabled)
         {
             return;
         }
 
-        if (Workspace.SelectedProject.Settings.MonitorSourceFilesForChanges == isEnabled)
-        {
-            return;
-        }
-
-        Workspace.SelectedProject.Settings.MonitorSourceFilesForChanges = isEnabled;
-        Workspace.SelectedProject.UpdatedAt = DateTimeOffset.UtcNow;
+        ApplicationSettings.MonitorSourceFilesForChanges = isEnabled;
         OnPropertyChanged(nameof(IsSelectedProjectSourceFileMonitoringEnabled));
-        await SaveProjectAsync(Workspace.SelectedProject, cancellationToken);
+        await SaveApplicationSettingsAsync(cancellationToken);
+    }
+
+    public void SetThemePreference(AppThemePreference themePreference)
+    {
+        if (ApplicationSettings.ThemePreference == themePreference)
+        {
+            return;
+        }
+
+        ApplicationSettings.ThemePreference = themePreference;
+        _themePreferenceOverridden = true;
+        OnPropertyChanged(nameof(ThemePreference));
+    }
+
+    public async Task SetThemePreferenceAsync(
+        AppThemePreference themePreference,
+        CancellationToken cancellationToken = default)
+    {
+        if (ApplicationSettings.ThemePreference == themePreference)
+        {
+            return;
+        }
+
+        ApplicationSettings.ThemePreference = themePreference;
+        _themePreferenceOverridden = true;
+        OnPropertyChanged(nameof(ThemePreference));
+        await SaveApplicationSettingsAsync(cancellationToken);
+    }
+
+    private async Task SaveApplicationSettingsAsync(CancellationToken cancellationToken = default)
+    {
+        if (ApplicationSettingsStorage is not null)
+        {
+            await ApplicationSettingsStorage.SaveApplicationSettingsAsync(ApplicationSettings, cancellationToken);
+        }
     }
 
     public async Task<ImageAsset?> CaptureMonitoredImageChangeAsync(

@@ -7,8 +7,8 @@
              x:Name="Root"
              x:DataType="vm:MainWindowViewModel"
              Background="Transparent">
-    <Border Background="#171717"
-            BorderBrush="#303030"
+    <Border Background="{DynamicResource SidebarBackgroundBrush}"
+            BorderBrush="{DynamicResource BorderSubtleBrush}"
             BorderThickness="0,0,1,0"
             Padding="12">
         <Grid RowDefinitions="Auto,Auto,16,Auto,*"
@@ -54,7 +54,7 @@
 
             <Border Grid.Row="2"
                     Height="1"
-                    Background="#303030"
+                    Background="{DynamicResource BorderSubtleBrush}"
                     VerticalAlignment="Center" />
 
             <Grid Grid.Row="3"

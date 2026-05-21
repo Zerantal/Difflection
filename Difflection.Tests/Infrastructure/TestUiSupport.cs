@@ -11,6 +11,7 @@ using Avalonia.Platform.Storage;
 using Avalonia.Styling;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
+using Difflection.Models;
 using Difflection.ViewModels;
 using Difflection.Views;
 using SkiaSharp;
@@ -19,16 +20,25 @@ namespace Difflection.Tests.Infrastructure;
 
 internal static class TestUiSupport
 {
-    internal static MainWindow CreateWindow(MainWindowViewModel viewModel, double width = 1100, double height = 700, double renderScale = 1.0)
+    internal static MainWindow CreateWindow(
+        MainWindowViewModel viewModel,
+        double width = 1100,
+        double height = 700,
+        double renderScale = 1.0,
+        ThemeVariant? themeVariant = null)
     {
+        themeVariant ??= ThemeVariant.Dark;
+        viewModel.SetThemePreference(themeVariant == ThemeVariant.Light
+            ? AppThemePreference.Light
+            : AppThemePreference.Dark);
         if (Application.Current is { } application)
         {
-            application.RequestedThemeVariant = ThemeVariant.Dark;
+            application.RequestedThemeVariant = themeVariant;
         }
 
         var window = new MainWindow
         {
-            RequestedThemeVariant = ThemeVariant.Dark,
+            RequestedThemeVariant = themeVariant,
             Width = width,
             Height = height,
             DataContext = viewModel

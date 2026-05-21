@@ -1035,18 +1035,48 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
-    public async Task SetSelectedProjectSourceFileMonitoringAsync_updates_project_setting_and_saves()
+    public async Task SetSelectedProjectSourceFileMonitoringAsync_updates_global_setting_and_saves()
     {
         var storage = new FakeProjectStorage();
-        var viewModel = new MainWindowViewModel(storage);
-        var project = await viewModel.Workspace.AddProjectAsync("Project", TestContext.Current.CancellationToken);
-        storage.SavedProjects.Clear();
+        var settingsStorage = new FakeApplicationSettingsStorage();
+        var viewModel = new MainWindowViewModel(storage, settingsStorage);
 
         await viewModel.SetSelectedProjectSourceFileMonitoringAsync(true, TestContext.Current.CancellationToken);
 
-        Assert.True(project.Settings.MonitorSourceFilesForChanges);
         Assert.True(viewModel.IsSelectedProjectSourceFileMonitoringEnabled);
-        Assert.Same(project, Assert.Single(storage.SavedProjects));
+        Assert.True(Assert.Single(settingsStorage.SavedApplicationSettings).MonitorSourceFilesForChanges);
+    }
+
+    [Fact]
+    public async Task SetThemePreferenceAsync_updates_global_setting_and_saves()
+    {
+        var storage = new FakeProjectStorage();
+        var settingsStorage = new FakeApplicationSettingsStorage();
+        var viewModel = new MainWindowViewModel(storage, settingsStorage);
+
+        await viewModel.SetThemePreferenceAsync(AppThemePreference.Dark, TestContext.Current.CancellationToken);
+
+        Assert.Equal(AppThemePreference.Dark, viewModel.ThemePreference);
+        Assert.Equal(AppThemePreference.Dark, Assert.Single(settingsStorage.SavedApplicationSettings).ThemePreference);
+    }
+
+    private sealed class FakeApplicationSettingsStorage : IApplicationSettingsStorage
+    {
+        public List<ApplicationSettings> SavedApplicationSettings { get; } = [];
+
+        public ApplicationSettings ApplicationSettings { get; set; } = new();
+
+        public Task<ApplicationSettings> LoadApplicationSettingsAsync(CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(ApplicationSettings);
+        }
+
+        public Task SaveApplicationSettingsAsync(ApplicationSettings settings, CancellationToken cancellationToken = default)
+        {
+            ApplicationSettings = settings;
+            SavedApplicationSettings.Add(settings);
+            return Task.CompletedTask;
+        }
     }
 
     private sealed class FakeProjectStorage(params Project[] projects) : IProjectStorage

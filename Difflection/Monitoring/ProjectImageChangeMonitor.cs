@@ -26,7 +26,7 @@ public sealed class ProjectImageChangeMonitor : IDisposable
 
     public event EventHandler<MonitoredImageVersionCapturedEventArgs>? VersionCaptured;
 
-    public void Start(IEnumerable<Project> projects)
+    public void Start(IEnumerable<Project> projects, bool monitorSourceFilesForChanges)
     {
         _watcher.Stop();
         _monitoredImagesBySourceId.Clear();
@@ -35,7 +35,7 @@ public sealed class ProjectImageChangeMonitor : IDisposable
         {
             foreach (var comparison in project.Comparisons)
             {
-                foreach (var monitoredImage in GetMonitorableImages(project, comparison))
+                foreach (var monitoredImage in GetMonitorableImages(project, comparison, monitorSourceFilesForChanges))
                 {
                     var sourceId = CreateSourceId(monitoredImage.Image);
 
@@ -125,9 +125,12 @@ public sealed class ProjectImageChangeMonitor : IDisposable
             && File.Exists(image.OriginalFileMetadata.Path);
     }
 
-    private static IEnumerable<MonitoredImage> GetMonitorableImages(Project project, ComparisonSet comparison)
+    private static IEnumerable<MonitoredImage> GetMonitorableImages(
+        Project project,
+        ComparisonSet comparison,
+        bool monitorSourceFilesForChanges)
     {
-        if (project.Settings.MonitorSourceFilesForChanges)
+        if (monitorSourceFilesForChanges)
         {
             if (comparison.BaselineImage is { } baseline && HasExistingSourcePath(baseline))
             {

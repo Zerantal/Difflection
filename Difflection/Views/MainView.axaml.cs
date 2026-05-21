@@ -8,8 +8,10 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
+using Avalonia.Styling;
 using Avalonia.Threading;
 using Difflection.Infrastructure;
+using Difflection.Models;
 using Difflection.Monitoring;
 using Difflection.ViewModels;
 using JetBrains.Annotations;
@@ -98,6 +100,8 @@ public partial class MainView : UserControl
 
         if (await dialog.ShowOwnedAsync(owner))
         {
+            await _viewModel.SetThemePreferenceAsync(dialog.ThemePreference);
+            ApplyThemeVariant(_viewModel);
             await _viewModel.SetSelectedProjectSourceFileMonitoringAsync(dialog.MonitorSourceFilesForChanges);
             RestartImageChangeMonitor();
         }
@@ -168,6 +172,7 @@ public partial class MainView : UserControl
         _projectsLoaded = false;
 
         SubscribeViewModelEvents();
+        ApplyThemeVariant(_viewModel);
     }
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -182,6 +187,16 @@ public partial class MainView : UserControl
 
         if (e.PropertyName is nameof(WorkspaceNavigatorViewModel.SelectedProjectComparisons)
             or nameof(WorkspaceNavigatorViewModel.SelectedComparisonImages))
+        {
+            RestartImageChangeMonitor();
+        }
+
+        if (e.PropertyName is nameof(MainWindowViewModel.ThemePreference) && sender is MainWindowViewModel viewModel)
+        {
+            ApplyThemeVariant(viewModel);
+        }
+
+        if (e.PropertyName is nameof(MainWindowViewModel.IsSelectedProjectSourceFileMonitoringEnabled))
         {
             RestartImageChangeMonitor();
         }
@@ -225,6 +240,7 @@ public partial class MainView : UserControl
         }
 
         _viewModel.Workspace.PropertyChanged += OnViewModelPropertyChanged;
+        _viewModel.PropertyChanged += OnViewModelPropertyChanged;
     }
 
     private void UnsubscribeViewModelEvents()
@@ -235,6 +251,31 @@ public partial class MainView : UserControl
         }
 
         _viewModel.Workspace.PropertyChanged -= OnViewModelPropertyChanged;
+        _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
+    }
+
+    private void ApplyThemeVariant(MainWindowViewModel? viewModel)
+    {
+        if (viewModel is null)
+        {
+            return;
+        }
+
+        var themeVariant = viewModel.ThemePreference switch
+        {
+            AppThemePreference.Light => ThemeVariant.Light,
+            AppThemePreference.Dark => ThemeVariant.Dark,
+            _ => ThemeVariant.Default
+        };
+        if (Application.Current is { } application)
+        {
+            application.RequestedThemeVariant = themeVariant;
+        }
+
+        if (TopLevel.GetTopLevel(this) is Window window)
+        {
+            window.RequestedThemeVariant = themeVariant;
+        }
     }
 
     // ReSharper disable once AsyncVoidEventHandlerMethod
@@ -261,7 +302,9 @@ public partial class MainView : UserControl
     {
         if (_viewModel is not null)
         {
-            _imageChangeMonitor?.Start(_viewModel.Workspace.Projects);
+            _imageChangeMonitor?.Start(
+                _viewModel.Workspace.Projects,
+                _viewModel.ApplicationSettings.MonitorSourceFilesForChanges);
         }
     }
 
