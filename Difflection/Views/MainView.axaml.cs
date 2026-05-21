@@ -11,6 +11,7 @@ using Avalonia.Platform.Storage;
 using Avalonia.Styling;
 using Avalonia.Threading;
 using Difflection.Infrastructure;
+using Difflection.Models;
 using Difflection.Monitoring;
 using Difflection.ViewModels;
 using JetBrains.Annotations;
@@ -99,7 +100,7 @@ public partial class MainView : UserControl
 
         if (await dialog.ShowOwnedAsync(owner))
         {
-            _viewModel.SetLightThemeEnabled(dialog.UseLightTheme);
+            await _viewModel.SetThemePreferenceAsync(dialog.ThemePreference);
             ApplyThemeVariant(_viewModel);
             await _viewModel.SetSelectedProjectSourceFileMonitoringAsync(dialog.MonitorSourceFilesForChanges);
             RestartImageChangeMonitor();
@@ -190,9 +191,14 @@ public partial class MainView : UserControl
             RestartImageChangeMonitor();
         }
 
-        if (e.PropertyName is nameof(MainWindowViewModel.IsLightThemeEnabled) && sender is MainWindowViewModel viewModel)
+        if (e.PropertyName is nameof(MainWindowViewModel.ThemePreference) && sender is MainWindowViewModel viewModel)
         {
             ApplyThemeVariant(viewModel);
+        }
+
+        if (e.PropertyName is nameof(MainWindowViewModel.IsSelectedProjectSourceFileMonitoringEnabled))
+        {
+            RestartImageChangeMonitor();
         }
     }
 
@@ -255,7 +261,12 @@ public partial class MainView : UserControl
             return;
         }
 
-        var themeVariant = viewModel.IsLightThemeEnabled ? ThemeVariant.Light : ThemeVariant.Dark;
+        var themeVariant = viewModel.ThemePreference switch
+        {
+            AppThemePreference.Light => ThemeVariant.Light,
+            AppThemePreference.Dark => ThemeVariant.Dark,
+            _ => ThemeVariant.Default
+        };
         if (Application.Current is { } application)
         {
             application.RequestedThemeVariant = themeVariant;
@@ -291,7 +302,9 @@ public partial class MainView : UserControl
     {
         if (_viewModel is not null)
         {
-            _imageChangeMonitor?.Start(_viewModel.Workspace.Projects);
+            _imageChangeMonitor?.Start(
+                _viewModel.Workspace.Projects,
+                _viewModel.ApplicationSettings.MonitorSourceFilesForChanges);
         }
     }
 

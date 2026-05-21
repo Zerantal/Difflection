@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Interactivity;
+using Difflection.Models;
 using Difflection.ViewModels;
 using System;
 using System.Threading.Tasks;
@@ -18,7 +19,12 @@ public partial class SettingsDialog : Window
 
     public bool MonitorSourceFilesForChanges => MonitorSourceFilesCheckBox.IsChecked == true;
 
-    public bool UseLightTheme => LightThemeCheckBox.IsChecked == true;
+    public AppThemePreference ThemePreference => ThemePreferenceComboBox.SelectedIndex switch
+    {
+        1 => AppThemePreference.Light,
+        2 => AppThemePreference.Dark,
+        _ => AppThemePreference.SyncWithOs
+    };
 
     public Task<bool> ShowOwnedAsync(Window owner)
     {
@@ -32,9 +38,13 @@ public partial class SettingsDialog : Window
     {
         if (DataContext is MainWindowViewModel viewModel)
         {
-            LightThemeCheckBox.IsChecked = viewModel.IsLightThemeEnabled;
+            ThemePreferenceComboBox.SelectedIndex = viewModel.ThemePreference switch
+            {
+                AppThemePreference.Light => 1,
+                AppThemePreference.Dark => 2,
+                _ => 0
+            };
             MonitorSourceFilesCheckBox.IsChecked = viewModel.IsSelectedProjectSourceFileMonitoringEnabled;
-            MonitorSourceFilesCheckBox.IsEnabled = viewModel.Workspace.HasSelectedProject;
         }
     }
 

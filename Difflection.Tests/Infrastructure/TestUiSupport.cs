@@ -11,6 +11,7 @@ using Avalonia.Platform.Storage;
 using Avalonia.Styling;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
+using Difflection.Models;
 using Difflection.ViewModels;
 using Difflection.Views;
 using SkiaSharp;
@@ -27,7 +28,9 @@ internal static class TestUiSupport
         ThemeVariant? themeVariant = null)
     {
         themeVariant ??= ThemeVariant.Dark;
-        viewModel.SetLightThemeEnabled(themeVariant == ThemeVariant.Light);
+        viewModel.SetThemePreference(themeVariant == ThemeVariant.Light
+            ? AppThemePreference.Light
+            : AppThemePreference.Dark);
         if (Application.Current is { } application)
         {
             application.RequestedThemeVariant = themeVariant;

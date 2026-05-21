@@ -140,7 +140,7 @@
                                 </Border>
 
                                 <Border x:Name="SplitDivider"
-                                        Width="1"
+                                        Width="2"
                                         Background="{DynamicResource SplitHandleBrush}"
                                         HorizontalAlignment="Left"
                                         VerticalAlignment="Stretch"

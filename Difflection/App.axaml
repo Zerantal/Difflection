@@ -1,8 +1,7 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="Difflection.App"
-             RequestedThemeVariant="Dark">
-    <!-- Difflection is currently designed against the dark Fluent theme. Light theme support should be added deliberately. -->
+             RequestedThemeVariant="Default">
 
     <Application.Resources>
             <ResourceDictionary>

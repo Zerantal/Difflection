@@ -21,11 +21,22 @@
                     CornerRadius="6"
                     Padding="14">
                 <StackPanel Spacing="10">
-                    <CheckBox x:Name="LightThemeCheckBox"
-                              Foreground="{DynamicResource TextSecondaryBrush}"
-                              FontSize="13"
-                              Content="Light theme"
-                              ToolTip.Tip="Use the light color palette." />
+                    <Grid ColumnDefinitions="Auto,*"
+                          ColumnSpacing="12">
+                        <TextBlock Text="Theme"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                   FontSize="13"
+                                   VerticalAlignment="Center" />
+                        <ComboBox x:Name="ThemePreferenceComboBox"
+                                  Grid.Column="1"
+                                  MinWidth="150"
+                                  HorizontalAlignment="Left"
+                                  ToolTip.Tip="Sync with OS follows the current operating system appearance setting.">
+                            <ComboBoxItem Content="Sync with OS" />
+                            <ComboBoxItem Content="Light" />
+                            <ComboBoxItem Content="Dark" />
+                        </ComboBox>
+                    </Grid>
                     <CheckBox x:Name="MonitorSourceFilesCheckBox"
                               Foreground="{DynamicResource TextSecondaryBrush}"
                               FontSize="13"

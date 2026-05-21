@@ -60,7 +60,7 @@
                   DataContext="{Binding Workspace}">
                 <StackPanel Spacing="3"
                             VerticalAlignment="Center">
-                    <Grid ColumnDefinitions="Auto,Auto,*"
+                    <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,*"
                           ColumnSpacing="8">
                         <TextBlock Classes="workspaceContextTitle"
                                    Text="{Binding SelectedProjectName}"
@@ -93,6 +93,28 @@
                                       Width="16"
                                       Height="16" />
                         </Button>
+                        <Button x:Name="RefreshProjectSourcesButton"
+                                Grid.Column="2"
+                                Classes="headerIconButton"
+                                ToolTip.Tip="Refresh all source images in project"
+                                IsEnabled="{Binding HasSelectedProject}"
+                                IsVisible="{Binding SelectedProjectRow?.IsNotEditing}"
+                                Click="RefreshSelectedProjectSourcesButton_OnClick">
+                            <PathIcon Data="{StaticResource Icon.Refresh}"
+                                      Width="16"
+                                      Height="16" />
+                        </Button>
+                        <Button x:Name="DeleteProjectButton"
+                                Grid.Column="3"
+                                Classes="headerIconButton"
+                                ToolTip.Tip="Delete project"
+                                IsEnabled="{Binding CanDeleteSelectedProject}"
+                                IsVisible="{Binding SelectedProjectRow?.IsNotEditing}"
+                                Click="DeleteSelectedProjectButton_OnClick">
+                            <PathIcon Data="{StaticResource Icon.Delete}"
+                                      Width="16"
+                                      Height="16" />
+                        </Button>
                     </Grid>
                     <StackPanel Orientation="Horizontal"
                                 Spacing="12"
@@ -110,26 +132,6 @@
                             HorizontalAlignment="Right"
                             VerticalAlignment="Center"
                             Spacing="6">
-                    <Button x:Name="DeleteProjectButton"
-                            Classes="headerIconButton"
-                            ToolTip.Tip="Delete project"
-                            IsEnabled="{Binding CanDeleteSelectedProject}"
-                            IsVisible="{Binding SelectedProjectRow?.IsNotEditing}"
-                            Click="DeleteSelectedProjectButton_OnClick">
-                        <PathIcon Data="{StaticResource Icon.Delete}"
-                                  Width="16"
-                                  Height="16" />
-                    </Button>
-                    <Button x:Name="RefreshProjectSourcesButton"
-                            Classes="headerIconButton"
-                            ToolTip.Tip="Refresh all source images in project"
-                            IsEnabled="{Binding HasSelectedProject}"
-                            IsVisible="{Binding SelectedProjectRow?.IsNotEditing}"
-                            Click="RefreshSelectedProjectSourcesButton_OnClick">
-                        <PathIcon Data="{StaticResource Icon.Refresh}"
-                                  Width="16"
-                                  Height="16" />
-                    </Button>
                     <Button x:Name="SettingsButton"
                             Classes="headerIconButton"
                             ToolTip.Tip="Settings"
