@@ -1,6 +1,16 @@
 # Difflection
 
-Difflection is a desktop image comparison tool built with Avalonia. It is aimed at quick static image review with side-by-side and split-screen comparison views.
+Difflection is a lightweight desktop image comparison tool built with Avalonia and .NET. It is designed for quick visual review of two static images, with side-by-side and split-screen comparison modes.
+
+The current alpha is aimed at developers, designers, and testers who need a simple local tool for checking image changes without setting up a full visual-regression workflow.
+
+Difflection supports quick visual comparison of two static images using side-by-side, split-screen, and difference highlighting views.
+
+![Difflection side-by-side comparison](docs/images/difflection-side-by-side.png)
+
+![Difflection split-screen comparison](docs/images/difflection-split-screen.png)
+
+![Difflection split-screen comparison](docs/images/difflection-diff-screen.png)
 
 ## Status
 
