@@ -1,28 +1,41 @@
 # Difflection
 
-Difflection is a lightweight desktop image comparison tool built with Avalonia and .NET. It is designed for quick visual review of two static images, with side-by-side and split-screen comparison modes.
+Difflection is a cross-platform desktop tool for visual regression review and static image comparison, built with Avalonia and .NET.
 
-The current alpha is aimed at developers, designers, and testers who need a simple local tool for checking image changes without setting up a full visual-regression workflow.
+It is designed for developers and testers who need a lightweight way to inspect UI snapshot changes without setting up a full visual-regression pipeline.
 
-Difflection supports quick visual comparison of two static images using side-by-side, split-screen, and difference highlighting views.
+Features include:
+
+- Side-by-side image comparison
+- Split-screen comparison with draggable divider
+- Difference highlighting mode
+- Zoomable high-resolution inspection
+- Snapshot-tested UI with Avalonia headless tests
+
 
 ![Difflection side-by-side comparison](docs/images/difflection-side-by-side.png)
+*Side-by-side Comparison*
 
 ![Difflection split-screen comparison](docs/images/difflection-split-screen.png)
+*Split screen comparison*
 
-![Difflection split-screen comparison](docs/images/difflection-diff-screen.png)
+![Difflection difference highlighting comparison](docs/images/difflection-diff-screen.png)
+*Difference highlighting
 
-## Status
-
+## Status  
 This project is currently in an early alpha state. The core comparison workflow is usable, but packaging, broader file handling, accessibility polish, and error handling are still being refined.
 
-## Features
+## Technical Highlights
 
-- Load reference and candidate images by file picker or drag and drop.
-- Compare images in a side-by-side view.
-- Compare images in a split-screen overlay view with a draggable divider.
-- Zoom with `Ctrl` + mouse wheel without scrolling the viewport.
-- Snapshot-tested UI using Avalonia headless tests.
+- Avalonia cross-platform desktop UI
+- Snapshot-based UI testing
+- Avalonia headless integration tests
+- WebAssembly browser host scaffold
+- Cross-platform .NET 10 architecture
+
+## Downloads
+
+Prebuilt binaries are available from the GitHub Releases page.
 
 ## Supported Runtime
 
@@ -69,18 +82,15 @@ UPDATE_SNAPSHOTS=1 dotnet test
 ```
 
 ## Known Limitations
-
 - No installer or release packaging yet.
-- Image loading errors are not yet surfaced with user-friendly messages.
-- Split-screen comparison is only enabled after two images are present.
-- Snapshot tests are sensitive to rendering/font changes across environments.
 
 ## Roadmap
 
 - Add first packaged release.
-- Improve image loading validation and error reporting.
 - Add keyboard shortcuts for common view and zoom actions.
 - Add more comparison modes if useful.
+- Add directory comparison workflows
+- Add CI-oriented regression review tooling
 
 ## Contributing
 
