@@ -5,9 +5,11 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
+using Difflection.Infrastructure;
 using Difflection.Models;
 using Difflection.Storage;
 // ReSharper disable UnusedParameterInPartialMethod
@@ -16,6 +18,16 @@ namespace Difflection.ViewModels;
 
 public sealed partial class ComparisonImageSetItemViewModel(ImageAsset image, ComparisonSet comparison, ComparisonChannel channel) : ViewModelBase, IDisposable
 {
+    private static readonly IBrush DarkThumbnailOverlayBrush = new SolidColorBrush(Color.FromArgb(0xD8, 0x05, 0x05, 0x05));
+    private static readonly IBrush DarkThumbnailTagOverlayBrush = new SolidColorBrush(Color.FromArgb(0xE8, 0x10, 0x10, 0x10));
+    private static readonly IBrush DarkThumbnailOverlayForegroundBrush = new SolidColorBrush(Color.FromRgb(0xF9, 0xFA, 0xFB));
+    private static readonly IBrush DarkThumbnailOverlayBorderBrush = new SolidColorBrush(Color.FromArgb(0x66, 0xFF, 0xFF, 0xFF));
+    private static readonly IBrush LightThumbnailOverlayBrush = new SolidColorBrush(Color.FromArgb(0xE8, 0xFF, 0xFF, 0xFF));
+    private static readonly IBrush LightThumbnailTagOverlayBrush = new SolidColorBrush(Color.FromArgb(0xF0, 0xFF, 0xFF, 0xFF));
+    private static readonly IBrush LightThumbnailOverlayForegroundBrush = new SolidColorBrush(Color.FromRgb(0x11, 0x18, 0x27));
+    private static readonly IBrush LightThumbnailOverlayBorderBrush = new SolidColorBrush(Color.FromArgb(0x66, 0x11, 0x18, 0x27));
+    private double _thumbnailAverageLuminance;
+
     public ComparisonImageSetItemViewModel(ImageAsset image, ComparisonSet comparison)
         : this(image, comparison, comparison.GetChannelForImage(image) ?? comparison.BaselineChannel)
     {
@@ -101,6 +113,24 @@ public sealed partial class ComparisonImageSetItemViewModel(ImageAsset image, Co
     public bool HasThumbnail => Thumbnail is not null;
 
     public bool HasNoThumbnail => Thumbnail is null;
+
+    public IBrush ThumbnailOverlayBrush => UsesDarkThumbnailOverlay
+        ? DarkThumbnailOverlayBrush
+        : LightThumbnailOverlayBrush;
+
+    public IBrush ThumbnailTagOverlayBrush => UsesDarkThumbnailOverlay
+        ? DarkThumbnailTagOverlayBrush
+        : LightThumbnailTagOverlayBrush;
+
+    public IBrush ThumbnailOverlayForegroundBrush => UsesDarkThumbnailOverlay
+        ? DarkThumbnailOverlayForegroundBrush
+        : LightThumbnailOverlayForegroundBrush;
+
+    public IBrush ThumbnailOverlayBorderBrush => UsesDarkThumbnailOverlay
+        ? DarkThumbnailOverlayBorderBrush
+        : LightThumbnailOverlayBorderBrush;
+
+    private bool UsesDarkThumbnailOverlay => Thumbnail is null || _thumbnailAverageLuminance >= 0.5;
 
     public async Task LoadThumbnailAsync(IProjectStorage projectStorage, CancellationToken cancellationToken = default)
     {
@@ -222,6 +252,12 @@ public sealed partial class ComparisonImageSetItemViewModel(ImageAsset image, Co
 
     partial void OnThumbnailChanged(Bitmap? oldValue, Bitmap? newValue)
     {
+        _thumbnailAverageLuminance = newValue is null ? 0.0 : BitmapLuminanceAnalyzer.GetAverageLuminance(newValue);
+        OnPropertyChanged(nameof(ThumbnailOverlayBrush));
+        OnPropertyChanged(nameof(ThumbnailTagOverlayBrush));
+        OnPropertyChanged(nameof(ThumbnailOverlayForegroundBrush));
+        OnPropertyChanged(nameof(ThumbnailOverlayBorderBrush));
+
         if (oldValue is not null)
         {
             Dispatcher.UIThread.Post(oldValue.Dispose, DispatcherPriority.Background);
