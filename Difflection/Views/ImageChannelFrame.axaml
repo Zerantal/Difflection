@@ -90,10 +90,9 @@
                                         Classes.baseline="{Binding IsBaseline}"
                                         Classes.candidate="{Binding IsCandidate}">
                                     <Grid>
-                                        <Image Source="{Binding Thumbnail}"
-                                               Stretch="UniformToFill"
-                                               RenderOptions.BitmapInterpolationMode="None"
-                                               IsVisible="{Binding HasThumbnail}" />
+                                        <views:AdaptiveInterpolationImage Source="{Binding Thumbnail}"
+                                                                          Stretch="UniformToFill"
+                                                                          IsVisible="{Binding HasThumbnail}" />
                                         <TextBlock Classes="imageSourceText"
                                                    Text="No preview"
                                                    HorizontalAlignment="Center"
