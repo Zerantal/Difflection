@@ -101,28 +101,37 @@
                                                    FontSize="10"
                                                    IsVisible="{Binding HasNoThumbnail}" />
                                         <Border Classes="revisionTagOverlay"
+                                                Background="{Binding ThumbnailTagOverlayBrush}"
+                                                BorderBrush="{Binding ThumbnailOverlayBorderBrush}"
                                                 HorizontalAlignment="Left"
                                                 VerticalAlignment="Top"
                                                 IsVisible="{Binding HasDisplayLabel}">
                                             <TextBlock Classes="revisionTagText"
+                                                       Foreground="{Binding ThumbnailOverlayForegroundBrush}"
                                                        Text="{Binding DisplayLabel}" />
                                         </Border>
                                         <Border Classes="revisionMetaOverlay"
+                                                Background="{Binding ThumbnailOverlayBrush}"
                                                 HorizontalAlignment="Left"
                                                 VerticalAlignment="Bottom">
                                             <TextBlock Classes="revisionMetaText"
+                                                       Foreground="{Binding ThumbnailOverlayForegroundBrush}"
                                                        Text="{Binding RevisionText}" />
                                         </Border>
                                     </Grid>
                                 </Border>
                             </Button>
                             <Button Classes="revisionDeleteButton"
+                                    Background="{Binding ThumbnailOverlayBrush}"
+                                    Foreground="{Binding ThumbnailOverlayForegroundBrush}"
+                                    BorderBrush="{Binding ThumbnailOverlayBorderBrush}"
                                     ToolTip.Tip="Remove revision"
                                     HorizontalAlignment="Right"
                                     VerticalAlignment="Top"
                                     Command="{Binding #Root.((vm:MainWindowViewModel)DataContext)?.ImageSet.DeleteImageAndRefreshCommand}"
                                     CommandParameter="{Binding Image}">
                                 <PathIcon Data="{StaticResource Icon.Delete}"
+                                          Foreground="{Binding ThumbnailOverlayForegroundBrush}"
                                           Width="11"
                                           Height="11" />
                             </Button>
