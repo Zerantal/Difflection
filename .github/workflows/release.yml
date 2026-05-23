@@ -1,0 +1,62 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build release
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        include:
+          - rid: linux-x64
+            archive: difflection-linux-x64.tar.gz
+          - rid: win-x64
+            archive: difflection-win-x64.zip
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Test
+        run: dotnet test --configuration Release --no-restore
+
+      - name: Publish
+        run: >
+          dotnet publish Difflection.Desktop/Difflection.Desktop.csproj
+          --configuration Release
+          --runtime ${{ matrix.rid }}
+          --self-contained true
+          -p:PublishSingleFile=true
+          -p:IncludeNativeLibrariesForSelfExtract=true
+          --output ./artifacts/${{ matrix.rid }}
+
+      - name: Archive Linux
+        if: matrix.rid == 'linux-x64'
+        run: tar -czf ./artifacts/${{ matrix.archive }} -C ./artifacts/${{ matrix.rid }} .
+
+      - name: Archive Windows
+        if: matrix.rid == 'win-x64'
+        run: cd ./artifacts/${{ matrix.rid }} && zip -r ../${{ matrix.archive }} .
+
+      - name: Upload release asset
+        uses: softprops/action-gh-release@v3
+        with:
+          prerelease: true
+          generate_release_notes: true
+          files: ./artifacts/${{ matrix.archive }}
