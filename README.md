@@ -12,20 +12,14 @@ Features include:
 - Zoomable high-resolution inspection
 - Snapshot-tested UI with Avalonia headless tests
 
-<figure style="border: 2px solid #888; padding: 10px; display: inline-block;">
-	<img src="docs/images/difflection-side-by-side.png" alt="Difflection side-by-side comparison">
-	<figcaption>Side-by-side comparison</figcaption>
-</figure>
+*Side-by-side Comparison*
+![Difflection side-by-side comparison](docs/images/difflection-side-by-side.png)
 
-<figure style="border: 2px solid #888; padding: 10px; display: inline-block;">
-	<img src="docs/images/difflection-split-screen.png" alt="Difflection split screen comparison">
-	<figcaption>Split screen comparison</figcaption>
-</figure>
+*Split screen comparison*
+![Difflection split-screen comparison](docs/images/difflection-split-screen.png)
 
-<figure style="border: 2px solid #888; padding: 10px; display: inline-block;">
-	<img src="docs/images/difflection-diff-screen.png" alt="Difflection difference highlighting comparison">
-	<figcaption>Difference highlighting comparison</figcaption>
-</figure>
+*Difference highlighting*
+![Difflection difference highlighting comparison](docs/images/difflection-diff-screen.png)
 
 ## Status  
 This project is currently in an early alpha state. The core comparison workflow is usable, but packaging, broader file handling, accessibility polish, and error handling are still being refined.
