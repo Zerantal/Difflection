@@ -34,7 +34,7 @@ This project is currently in an early alpha state. The core comparison workflow 
 
 ## Downloads
 
-Prebuilt binaries are available from the GitHub Releases page.
+Prebuilt binaries are available from the GitHub Releases [page](https://github.com/Zerantal/Difflection/releases).
 
 ## Supported Runtime
 
