@@ -43,6 +43,14 @@ Prebuilt binaries are available from the GitHub Releases [page](https://github.c
 
 The app is intended to be cross-platform through Avalonia, but Linux is the current development environment. Windows and macOS packaging have not been completed yet.
 
+> **Why an Avalonia alpha build?**
+>
+> Difflection currently uses Avalonia `12.0.999-cibuild0064469-alpha` because the latest stable Avalonia release does not provide working drag-and-drop behavior for this app on Wayland, which is the primary development platform.
+>
+> This CI build includes drag-and-drop fixes that work on the target Linux/Wayland environment and have also been tested successfully in the Windows release binary running under Steam/Proton.
+>
+> The project should move back to a stable Avalonia release once the relevant drag-and-drop fixes are available in a stable version.
+
 ## Build And Run
 
 ```bash
@@ -82,6 +90,7 @@ UPDATE_SNAPSHOTS=1 dotnet test
 
 ## Known Limitations
 - No installer or release packaging yet.
+- Uses an Avalonia CI alpha build to pick up required Wayland drag-and-drop fixes.
 
 ## Roadmap
 
@@ -90,6 +99,7 @@ UPDATE_SNAPSHOTS=1 dotnet test
 - Add more comparison modes if useful.
 - Add directory comparison workflows
 - Add CI-oriented regression review tooling
+- Move back to a stable Avalonia release once the required drag-and-drop fixes are released.
 
 ## Contributing
 
