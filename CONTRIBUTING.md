@@ -15,7 +15,7 @@ Useful commands:
 dotnet restore
 dotnet build
 dotnet test
-dotnet run --project Difflection/Difflection.csproj
+dotnet run --project Difflection.Desktop/Difflection.Desktop.csproj
 ```
 
 ## UI Snapshots
