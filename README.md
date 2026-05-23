@@ -20,7 +20,7 @@ Features include:
 *Split screen comparison*
 
 ![Difflection difference highlighting comparison](docs/images/difflection-diff-screen.png)
-*Difference highlighting
+*Difference highlighting*
 
 ## Status  
 This project is currently in an early alpha state. The core comparison workflow is usable, but packaging, broader file handling, accessibility polish, and error handling are still being refined.

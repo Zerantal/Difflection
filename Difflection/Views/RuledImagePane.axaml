@@ -74,9 +74,9 @@
 
                                 <Border x:Name="ImageLayer"
                                         Classes="imageLayer">
-                                    <Image Source="{Binding ImageSource, ElementName=Root}"
-                                           Stretch="Uniform"
-                                           RenderOptions.BitmapInterpolationMode="None" />
+                                    <views:AdaptiveInterpolationImage Source="{Binding ImageSource, ElementName=Root}"
+                                                                      Stretch="Uniform"
+                                                                      ViewScale="{Binding ZoomScale, ElementName=Root}" />
                                 </Border>
                             </Grid>
                         </LayoutTransformControl>

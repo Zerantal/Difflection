@@ -127,16 +127,16 @@
 
                                 <Border x:Name="LeftImageLayer"
                                         Classes="imageLayer">
-                                    <Image Source="{Binding LeftImage, ElementName=Root}"
-                                           Stretch="Uniform"
-                                           RenderOptions.BitmapInterpolationMode="None" />
+                                    <views:AdaptiveInterpolationImage Source="{Binding LeftImage, ElementName=Root}"
+                                                                      Stretch="Uniform"
+                                                                      ViewScale="{Binding ZoomScale, ElementName=Root}" />
                                 </Border>
 
                                 <Border x:Name="RightImageLayer"
                                         Classes="imageLayer">
-                                    <Image Source="{Binding RightImage, ElementName=Root}"
-                                           Stretch="Uniform"
-                                           RenderOptions.BitmapInterpolationMode="None" />
+                                    <views:AdaptiveInterpolationImage Source="{Binding RightImage, ElementName=Root}"
+                                                                      Stretch="Uniform"
+                                                                      ViewScale="{Binding ZoomScale, ElementName=Root}" />
                                 </Border>
 
                                 <Border x:Name="SplitDivider"
