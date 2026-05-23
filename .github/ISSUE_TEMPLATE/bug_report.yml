@@ -1,40 +1,73 @@
 name: Bug report
-description: Report something that is not working as expected.
+description: Report a reproducible problem in Difflection
 title: "[Bug]: "
 labels: ["bug"]
 body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. Please include enough detail for the issue to be reproduced.
+
   - type: textarea
     id: summary
     attributes:
       label: Summary
-      description: What happened?
+      description: What went wrong?
+      placeholder: Describe the problem clearly.
     validations:
       required: true
+
   - type: textarea
     id: steps
     attributes:
       label: Steps to reproduce
       description: List the exact steps needed to reproduce the issue.
       placeholder: |
-        1. Open the app
-        2. Load these images
-        3. Switch to this view
+        1. Open Difflection
+        2. Load image A
+        3. Load image B
+        4. Switch to ...
     validations:
       required: true
+
   - type: textarea
     id: expected
     attributes:
-      label: Expected behavior
+      label: Expected behaviour
+      description: What did you expect to happen?
     validations:
       required: true
+
   - type: textarea
-    id: environment
+    id: actual
     attributes:
-      label: Environment
-      description: OS, .NET SDK version, and app version or commit.
-      placeholder: |
-        OS:
-        .NET SDK:
-        Difflection version/commit:
+      label: Actual behaviour
+      description: What happened instead?
     validations:
-      required: false
+      required: true
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - Linux / Wayland
+        - Linux / X11
+        - Windows
+        - macOS
+        - Browser / WebAssembly
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Difflection version / commit
+      placeholder: v0.1.0-alpha.1 or commit SHA
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs, screenshots, or sample images
+      description: Attach anything that helps demonstrate the issue.

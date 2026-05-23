@@ -1,25 +1,52 @@
 name: Feature request
-description: Suggest an improvement or new capability.
+description: Suggest an improvement or new capability
 title: "[Feature]: "
 labels: ["enhancement"]
 body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting an improvement. Please describe the workflow or problem the feature would help with.
+
   - type: textarea
     id: problem
     attributes:
-      label: Problem or workflow
+      label: Problem or use case
       description: What are you trying to do?
     validations:
       required: true
+
   - type: textarea
     id: proposal
     attributes:
       label: Proposed solution
-      description: What would make this workflow better?
+      description: What would you like Difflection to do?
     validations:
       required: true
+
   - type: textarea
     id: alternatives
     attributes:
       label: Alternatives considered
-    validations:
-      required: false
+      description: Are there simpler or partial solutions?
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Image loading
+        - Side-by-side comparison
+        - Split-screen comparison
+        - Difference highlighting
+        - Zoom / pan
+        - Snapshot testing
+        - Packaging / releases
+        - Browser host
+        - Documentation
+        - Other
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional context
