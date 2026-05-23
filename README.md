@@ -1,5 +1,7 @@
 # Difflection
 
+THIS IS A TEST
+
 Difflection is a cross-platform desktop tool for visual regression review and static image comparison, built with Avalonia and .NET.
 
 It is designed for developers and testers who need a lightweight way to inspect UI snapshot changes without setting up a full visual-regression pipeline.
