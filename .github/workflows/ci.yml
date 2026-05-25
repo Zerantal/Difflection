@@ -6,32 +6,65 @@ on:
   pull_request:
 
 jobs:
-  build:
-    runs-on: ubuntu-24.04
+  format:
+    name: Format
+    runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v6
 
       - uses: actions/setup-dotnet@v5
         with:
-          dotnet-version: '10.0.x'
+          dotnet-version: "10.0.x"
 
-      - uses: actions/setup-node@v4
+      - name: Restore
+        run: dotnet restore
+
+      - name: Verify formatting
+        run: dotnet format Difflection.sln --verify-no-changes --no-restore
+
+  build:
+    name: Build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    needs: format
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-dotnet@v5
         with:
-          node-version: '22'
+          dotnet-version: "10.0.x"
 
-      - run: dotnet restore
-      - run: dotnet build --configuration Release --no-restore
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Setup Node
+        if: matrix.os == 'ubuntu-latest'
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
 
       - name: Test web app
+        if: matrix.os == 'ubuntu-latest'
         working-directory: Difflection.Browser
         run: npm test
 
       - name: Test
+        if: matrix.os == 'ubuntu-latest'
         run: dotnet test --configuration Release --no-build --logger "trx;LogFileName=test-results.trx" --results-directory TestResults
 
       - name: Upload test artifacts
-        if: always()
+        if: always() && matrix.os == 'ubuntu-latest'
         uses: actions/upload-artifact@v7
         with:
           name: test-artifacts
