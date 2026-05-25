@@ -32,9 +32,33 @@ UPDATE_SNAPSHOTS=1 dotnet test
 
 Review the changed baseline images before committing them.
 
-## Pull Requests
+## Contribution Scope
 
-- Keep changes focused.
-- Include tests for behavior changes where practical.
-- Update snapshots only when the visual change is intentional.
-- Run `dotnet test` before opening a pull request.
+Small, focused pull requests are welcome.
+
+For larger changes, please open an issue first so the approach can be discussed before implementation work begins.
+
+Good candidates for contributions include:
+
+- Bug fixes
+- Documentation improvements
+- Small UI polish improvements
+- Test coverage improvements
+- Packaging/release improvements
+- Platform-specific fixes
+
+Please avoid large rewrites, broad refactors, or major workflow changes without prior discussion.
+
+## Review and Merge Policy
+
+All changes should go through pull requests.
+
+Pull requests should include:
+
+- A clear description of the problem and solution
+- A linked issue where appropriate
+- Passing local tests
+- Updated snapshot baselines for intentional visual changes
+- Documentation updates for user-facing behaviour changes
+
+The maintainer may squash commits when merging to keep the project history readable.
