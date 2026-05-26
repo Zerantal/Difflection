@@ -51,13 +51,13 @@ public partial class TopToolbar : UserControl
         UnregisterShortcuts();
 
         registry
-            .Add("view.side-by-side", "D1",      "Side-by-side view",  SwitchToSideBySideView)
-            .Add("view.split-screen", "D2",      "Split-screen view",  SwitchToSplitScreenView)
-            .Add("view.difference",   "D3",      "Difference view",    SwitchToDifferenceView)
-            .Add("zoom.fit",          "Ctrl+D0", "Fit to window",      FitZoom)
-            .Add("zoom.actual",       "Ctrl+D1", "Actual size (100%)", SetActualSize)
-            .Add("files.open",        "Ctrl+O",  "Open files",         InvokeOpenFilePicker)
-            .Add("sources.refresh",   "F5",      "Refresh sources",    InvokeRefreshSelectedComparisonSources);
+            .Add("view.side-by-side", "D1", "Side-by-side view", SwitchToSideBySideView)
+            .Add("view.split-screen", "D2", "Split-screen view", SwitchToSplitScreenView)
+            .Add("view.difference", "D3", "Difference view", SwitchToDifferenceView)
+            .Add("zoom.fit", "Ctrl+D0", "Fit to window", FitZoom)
+            .Add("zoom.actual", "Ctrl+D1", "Actual size (100%)", SetActualSize)
+            .Add("files.open", "Ctrl+O", "Open files", InvokeOpenFilePicker)
+            .Add("sources.refresh", "F5", "Refresh sources", InvokeRefreshSelectedComparisonSources);
 
         _registeredOn = registry;
     }
