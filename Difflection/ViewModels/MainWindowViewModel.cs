@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Media.Imaging;
+using Difflection.Infrastructure;
 using Difflection.Models;
 using Difflection.Monitoring;
 using Difflection.Storage;
@@ -51,6 +52,8 @@ public class MainWindowViewModel : ViewModelBase
     public WorkspaceStatusViewModel WorkspaceStatus { get; }
 
     public ComparisonImageSetViewModel ImageSet { get; }
+
+    public KeyboardShortcutRegistry Shortcuts { get; } = new();
 
     public IProjectStorage? ProjectStorage { get; }
 

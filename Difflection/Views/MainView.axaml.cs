@@ -10,6 +10,7 @@ using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using Avalonia.Styling;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using Difflection.Infrastructure;
 using Difflection.Models;
 using Difflection.Monitoring;
@@ -24,6 +25,7 @@ public partial class MainView : UserControl
     private ProjectImageChangeMonitor? _imageChangeMonitor;
     private bool _projectsLoaded;
     private readonly WorkspaceSidebar? _workspaceSidebar;
+    private TopLevel? _shortcutHost;
     private Func<string, string, Task<bool>> _confirmDestructiveActionAsync = ConfirmationDialogService.ShowAsync;
 
     public MainView()
@@ -227,9 +229,64 @@ public partial class MainView : UserControl
     {
         BrowserInterop.DetachBrowserBridge?.Invoke(this);
 
+        DetachShortcutHandler();
+
         UnsubscribeViewModelEvents();
 
         DisposeImageChangeMonitor();
+    }
+
+    private void AttachShortcutHandler()
+    {
+        if (_shortcutHost is not null)
+        {
+            return;
+        }
+
+        _shortcutHost = TopLevel.GetTopLevel(this);
+        _shortcutHost?.AddHandler(KeyDownEvent, OnShortcutKeyDown, RoutingStrategies.Tunnel);
+    }
+
+    private void DetachShortcutHandler()
+    {
+        if (_shortcutHost is null)
+        {
+            return;
+        }
+
+        _shortcutHost.RemoveHandler(KeyDownEvent, OnShortcutKeyDown);
+        _shortcutHost = null;
+    }
+
+    private void OnShortcutKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.Handled || _viewModel is null || IsTextInputFocused())
+        {
+            return;
+        }
+
+        if (_viewModel.Shortcuts.TryInvoke(e))
+        {
+            e.Handled = true;
+        }
+    }
+
+    private bool IsTextInputFocused()
+    {
+        if (_shortcutHost?.FocusManager?.GetFocusedElement() is not Visual focused)
+        {
+            return false;
+        }
+
+        foreach (var ancestor in focused.GetSelfAndVisualAncestors())
+        {
+            if (ancestor is TextBox or AutoCompleteBox)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private void SubscribeViewModelEvents()
@@ -282,6 +339,8 @@ public partial class MainView : UserControl
     private async void OnAttachedToVisualTree(object? sender, VisualTreeAttachmentEventArgs e)
     {
         BrowserInterop.AttachBrowserBridge?.Invoke(this);
+
+        AttachShortcutHandler();
 
         if (_viewModel is not null && !_projectsLoaded)
         {

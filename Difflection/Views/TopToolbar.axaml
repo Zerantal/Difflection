@@ -2,6 +2,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Difflection.ViewModels"
+             xmlns:infra="using:Difflection.Infrastructure"
              x:Class="Difflection.Views.TopToolbar"
              x:Name="Root"
              x:DataType="vm:MainWindowViewModel"
@@ -16,20 +17,24 @@
                 <Button x:Name="SideBySideViewButton"
                         Classes="viewModeButton"
                         Content="Side-by-side"
+                        infra:Hotkey.Id="view.side-by-side"
                         Click="SideBySideViewButton_OnClick" />
                 <Button x:Name="SplitScreenViewButton"
                         Classes="viewModeButton"
                         Content="Split screen"
                         IsEnabled="{Binding ToolState.CanUseSplitScreen}"
+                        infra:Hotkey.Id="view.split-screen"
                         Click="SplitScreenViewButton_OnClick" />
                 <Button x:Name="DifferenceViewButton"
                         Classes="viewModeButton"
                         Content="Difference"
                         IsEnabled="{Binding ToolState.CanUseDifferenceView}"
+                        infra:Hotkey.Id="view.difference"
                         Click="DifferenceViewButton_OnClick" />
                 <Border Classes="toolbarSeparator" />
                 <Button Classes="headerIconButton"
                         ToolTip.Tip="Add images to comparison"
+                        infra:Hotkey.Id="files.open"
                         Click="AddMediaButton_OnClick">
                     <PathIcon Data="{StaticResource Icon.Add}"
                               Width="16"
@@ -38,6 +43,7 @@
                 <Button Classes="headerIconButton"
                         ToolTip.Tip="Refresh source images for selected comparison"
                         IsEnabled="{Binding Workspace.HasSelectedComparison}"
+                        infra:Hotkey.Id="sources.refresh"
                         Click="RefreshSelectedComparisonSourcesButton_OnClick">
                     <PathIcon Data="{StaticResource Icon.Refresh}"
                               Width="16"
@@ -69,6 +75,7 @@
                 <Button Classes="headerIconButton"
                         ToolTip.Tip="Fit images to stage"
                         IsEnabled="{Binding ComparisonDisplay.HasAnyImage}"
+                        infra:Hotkey.Id="zoom.fit"
                         Click="FitZoomButton_OnClick">
                     <PathIcon Data="{StaticResource Icon.AutofitContent}"
                               Width="16"
@@ -77,6 +84,7 @@
                 <Button Classes="headerIconButton"
                         ToolTip.Tip="Actual size"
                         IsEnabled="{Binding ComparisonDisplay.HasAnyImage}"
+                        infra:Hotkey.Id="zoom.actual"
                         Click="ActualSizeZoomButton_OnClick">
                     <PathIcon Data="{StaticResource Icon.ActualSize}"
                               Width="16"
