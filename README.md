@@ -12,6 +12,7 @@ Features include:
 - Split-screen comparison with draggable divider
 - Difference highlighting mode
 - Zoomable high-resolution inspection
+- Keyboard shortcuts for common view, zoom, and file actions
 - Snapshot-tested UI with Avalonia headless tests
 
 *Side-by-side Comparison*
@@ -52,6 +53,22 @@ The app is intended to be cross-platform through Avalonia, but Linux is the curr
 > This CI build includes drag-and-drop fixes that work on the target Linux/Wayland environment and have also been tested successfully in the Windows release binary running under Steam/Proton.
 >
 > The project should move back to a stable Avalonia release once the relevant drag-and-drop fixes are available in a stable version.
+
+## Keyboard Shortcuts
+
+| Shortcut        | Action                |
+|-----------------|-----------------------|
+| `1`             | Side-by-side view     |
+| `2`             | Split-screen view     |
+| `3`             | Difference view       |
+| `Ctrl + 0`      | Fit to window         |
+| `Ctrl + 1`      | Actual size (100%)    |
+| `Ctrl + O`      | Open files            |
+| `F5`            | Refresh source images |
+| `Ctrl + Wheel`  | Zoom in / out         |
+| `Shift + Wheel` | Horizontal scroll     |
+
+On macOS, `Ctrl` is replaced by `Cmd` automatically — for example `Cmd + O` opens files. Tooltips on toolbar buttons reflect the platform's modifier.
 
 ## Build And Run
 
@@ -97,7 +114,6 @@ UPDATE_SNAPSHOTS=1 dotnet test
 ## Roadmap
 
 - Add first packaged release.
-- Add keyboard shortcuts for common view and zoom actions.
 - Add more comparison modes if useful.
 - Add directory comparison workflows
 - Add CI-oriented regression review tooling
