@@ -96,9 +96,10 @@
                         <Button x:Name="RefreshProjectSourcesButton"
                                 Grid.Column="2"
                                 Classes="headerIconButton"
-                                ToolTip.Tip="Refresh all source images in project"
+                                ToolTip.Tip="Refresh source images for the current project"
                                 IsEnabled="{Binding HasSelectedProject}"
                                 IsVisible="{Binding SelectedProjectRow?.IsNotEditing}"
+                                infra:Hotkey.Id="project.sources.refresh"
                                 Click="RefreshSelectedProjectSourcesButton_OnClick">
                             <PathIcon Data="{StaticResource Icon.Refresh}"
                                       Width="16"

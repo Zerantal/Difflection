@@ -57,16 +57,17 @@ The app is intended to be cross-platform through Avalonia, but Linux is the curr
 ## Keyboard Shortcuts
 
 | Shortcut        | Action                |
-|-----------------|-----------------------|
-| `1`             | Side-by-side view     |
-| `2`             | Split-screen view     |
-| `3`             | Difference view       |
-| `Ctrl + 0`      | Fit to window         |
-| `Ctrl + 1`      | Actual size (100%)    |
-| `Ctrl + O`      | Open files            |
-| `F5`            | Refresh source images |
-| `Ctrl + Wheel`  | Zoom in / out         |
-| `Shift + Wheel` | Horizontal scroll     |
+|-----------------|------------------------------------------------------|
+| `1`             | Side-by-side view                                    |
+| `2`             | Split-screen view                                    |
+| `3`             | Difference view                                      |
+| `Ctrl + 0`      | Fit to window                                        |
+| `Ctrl + 1`      | Actual size (100%)                                   |
+| `Ctrl + O`      | Open files                                           |
+| `F5`            | Refresh source images for the current comparison     |
+| `Ctrl + F5`     | Refresh source images for the current project        |
+| `Ctrl + Wheel`  | Zoom in / out                                        |
+| `Shift + Wheel` | Horizontal scroll                                    |
 
 On macOS, `Ctrl` is replaced by `Cmd` automatically — for example `Cmd + O` opens files. Tooltips on toolbar buttons reflect the platform's modifier.
 

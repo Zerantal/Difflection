@@ -22,7 +22,8 @@ public partial class TopToolbar : UserControl
         "zoom.fit",
         "zoom.actual",
         "files.open",
-        "sources.refresh"
+        "sources.refresh",
+        "project.sources.refresh"
     ];
 
     private MainWindowViewModel? _viewModel;
@@ -57,7 +58,8 @@ public partial class TopToolbar : UserControl
             .Add("zoom.fit", "Ctrl+D0", "Fit to window", FitZoom)
             .Add("zoom.actual", "Ctrl+D1", "Actual size (100%)", SetActualSize)
             .Add("files.open", "Ctrl+O", "Open files", InvokeOpenFilePicker)
-            .Add("sources.refresh", "F5", "Refresh sources", InvokeRefreshSelectedComparisonSources);
+            .Add("sources.refresh", "F5", "Refresh source images for the current comparison", InvokeRefreshSelectedComparisonSources)
+            .Add("project.sources.refresh", "Ctrl+F5", "Refresh source images for the current project", InvokeRefreshSelectedProjectSources);
 
         _registeredOn = registry;
     }
@@ -88,7 +90,14 @@ public partial class TopToolbar : UserControl
     {
         _ = ObservedTask.ReportFailureAsync(
             RefreshSelectedComparisonSourcesCoreAsync(),
-            "Difflection could not refresh source images.");
+            "Difflection could not refresh the current comparison's source images.");
+    }
+
+    private void InvokeRefreshSelectedProjectSources()
+    {
+        _ = ObservedTask.ReportFailureAsync(
+            RefreshSelectedProjectSourcesCoreAsync(),
+            "Difflection could not refresh the current project's source images.");
     }
 
     private void SwitchToSideBySideView()
@@ -130,6 +139,17 @@ public partial class TopToolbar : UserControl
         }
 
         await _viewModel.RefreshComparisonSourceImagesAsync(_viewModel.Workspace.SelectedComparison);
+        RequestImageChangeMonitorRestart?.Invoke();
+    }
+
+    private async Task RefreshSelectedProjectSourcesCoreAsync()
+    {
+        if (_viewModel?.Workspace.SelectedProject is null)
+        {
+            return;
+        }
+
+        await _viewModel.RefreshProjectSourceImagesAsync(_viewModel.Workspace.SelectedProject);
         RequestImageChangeMonitorRestart?.Invoke();
     }
 
