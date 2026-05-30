@@ -1,4 +1,4 @@
-export function setupBrowserDragDrop({ document, getBrowserExports, isSupportedImageFile }) {
+export function setupBrowserDragDrop({ document, getBrowserExports, isSupportedImageFile, showDropBridgeError }) {
     let dragDepth = 0;
     let dropOverlay = null;
     let browserDropHandlersInstalled = false;
@@ -15,6 +15,14 @@ export function setupBrowserDragDrop({ document, getBrowserExports, isSupportedI
         };
 
         const shouldHandle = (event) => event.dataTransfer != null;
+
+        const reportDropError = (message) => {
+            dragDepth = 0;
+            setDropActive(false);
+            dropOverlay?.remove();
+            dropOverlay = null;
+            showDropBridgeError?.(document, message);
+        };
 
         const ensureDropOverlay = () => {
             if (dropOverlay != null) {
@@ -51,23 +59,36 @@ export function setupBrowserDragDrop({ document, getBrowserExports, isSupportedI
 
                 const files = Array.from(event.dataTransfer.files ?? []).filter(isSupportedImageFile).slice(0, 2);
                 if (files.length === 0) {
+                    reportDropError("No supported image files found. Use PNG, JPEG, BMP, GIF, WebP, or TIFF.");
                     return;
                 }
 
-                const exports = await getBrowserExports();
+                try {
+                    const exports = await getBrowserExports();
+                    const bridge = exports?.Difflection?.Browser?.BrowserDropBridge;
+                    if (bridge == null) {
+                        reportDropError("Difflection is still loading. Wait a moment and try dropping again.");
+                        return;
+                    }
 
-                if (files.length >= 2) {
-                    await exports.Difflection.Browser.BrowserDropBridge.AcceptDroppedPair(
+                    if (files.length >= 2) {
+                        await bridge.AcceptDroppedPair(
+                            files[0].name,
+                            new Uint8Array(await files[0].arrayBuffer()),
+                            files[1].name,
+                            new Uint8Array(await files[1].arrayBuffer()));
+                        return;
+                    }
+
+                    await bridge.AcceptDroppedFile(
                         files[0].name,
-                        new Uint8Array(await files[0].arrayBuffer()),
-                        files[1].name,
-                        new Uint8Array(await files[1].arrayBuffer()));
-                    return;
+                        new Uint8Array(await files[0].arrayBuffer()));
+                } catch (error) {
+                    const message = error instanceof Error
+                        ? `Could not load dropped images: ${error.message}`
+                        : "Could not load dropped images. Try again.";
+                    reportDropError(message);
                 }
-
-                await exports.Difflection.Browser.BrowserDropBridge.AcceptDroppedFile(
-                    files[0].name,
-                    new Uint8Array(await files[0].arrayBuffer()));
             });
 
             document.body.appendChild(dropOverlay);
