@@ -85,6 +85,8 @@ For Rider, use the launch profiles in `Difflection.Desktop/Properties/launchSett
 
 An initial Avalonia WebAssembly host lives in `Difflection.Browser`.
 
+**At a glance:** the browser build is a scaffold for future web deployment, not a supported comparison workflow yet. Desktop drag-and-drop and direct file paths work today; the browser sandbox cannot access the local filesystem the same way, so image open/drop behavior still needs a browser-specific adapter.
+
 The project currently builds as part of the solution. Running or publishing it as WebAssembly requires the .NET `wasm-tools` workload:
 
 ```bash
@@ -92,7 +94,7 @@ dotnet workload restore Difflection.Browser/Difflection.Browser.csproj
 dotnet run --project Difflection.Browser/Difflection.Browser.csproj -p:RuntimeIdentifier=browser-wasm
 ```
 
-The browser host is an early scaffold. The next browser-specific work is adapting image file/drop behavior for browser sandbox constraints.
+The browser host is an early scaffold. The next browser-specific work is adapting image file/drop behavior for browser sandbox constraints — for example, routing drops through browser file APIs instead of desktop paths, and surfacing clearer errors when a drop contains no supported image files.
 
 ## Test
 
