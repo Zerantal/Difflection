@@ -135,6 +135,43 @@ test('browser drop ignores non-image files', async () => {
     });
 
     assert.deepEqual(calls, []);
+    assert.equal(document.body.classList.values.has('difflection-drop-active'), false);
+    assert.equal(document.children.length, 0);
+});
+
+test('browser drop clears active state after dragleave cancel', () => {
+    const document = createDocument();
+    const controller = setupBrowserDragDrop({
+        document,
+        getBrowserExports: async () => ({
+            Difflection: {
+                Browser: {
+                    BrowserDropBridge: {
+                        AcceptDroppedFile: async () => {},
+                        AcceptDroppedPair: async () => {},
+                    },
+                },
+            },
+        }),
+        isSupportedImageFile,
+    });
+
+    controller.setup();
+    document.listeners.dragenter({
+        dataTransfer: { files: [] },
+        preventDefault() {},
+    });
+
+    assert.equal(document.body.classList.values.has('difflection-drop-active'), true);
+    assert.equal(document.children.length, 1);
+
+    document.listeners.dragleave({
+        dataTransfer: { files: [] },
+        preventDefault() {},
+    });
+
+    assert.equal(document.body.classList.values.has('difflection-drop-active'), false);
+    assert.equal(document.children.length, 0);
 });
 
 function createDocument() {
