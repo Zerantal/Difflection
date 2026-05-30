@@ -79,6 +79,8 @@ dotnet build
 dotnet run --project Difflection.Desktop/Difflection.Desktop.csproj
 ```
 
+For a portable Linux AppImage, see [`docs/linux-appimage-packaging.md`](docs/linux-appimage-packaging.md).
+
 For Rider, use the launch profiles in `Difflection.Desktop/Properties/launchSettings.json` and `Difflection.Browser/Properties/launchSettings.json`.
 
 ## Browser Host
