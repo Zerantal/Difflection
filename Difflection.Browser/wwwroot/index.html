@@ -9,12 +9,13 @@
 </head>
 <body>
     <div id="out">
-        <div class="splash">
+        <div class="splash" role="status" aria-live="polite" aria-busy="true" aria-label="Loading Difflection image comparison workspace">
             <strong>Difflection</strong>
             <span>Loading image comparison workspace...</span>
-	    <span>Supported formats: PNG, JPEG, BMP, GIF, WebP, TIFF</span>
+            <span>Supported formats: PNG, JPEG, BMP, GIF, WebP, TIFF</span>
         </div>
     </div>
+    <div id="difflection-drop-status" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
     <script type="module" src="./main.js"></script>
 </body>
 </html>

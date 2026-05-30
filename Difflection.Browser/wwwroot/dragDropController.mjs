@@ -10,8 +10,15 @@ export function setupBrowserDragDrop({ document, getBrowserExports, isSupportedI
 
         browserDropHandlersInstalled = true;
 
+        const dropStatus = document.getElementById("difflection-drop-status");
+
         const setDropActive = (value) => {
             document.body.classList.toggle("difflection-drop-active", value);
+            if (dropStatus != null) {
+                dropStatus.textContent = value
+                    ? "Drop zone active. Release to load one or two supported image files."
+                    : "";
+            }
         };
 
         const shouldHandle = (event) => event.dataTransfer != null;
