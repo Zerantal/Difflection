@@ -20,6 +20,8 @@ jobs:
             archive: difflection-linux-x64.tar.gz
           - rid: win-x64
             archive: difflection-win-x64.zip
+          - rid: osx-arm64
+            archive: difflection-osx-arm64.tar.gz
 
     steps:
       - name: Checkout
@@ -50,6 +52,10 @@ jobs:
 
       - name: Archive Linux
         if: matrix.rid == 'linux-x64'
+        run: tar -czf ./artifacts/${{ matrix.archive }} -C ./artifacts/${{ matrix.rid }} .
+
+      - name: Archive macOS
+        if: matrix.rid == 'osx-arm64'
         run: tar -czf ./artifacts/${{ matrix.archive }} -C ./artifacts/${{ matrix.rid }} .
 
       - name: Archive Windows
