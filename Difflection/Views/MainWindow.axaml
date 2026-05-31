@@ -3,7 +3,7 @@
         xmlns:views="using:Difflection.Views"
         x:Class="Difflection.Views.MainWindow"
         Background="{DynamicResource AppBackgroundBrush}"
-        Icon="/Assets/avalonia-logo.ico"
+        Icon="/Assets/difflection.ico"
         Title="Difflection">
 
     <views:MainView />
