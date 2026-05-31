@@ -44,7 +44,7 @@ Prebuilt binaries are available from the GitHub Releases [page](https://github.c
 - .NET 10
 - Avalonia `12.0.999-cibuild0064469-alpha`
 
-The app is intended to be cross-platform through Avalonia, but Linux is the current development environment. Windows and macOS packaging have not been completed yet.
+The app is intended to be cross-platform through Avalonia, but Linux is the current development environment. Tagged releases publish Linux, Windows, and macOS (`osx-arm64`) assets; notarization is not automated yet. See [`docs/macos-release-testing.md`](docs/macos-release-testing.md) for macOS smoke-test steps.
 
 > **Why an Avalonia alpha build?**
 >
