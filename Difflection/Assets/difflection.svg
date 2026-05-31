@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48" role="img" aria-labelledby="title desc">
+  <title id="title">Difflection icon - split image comparison</title>
+  <desc id="desc">A high-contrast split image comparison icon with blue image content on the left, green image content on the right, and a central divider.</desc>
+
+  <defs>
+    <clipPath id="outerClip">
+      <rect x="3" y="3" width="42" height="42" rx="7"/>
+    </clipPath>
+    <clipPath id="leftClip">
+      <rect x="6" y="6" width="18" height="36" rx="4"/>
+    </clipPath>
+    <clipPath id="rightClip">
+      <rect x="24" y="6" width="18" height="36" rx="4"/>
+    </clipPath>
+
+    <linearGradient id="leftSky" x1="0" y1="6" x2="0" y2="42" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#62B7FF"/>
+      <stop offset="1" stop-color="#2E63C6"/>
+    </linearGradient>
+    <linearGradient id="rightSky" x1="0" y1="6" x2="0" y2="42" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#A5E6CF"/>
+      <stop offset="1" stop-color="#228E65"/>
+    </linearGradient>
+    <linearGradient id="leftForeground" x1="0" y1="30" x2="0" y2="43" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#214A78"/>
+      <stop offset="1" stop-color="#102C4B"/>
+    </linearGradient>
+    <linearGradient id="rightForeground" x1="0" y1="30" x2="0" y2="43" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#08735E"/>
+      <stop offset="1" stop-color="#034436"/>
+    </linearGradient>
+  </defs>
+
+  <!-- App/icon silhouette -->
+  <rect x="3" y="3" width="42" height="42" rx="7" fill="#F8FAFC"/>
+  <rect x="5" y="5" width="38" height="38" rx="5" fill="#071014"/>
+
+  <!-- Image halves -->
+  <g clip-path="url(#leftClip)">
+    <rect x="6" y="6" width="18" height="36" fill="url(#leftSky)"/>
+    <circle cx="12.5" cy="12.5" r="3.4" fill="#FFFDF6" stroke="#071014" stroke-width="1.6"/>
+
+    <!-- rear mountain -->
+    <path d="M5.5 33.5 L14.5 22.5 L24.8 35.5 L24.8 43 L5.5 43 Z"
+          fill="#5D8FE8" stroke="#071014" stroke-width="1.7" stroke-linejoin="round"/>
+    <!-- snow cap -->
+    <path d="M14.5 22.5 L10.7 27.2 L13.8 25.1 L16.6 28.9 L19.5 25.7 L24.8 32.5 L24.8 35.5 Z"
+          fill="#F8FAFC" stroke="#071014" stroke-width="1.35" stroke-linejoin="round"/>
+
+    <!-- front ridge -->
+    <path d="M5.5 36.5 L10.5 34 L18 38.7 L24.8 40 L24.8 43 L5.5 43 Z"
+          fill="url(#leftForeground)" stroke="#071014" stroke-width="1.7" stroke-linejoin="round"/>
+  </g>
+
+  <g clip-path="url(#rightClip)">
+    <rect x="24" y="6" width="18" height="36" fill="url(#rightSky)"/>
+    <circle cx="36" cy="12.5" r="3.4" fill="#FFE979" stroke="#071014" stroke-width="1.6"/>
+
+    <!-- rear mountain -->
+    <path d="M23.2 33.5 L31.9 22.5 L43.2 35.5 L43.2 43 L23.2 43 Z"
+          fill="#4FB982" stroke="#071014" stroke-width="1.7" stroke-linejoin="round"/>
+    <!-- snow cap -->
+    <path d="M31.9 22.5 L27.5 28 L30 26 L31.7 28.7 L34 25.9 L43.2 35.5 L43.2 32.2 Z"
+          fill="#F8FAFC" stroke="#071014" stroke-width="1.35" stroke-linejoin="round"/>
+
+    <!-- front ridge -->
+    <path d="M23.2 40 L30 39.4 L36.8 35.8 L43.2 39.5 L43.2 43 L23.2 43 Z"
+          fill="url(#rightForeground)" stroke="#071014" stroke-width="1.7" stroke-linejoin="round"/>
+  </g>
+
+  <!-- Central split comparison divider -->
+  <path d="M24 3.7 V44.3" stroke="#F8FAFC" stroke-width="3.2" stroke-linecap="round"/>
+  <path d="M24 6 V42" stroke="#071014" stroke-width="0.8" stroke-linecap="round" opacity="0.72"/>
+
+  <!-- Outer frame last for crispness -->
+  <rect x="3" y="3" width="42" height="42" rx="7" fill="none" stroke="#F8FAFC" stroke-width="3.2"/>
+  <rect x="5" y="5" width="38" height="38" rx="5" fill="none" stroke="#071014" stroke-width="1.2"/>
+</svg>
