@@ -30,6 +30,11 @@ jobs:
         with:
           dotnet-version: "10.0.x"
 
+      - name: Install FUSE runtime
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libfuse2t64
+
       - name: Restore
         run: dotnet restore
 
@@ -50,7 +55,7 @@ jobs:
           chmod +x scripts/build-appimage.sh
           PUBLISH_DIR=./artifacts/linux-x64 ./scripts/build-appimage.sh --skip-publish
 
-      - name: Smoke test without FUSE
+      - name: Smoke test
         run: |
           chmod +x ./artifacts/difflection-x86_64.AppImage
           ./artifacts/difflection-x86_64.AppImage --appimage-extract
