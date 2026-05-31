@@ -52,6 +52,12 @@ jobs:
         if: matrix.rid == 'linux-x64'
         run: tar -czf ./artifacts/${{ matrix.archive }} -C ./artifacts/${{ matrix.rid }} .
 
+      - name: Build AppImage
+        if: matrix.rid == 'linux-x64'
+        run: |
+          chmod +x scripts/build-appimage.sh
+          PUBLISH_DIR=./artifacts/linux-x64 ./scripts/build-appimage.sh --skip-publish
+
       - name: Archive Windows
         if: matrix.rid == 'win-x64'
         run: cd ./artifacts/${{ matrix.rid }} && zip -r ../${{ matrix.archive }} .
@@ -62,3 +68,9 @@ jobs:
           prerelease: true
           generate_release_notes: true
           files: ./artifacts/${{ matrix.archive }}
+
+      - name: Upload AppImage
+        if: matrix.rid == 'linux-x64'
+        uses: softprops/action-gh-release@v3
+        with:
+          files: ./artifacts/difflection-x86_64.AppImage
