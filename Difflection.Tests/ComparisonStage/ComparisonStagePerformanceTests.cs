@@ -1,13 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Threading;
+using Difflection.Infrastructure;
 using Difflection.Tests.Infrastructure;
 using Difflection.ViewModels;
 using Difflection.Views;
@@ -100,8 +100,12 @@ public sealed class ComparisonStagePerformanceTests
 
     private static string HashFrame(Avalonia.Media.Imaging.Bitmap frame)
     {
-        using var stream = new MemoryStream();
-        frame.Save(stream);
-        return Convert.ToHexString(SHA256.HashData(stream.ToArray()));
+        var pixelSize = frame.PixelSize;
+        var stride = pixelSize.Width * 4;
+        var pixels = new byte[stride * pixelSize.Height];
+
+        using var framebuffer = new ManagedFramebuffer(pixels, pixelSize, stride);
+        frame.CopyPixels(framebuffer);
+        return Convert.ToHexString(SHA256.HashData(pixels));
     }
 }
