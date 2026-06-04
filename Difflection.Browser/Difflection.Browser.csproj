@@ -7,6 +7,16 @@
         <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     </PropertyGroup>
 
+    <PropertyGroup Condition="'$(WasmProfile)' == 'true'">
+        <EnableDiagnostics>true</EnableDiagnostics>
+        <WasmDebugLevel>0</WasmDebugLevel>
+        <WasmPerformanceInstrumentation>Difflection</WasmPerformanceInstrumentation>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(FastBrowser)' == 'true'">
+        <WasmDebugLevel>0</WasmDebugLevel>
+    </PropertyGroup>
+
     <ItemGroup>
         <PackageReference Include="Avalonia.Browser" Version="12.0.999-cibuild0064469-alpha" />
         <PackageReference Include="Avalonia.Fonts.Inter" Version="12.0.999-cibuild0064469-alpha" />
