@@ -15,8 +15,11 @@ public partial class ComparisonDisplayViewModel : ViewModelBase
 {
     private const double MinimumStageWidth = 920;
     private const double MinimumStageHeight = 560;
+    private readonly DifferenceBitmapRenderer _differenceBitmapRenderer = new();
     private bool _suppressDifferenceStatusUpdates;
     private int _differenceStatusVersion;
+    private int _differenceImageUpdateVersion;
+    private bool _differenceImageUpdateQueued;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(SideBySideStageWidth))]
@@ -50,6 +53,9 @@ public partial class ComparisonDisplayViewModel : ViewModelBase
     [NotifyPropertyChangedFor(nameof(DifferenceImageWidth))]
     [NotifyPropertyChangedFor(nameof(DifferenceImageHeight))]
     public partial Bitmap? DifferenceImage { get; private set; }
+
+    [ObservableProperty]
+    public partial int DifferenceImageRevision { get; private set; }
 
     [ObservableProperty]
     public partial string LeftFileName { get; set; } = "Baseline image";
@@ -291,11 +297,60 @@ public partial class ComparisonDisplayViewModel : ViewModelBase
 
     private void UpdateDifferenceImage()
     {
-        DifferenceImage = ImageDifferenceMetric.CreateDifferenceBitmap(
+        SetDifferenceImage(_differenceBitmapRenderer.Render(
             LeftImage,
             RightImage,
             DifferenceBaseImage,
-            DifferenceOverlayOpacity);
+            DifferenceOverlayOpacity));
+    }
+
+    private void ScheduleDifferenceImageUpdate()
+    {
+        if (!OperatingSystem.IsBrowser())
+        {
+            UpdateDifferenceImage();
+            return;
+        }
+
+        _differenceImageUpdateVersion++;
+        if (_differenceImageUpdateQueued)
+        {
+            return;
+        }
+
+        _differenceImageUpdateQueued = true;
+        Dispatcher.UIThread.Post(
+            () =>
+            {
+                _differenceImageUpdateQueued = false;
+                var version = _differenceImageUpdateVersion;
+                UpdateDifferenceImage();
+                // if new difference image is requested, schedule another update
+                if (version != _differenceImageUpdateVersion)
+                {
+                    ScheduleDifferenceImageUpdate();
+                }
+            },
+            DispatcherPriority.Render);
+    }
+
+    private void SetDifferenceImage(Bitmap? image)
+    {
+        if (ReferenceEquals(DifferenceImage, image))
+        {
+            if (image is not null)
+            {
+                DifferenceImageRevision++;
+                OnPropertyChanged(nameof(DifferenceImage));
+                OnPropertyChanged(nameof(DifferenceImageWidth));
+                OnPropertyChanged(nameof(DifferenceImageHeight));
+            }
+
+            return;
+        }
+
+        DifferenceImage = image;
+        DifferenceImageRevision++;
     }
 
     // ReSharper disable once UnusedParameterInPartialMethod
@@ -316,7 +371,7 @@ public partial class ComparisonDisplayViewModel : ViewModelBase
     // ReSharper disable once UnusedParameterInPartialMethod
     partial void OnDifferenceOverlayOpacityChanged(double value)
     {
-        UpdateDifferenceImage();
+        ScheduleDifferenceImageUpdate();
     }
 
     // ReSharper disable once UnusedParameterInPartialMethod

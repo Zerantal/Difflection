@@ -135,6 +135,7 @@
                                       SurfaceWidth="{Binding ComparisonDisplay.DifferenceImageWidth}"
                                       SurfaceHeight="{Binding ComparisonDisplay.DifferenceImageHeight}"
                                       ImageSource="{Binding ComparisonDisplay.DifferenceImage}"
+                                      ImageRevision="{Binding ComparisonDisplay.DifferenceImageRevision}"
                                       ZoomScale="{Binding ToolState.ZoomScale}" />
 
                 <Border x:Name="DifferenceDropOverlay"

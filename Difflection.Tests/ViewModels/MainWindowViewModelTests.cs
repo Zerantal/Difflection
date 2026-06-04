@@ -55,6 +55,14 @@ public sealed class MainWindowViewModelTests
         await viewModel.ComparisonDisplay.LoadImageAsync(ImageSlot.Left, TestUiSupport.CreateStorageFile("left-reference.png", 8, 8));
         await viewModel.ComparisonDisplay.LoadImageAsync(ImageSlot.Right, TestUiSupport.CreateStorageFile("candidate.png", 8, 8));
         var neutralDifference = viewModel.ComparisonDisplay.DifferenceImage;
+        var differenceImageUpdateCount = 0;
+        viewModel.ComparisonDisplay.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(ComparisonDisplayViewModel.DifferenceImage))
+            {
+                differenceImageUpdateCount++;
+            }
+        };
 
         viewModel.ComparisonDisplay.SelectDifferenceBaseImage(DifferenceBaseImage.Baseline);
         var baselineDifference = viewModel.ComparisonDisplay.DifferenceImage;
@@ -63,8 +71,9 @@ public sealed class MainWindowViewModelTests
         Assert.Equal("40%", viewModel.ComparisonDisplay.DifferenceOverlayOpacityText);
         Assert.True(viewModel.ComparisonDisplay.IsDifferenceBaseBaseline);
         Assert.NotNull(viewModel.ComparisonDisplay.DifferenceImage);
-        Assert.NotSame(neutralDifference, baselineDifference);
-        Assert.NotSame(baselineDifference, viewModel.ComparisonDisplay.DifferenceImage);
+        Assert.Same(neutralDifference, baselineDifference);
+        Assert.Same(baselineDifference, viewModel.ComparisonDisplay.DifferenceImage);
+        Assert.True(differenceImageUpdateCount >= 2);
     }
 
     [Fact]

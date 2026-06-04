@@ -40,6 +40,9 @@ public partial class RuledImagePane : UserControl
     [GeneratedStyledProperty]
     public partial IImage? ImageSource { get; set; }
 
+    [GeneratedStyledProperty]
+    public partial int ImageRevision { get; set; }
+
     [GeneratedStyledProperty(1.0)]
     public partial double ZoomScale { get; set; }
 

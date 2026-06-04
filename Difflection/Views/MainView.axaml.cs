@@ -273,7 +273,7 @@ public partial class MainView : UserControl
 
     private bool IsTextInputFocused()
     {
-        if (_shortcutHost?.FocusManager?.GetFocusedElement() is not Visual focused)
+        if (_shortcutHost?.FocusManager.GetFocusedElement() is not Visual focused)
         {
             return false;
         }

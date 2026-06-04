@@ -1,10 +1,7 @@
 using System;
 using System.Globalization;
-using System.Runtime.CompilerServices;
-using Avalonia;
 using Difflection.Infrastructure;
 using Avalonia.Media.Imaging;
-using Avalonia.Platform;
 
 namespace Difflection.ViewModels;
 
@@ -39,8 +36,8 @@ internal sealed record ImageDifferenceMetric(
             return null;
         }
 
-        var leftPixelBuffer = GetCachedPixels(left);
-        var rightPixelBuffer = GetCachedPixels(right);
+        var leftPixelBuffer = BitmapPixelCache.GetPixels(left);
+        var rightPixelBuffer = BitmapPixelCache.GetPixels(right);
         var leftPixelSize = leftPixelBuffer.PixelSize;
         var rightPixelSize = rightPixelBuffer.PixelSize;
         var width = Math.Min(leftPixelSize.Width, rightPixelSize.Width);
@@ -84,142 +81,5 @@ internal sealed record ImageDifferenceMetric(
         return new ImageDifferenceMetric(width, height, differentPixels, totalPixels, differentPixelRatio, rmsError);
     }
 
-    public static Bitmap? CreateDifferenceBitmap(
-        Bitmap? left,
-        Bitmap? right,
-        DifferenceBaseImage baseImage = DifferenceBaseImage.Candidate,
-        double overlayOpacity = 0.75)
-    {
-        if (left is null || right is null)
-        {
-            return null;
-        }
-
-        var leftPixelBuffer = GetCachedPixels(left);
-        var rightPixelBuffer = GetCachedPixels(right);
-        var leftPixelSize = leftPixelBuffer.PixelSize;
-        var rightPixelSize = rightPixelBuffer.PixelSize;
-        var width = Math.Min(leftPixelSize.Width, rightPixelSize.Width);
-        var height = Math.Min(leftPixelSize.Height, rightPixelSize.Height);
-        if (width <= 0 || height <= 0)
-        {
-            return null;
-        }
-
-        var overlayOpacity255 = overlayOpacity <= 0.0 || double.IsNaN(overlayOpacity)
-            ? 0
-            : overlayOpacity >= 1.0
-                ? 255
-                : (int)(overlayOpacity * 255.0 + 0.5);
-        var leftPixels = leftPixelBuffer.Pixels;
-        var rightPixels = rightPixelBuffer.Pixels;
-        var leftStride = leftPixelBuffer.Stride;
-        var rightStride = rightPixelBuffer.Stride;
-
-        var bitmap = new WriteableBitmap(
-            new PixelSize(width, height),
-            new Vector(96, 96),
-            PixelFormats.Bgra8888,
-            AlphaFormat.Premul);
-
-        using var framebuffer = bitmap.Lock();
-        unsafe
-        {
-            fixed (byte* leftBase = leftPixels)
-            fixed (byte* rightBase = rightPixels)
-            {
-                var outputBase = (byte*)framebuffer.Address;
-                var outputStride = framebuffer.RowBytes;
-                const int overlayBlue = 32;
-                const int overlayGreen = 28;
-                const int overlayRed = 255;
-
-                byte* baseBase;
-                int baseStride;
-                int basePixelStep;
-                var mapBase = stackalloc byte[4];
-                if (baseImage == DifferenceBaseImage.Map)
-                {
-                    mapBase[0] = 12;
-                    mapBase[1] = 12;
-                    mapBase[2] = 12;
-                    mapBase[3] = 255;
-                    baseBase = mapBase;
-                    baseStride = 0;
-                    basePixelStep = 0;
-                }
-                else
-                {
-                    baseBase = baseImage == DifferenceBaseImage.Baseline ? leftBase : rightBase;
-                    baseStride = baseImage == DifferenceBaseImage.Baseline ? leftStride : rightStride;
-                    basePixelStep = BytesPerPixel;
-                }
-
-                for (var y = 0; y < height; y++)
-                {
-                    var leftPixel = leftBase + y * leftStride;
-                    var rightPixel = rightBase + y * rightStride;
-                    var basePixel = baseBase + y * baseStride;
-                    var outputPixel = outputBase + y * outputStride;
-
-                    for (var x = 0; x < width; x++)
-                    {
-                        var blueDelta = leftPixel[0] - rightPixel[0];
-                        if (blueDelta < 0) blueDelta = -blueDelta;
-                        var greenDelta = leftPixel[1] - rightPixel[1];
-                        if (greenDelta < 0) greenDelta = -greenDelta;
-                        var redDelta = leftPixel[2] - rightPixel[2];
-                        if (redDelta < 0) redDelta = -redDelta;
-
-                        var maxDelta = redDelta > greenDelta ? redDelta : greenDelta;
-                        if (blueDelta > maxDelta) maxDelta = blueDelta;
-
-                        var alpha = maxDelta == 0
-                            ? 0
-                            : (overlayOpacity255 * ((35 * 255) + (65 * maxDelta)) + 12_750) / 25_500;
-                        var inverseAlpha = 255 - alpha;
-
-                        outputPixel[0] = (byte)((basePixel[0] * inverseAlpha + overlayBlue * alpha + 127) / 255);
-                        outputPixel[1] = (byte)((basePixel[1] * inverseAlpha + overlayGreen * alpha + 127) / 255);
-                        outputPixel[2] = (byte)((basePixel[2] * inverseAlpha + overlayRed * alpha + 127) / 255);
-                        outputPixel[3] = 255;
-
-                        leftPixel += BytesPerPixel;
-                        rightPixel += BytesPerPixel;
-                        basePixel += basePixelStep;
-                        outputPixel += BytesPerPixel;
-                    }
-                }
-            }
-        }
-
-        return bitmap;
-    }
-
     private const int BytesPerPixel = 4;
-    private static readonly ConditionalWeakTable<Bitmap, CachedBitmapPixels> PixelCache = new();
-
-    private static CachedBitmapPixels GetCachedPixels(Bitmap bitmap)
-    {
-        return PixelCache.GetValue(bitmap, static key => CopyPixels(key));
-    }
-
-    private static CachedBitmapPixels CopyPixels(Bitmap bitmap)
-    {
-        var pixelSize = bitmap.PixelSize;
-        var stride = pixelSize.Width * BytesPerPixel;
-        var pixels = new byte[stride * pixelSize.Height];
-        using var framebuffer = new ManagedFramebuffer(pixels, pixelSize, stride);
-        bitmap.CopyPixels(framebuffer);
-        return new CachedBitmapPixels(pixels, pixelSize, stride);
-    }
-
-    private sealed class CachedBitmapPixels(byte[] pixels, PixelSize pixelSize, int stride)
-    {
-        public byte[] Pixels { get; } = pixels;
-
-        public PixelSize PixelSize { get; } = pixelSize;
-
-        public int Stride { get; } = stride;
-    }
 }

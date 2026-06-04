@@ -76,7 +76,8 @@
                                         Classes="imageLayer">
                                     <views:AdaptiveInterpolationImage Source="{Binding ImageSource, ElementName=Root}"
                                                                       Stretch="Uniform"
-                                                                      ViewScale="{Binding ZoomScale, ElementName=Root}" />
+                                                                      ViewScale="{Binding ZoomScale, ElementName=Root}"
+                                                                      SourceRevision="{Binding ImageRevision, ElementName=Root}" />
                                 </Border>
                             </Grid>
                         </LayoutTransformControl>

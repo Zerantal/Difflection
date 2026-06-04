@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
@@ -11,6 +12,7 @@ using Avalonia.Platform.Storage;
 using Avalonia.Styling;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
+using Difflection.Infrastructure;
 using Difflection.Models;
 using Difflection.ViewModels;
 using Difflection.Views;
@@ -135,6 +137,31 @@ internal static class TestUiSupport
 
         return Math.Abs(origin.Value.X - topZero.Value.X) <= 1.0 &&
             Math.Abs(origin.Value.Y - leftZero.Value.Y) <= 1.0;
+    }
+
+    internal static string CaptureFrameHash(Window window)
+    {
+        Dispatcher.UIThread.RunJobs();
+        AvaloniaHeadlessPlatform.ForceRenderTimerTick();
+
+        using var frame = window.CaptureRenderedFrame();
+        if (frame is null)
+        {
+            throw new InvalidOperationException("Rendered frame was not captured.");
+        }
+
+        return HashFrame(frame);
+    }
+
+    internal static string HashFrame(Avalonia.Media.Imaging.Bitmap frame)
+    {
+        var pixelSize = frame.PixelSize;
+        var stride = pixelSize.Width * 4;
+        var pixels = new byte[stride * pixelSize.Height];
+
+        using var framebuffer = new ManagedFramebuffer(pixels, pixelSize, stride);
+        frame.CopyPixels(framebuffer);
+        return Convert.ToHexString(SHA256.HashData(pixels));
     }
 
     internal static async Task WaitForAsync(Func<bool> predicate)
