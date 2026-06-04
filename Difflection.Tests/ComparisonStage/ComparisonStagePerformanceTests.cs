@@ -1,13 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Threading;
-using Difflection.Infrastructure;
 using Difflection.Tests.Infrastructure;
 using Difflection.ViewModels;
 using Difflection.Views;
@@ -63,11 +61,11 @@ public sealed class ComparisonStagePerformanceTests
 
                 opacitySlider.Value = opacity;
                 Dispatcher.UIThread.RunJobs();
-                AvaloniaHeadlessPlatform.ForceRenderTimerTick(1);
+                AvaloniaHeadlessPlatform.ForceRenderTimerTick();
 
                 using var frame = window.CaptureRenderedFrame();
                 Assert.NotNull(frame);
-                distinctFrameHashes.Add(HashFrame(frame));
+                distinctFrameHashes.Add(TestUiSupport.HashFrame(frame));
 
                 stepStopwatch.Stop();
                 maximumStepDuration = TimeSpan.FromTicks(Math.Max(maximumStepDuration.Ticks, stepStopwatch.Elapsed.Ticks));
@@ -96,16 +94,5 @@ public sealed class ComparisonStagePerformanceTests
         {
             yield return minimumOpacity + (maximumOpacity - minimumOpacity) * index / Math.Max(1, count - 1);
         }
-    }
-
-    private static string HashFrame(Avalonia.Media.Imaging.Bitmap frame)
-    {
-        var pixelSize = frame.PixelSize;
-        var stride = pixelSize.Width * 4;
-        var pixels = new byte[stride * pixelSize.Height];
-
-        using var framebuffer = new ManagedFramebuffer(pixels, pixelSize, stride);
-        frame.CopyPixels(framebuffer);
-        return Convert.ToHexString(SHA256.HashData(pixels));
     }
 }

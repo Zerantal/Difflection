@@ -18,6 +18,10 @@ public sealed class AdaptiveInterpolationImage : Image
             nameof(ViewScale),
             1.0);
 
+    public static readonly StyledProperty<int> SourceRevisionProperty =
+        AvaloniaProperty.Register<AdaptiveInterpolationImage, int>(
+            nameof(SourceRevision));
+
     public double SourcePixelThreshold
     {
         get => GetValue(SourcePixelThresholdProperty);
@@ -28,6 +32,12 @@ public sealed class AdaptiveInterpolationImage : Image
     {
         get => GetValue(ViewScaleProperty);
         set => SetValue(ViewScaleProperty, value);
+    }
+
+    public int SourceRevision
+    {
+        get => GetValue(SourceRevisionProperty);
+        set => SetValue(SourceRevisionProperty, value);
     }
 
     protected override Size ArrangeOverride(Size finalSize)
@@ -48,6 +58,11 @@ public sealed class AdaptiveInterpolationImage : Image
             || change.Property == ViewScaleProperty)
         {
             UpdateBitmapInterpolationMode();
+        }
+
+        if (change.Property == SourceRevisionProperty)
+        {
+            InvalidateVisual();
         }
     }
 

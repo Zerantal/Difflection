@@ -92,6 +92,22 @@ dotnet workload restore Difflection.Browser/Difflection.Browser.csproj
 dotnet run --project Difflection.Browser/Difflection.Browser.csproj -p:RuntimeIdentifier=browser-wasm
 ```
 
+For realistic browser performance testing during development, use the `FastBrowser` flag:
+
+```bash
+dotnet run --project Difflection.Browser/Difflection.Browser.csproj -p:RuntimeIdentifier=browser-wasm -p:FastBrowser=true
+```
+
+This sets `WasmDebugLevel=0`, which disables the WebAssembly debugger support that can otherwise add substantial overhead to interactive UI paths.
+
+For browser profiling, use the `WasmProfile` flag:
+
+```bash
+dotnet run --project Difflection.Browser/Difflection.Browser.csproj -p:RuntimeIdentifier=browser-wasm -p:WasmProfile=true
+```
+
+This enables diagnostics and Difflection-scoped WebAssembly performance instrumentation while also disabling WebAssembly debugger support.
+
 The browser host is an early scaffold. The next browser-specific work is adapting image file/drop behavior for browser sandbox constraints.
 
 ## Test
