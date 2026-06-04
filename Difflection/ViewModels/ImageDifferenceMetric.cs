@@ -1,5 +1,6 @@
 using System;
 using System.Globalization;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Avalonia;
 using Avalonia.Media.Imaging;
@@ -38,8 +39,10 @@ internal sealed record ImageDifferenceMetric(
             return null;
         }
 
-        var leftPixelSize = left.PixelSize;
-        var rightPixelSize = right.PixelSize;
+        var leftPixelBuffer = GetCachedPixels(left);
+        var rightPixelBuffer = GetCachedPixels(right);
+        var leftPixelSize = leftPixelBuffer.PixelSize;
+        var rightPixelSize = rightPixelBuffer.PixelSize;
         var width = Math.Min(leftPixelSize.Width, rightPixelSize.Width);
         var height = Math.Min(leftPixelSize.Height, rightPixelSize.Height);
         if (width <= 0 || height <= 0)
@@ -47,10 +50,10 @@ internal sealed record ImageDifferenceMetric(
             return null;
         }
 
-        var leftPixels = CopyPixels(left);
-        var rightPixels = CopyPixels(right);
-        var leftStride = left.PixelSize.Width * BytesPerPixel;
-        var rightStride = right.PixelSize.Width * BytesPerPixel;
+        var leftPixels = leftPixelBuffer.Pixels;
+        var rightPixels = rightPixelBuffer.Pixels;
+        var leftStride = leftPixelBuffer.Stride;
+        var rightStride = rightPixelBuffer.Stride;
         var differentPixels = 0;
         long totalSquaredChannelDelta = 0;
 
@@ -92,8 +95,10 @@ internal sealed record ImageDifferenceMetric(
             return null;
         }
 
-        var leftPixelSize = left.PixelSize;
-        var rightPixelSize = right.PixelSize;
+        var leftPixelBuffer = GetCachedPixels(left);
+        var rightPixelBuffer = GetCachedPixels(right);
+        var leftPixelSize = leftPixelBuffer.PixelSize;
+        var rightPixelSize = rightPixelBuffer.PixelSize;
         var width = Math.Min(leftPixelSize.Width, rightPixelSize.Width);
         var height = Math.Min(leftPixelSize.Height, rightPixelSize.Height);
         if (width <= 0 || height <= 0)
@@ -106,10 +111,10 @@ internal sealed record ImageDifferenceMetric(
             : overlayOpacity >= 1.0
                 ? 255
                 : (int)(overlayOpacity * 255.0 + 0.5);
-        var leftPixels = CopyPixels(left);
-        var rightPixels = CopyPixels(right);
-        var leftStride = leftPixelSize.Width * BytesPerPixel;
-        var rightStride = rightPixelSize.Width * BytesPerPixel;
+        var leftPixels = leftPixelBuffer.Pixels;
+        var rightPixels = rightPixelBuffer.Pixels;
+        var leftStride = leftPixelBuffer.Stride;
+        var rightStride = rightPixelBuffer.Stride;
 
         var bitmap = new WriteableBitmap(
             new PixelSize(width, height),
@@ -192,15 +197,30 @@ internal sealed record ImageDifferenceMetric(
     }
 
     private const int BytesPerPixel = 4;
+    private static readonly ConditionalWeakTable<Bitmap, CachedBitmapPixels> PixelCache = new();
 
-    private static byte[] CopyPixels(Bitmap bitmap)
+    private static CachedBitmapPixels GetCachedPixels(Bitmap bitmap)
+    {
+        return PixelCache.GetValue(bitmap, static key => CopyPixels(key));
+    }
+
+    private static CachedBitmapPixels CopyPixels(Bitmap bitmap)
     {
         var pixelSize = bitmap.PixelSize;
         var stride = pixelSize.Width * BytesPerPixel;
         var pixels = new byte[stride * pixelSize.Height];
         using var framebuffer = new ManagedFramebuffer(pixels, pixelSize, stride);
         bitmap.CopyPixels(framebuffer);
-        return pixels;
+        return new CachedBitmapPixels(pixels, pixelSize, stride);
+    }
+
+    private sealed class CachedBitmapPixels(byte[] pixels, PixelSize pixelSize, int stride)
+    {
+        public byte[] Pixels { get; } = pixels;
+
+        public PixelSize PixelSize { get; } = pixelSize;
+
+        public int Stride { get; } = stride;
     }
 
     private sealed class ManagedFramebuffer : ILockedFramebuffer

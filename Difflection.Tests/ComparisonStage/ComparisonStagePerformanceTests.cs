@@ -21,7 +21,8 @@ public sealed class ComparisonStagePerformanceTests
     private static readonly TimeSpan MaximumOpacityStepDuration = TimeSpan.FromMilliseconds(100);
     private const int OpacityAdjustmentCount = 100;
     private const int MinimumDistinctDiffFrames = 90;
-    
+
+    [AvaloniaFact]
     [Trait("Category", "Performance")]
     public async Task Difference_view_opacity_sweep_completes_with_expected_rendered_frames()
     {
