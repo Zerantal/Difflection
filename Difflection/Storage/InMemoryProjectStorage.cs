@@ -10,7 +10,7 @@ namespace Difflection.Storage;
 
 public sealed class InMemoryProjectStorage(params Project[] projects) : IProjectStorage
 {
-    private readonly List<Project> _projects = [..projects];
+    private readonly List<Project> _projects = [.. projects];
     private readonly Dictionary<string, byte[]> _imageContents = new(StringComparer.Ordinal);
 
     public Task<IReadOnlyList<Project>> LoadProjectsAsync(CancellationToken cancellationToken = default)
