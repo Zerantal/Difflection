@@ -60,6 +60,17 @@ body.difflection-drop-active #out::after {
     font-size: 13px;
 }
 
+.splash-error {
+    color: #fecaca;
+}
+
+.splash-error span {
+    color: #fca5a5;
+    max-width: 28rem;
+    text-align: center;
+    line-height: 1.4;
+}
+
 #out.avalonia-container > .splash {
     display: none;
 }
