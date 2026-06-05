@@ -68,6 +68,6 @@ Linux is currently the primary development and validation platform.
 - Required toolchain: .NET 10 and Avalonia `12.0.999-cibuild0064469-alpha`.
 - Linux is the main development platform.
 - The repo uses an Avalonia CI alpha build because it includes drag and drop fixes needed on Wayland.
-- Windows packaging is present, but Windows support is still being validated in practice.
+- Windows packaging is present, but Windows support is still being validated in practice. See [`docs/windows-release-testing.md`](windows-release-testing.md) for the release smoke-test checklist.
 - macOS packaging is not complete yet.
 - The browser host is early-stage and depends on browser sandbox constraints for file handling.

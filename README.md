@@ -46,6 +46,8 @@ Prebuilt binaries are available from the GitHub Releases [page](https://github.c
 
 The app is intended to be cross-platform through Avalonia, but Linux is the current development environment. Windows and macOS packaging have not been completed yet.
 
+For Windows release validation, see [`docs/windows-release-testing.md`](docs/windows-release-testing.md).
+
 > **Why an Avalonia alpha build?**
 >
 > Difflection currently uses Avalonia `12.0.999-cibuild0064469-alpha` because the latest stable Avalonia release does not provide working drag-and-drop behavior for this app on Wayland, which is the primary development platform.
