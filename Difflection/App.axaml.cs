@@ -47,7 +47,7 @@ public class App : Application
             case ISingleViewApplicationLifetime singleView:
                 singleView.MainView = new MainView
                 {
-                    DataContext = new MainWindowViewModel()
+                    DataContext = new MainWindowViewModel(new InMemoryProjectStorage())
                 };
                 break;
         }

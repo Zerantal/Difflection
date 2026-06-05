@@ -409,6 +409,28 @@ public sealed class MainWindowViewModelTests
         Assert.True(viewModel.HasBothImages);
     }
 
+    [AvaloniaFact]
+    public async Task AddBrowserFilesToCurrentComparisonAsync_loads_image_channel_thumbnails_when_storage_is_available()
+    {
+        var viewModel = new MainWindowViewModel(new InMemoryProjectStorage());
+
+        await viewModel.ImageSet.AddBrowserFilesToCurrentComparisonAsync(
+            ["browser-reference.png", "browser-candidate.png"],
+            [
+                TestUiSupport.CreatePngBytes(12, 8, SKColors.OrangeRed),
+                TestUiSupport.CreatePngBytes(10, 6, SKColors.DarkSlateBlue)
+            ],
+            cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.Equal(2, viewModel.ImageSet.ImageRows.Count);
+        Assert.All(viewModel.ImageSet.ImageRows, row =>
+        {
+            Assert.True(row.HasThumbnail);
+            Assert.False(row.HasNoThumbnail);
+            Assert.NotNull(row.Thumbnail);
+        });
+    }
+
     [Fact]
     public async Task AddImageAsync_renames_default_comparison_from_first_image_label()
     {
