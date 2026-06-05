@@ -174,6 +174,29 @@ test('browser drop clears active state after dragleave cancel', () => {
     assert.equal(document.children.length, 0);
 });
 
+test('isSupportedImageFile matches image MIME types and extensions', () => {
+    const cases = [
+        { name: 'photo.png', type: 'image/png', expected: true },
+        { name: 'photo.PNG', type: '', expected: true },
+        { name: 'scan.JpEg', type: '', expected: true },
+        { name: 'legacy.tif', type: '', expected: true },
+        { name: 'scan.tiff', type: '', expected: true },
+        { name: 'animation.gif', type: 'image/gif', expected: true },
+        { name: 'unknown.bin', type: 'image/webp', expected: true },
+        { name: 'document.pdf', type: 'application/pdf', expected: false },
+        { name: 'notes.txt', type: 'text/plain', expected: false },
+        { name: 'no-extension', type: '', expected: false },
+    ];
+
+    for (const { name, type, expected } of cases) {
+        assert.equal(
+            isSupportedImageFile(createFile(name, type, [])),
+            expected,
+            `${name} (${type || 'no mime'})`,
+        );
+    }
+});
+
 function createDocument() {
     const listeners = {};
     const bodyClassValues = new Set();
