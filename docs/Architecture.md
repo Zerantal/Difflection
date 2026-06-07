@@ -69,5 +69,6 @@ Linux is currently the primary development and validation platform.
 - Linux is the main development platform.
 - The repo uses an Avalonia CI alpha build because it includes drag and drop fixes needed on Wayland.
 - Windows packaging is present, but Windows support is still being validated in practice.
-- macOS packaging is not complete yet.
+- macOS `osx-arm64` release artifacts are built by the release workflow; signing/notarization is manual. See [`docs/macos-release-testing.md`](macos-release-testing.md).
+- macOS Intel (`osx-x64`) is not in CI yet.
 - The browser host is early-stage and depends on browser sandbox constraints for file handling.
