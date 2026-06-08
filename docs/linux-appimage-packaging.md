@@ -7,7 +7,7 @@ Difflection ships Linux tarballs from tagged releases. This document describes h
 - Linux x86_64 (build and smoke-test on the same major distro when possible)
 - .NET 10 SDK
 - `curl` and `bash`
-- FUSE (or `libfuse2`) to **run** AppImages on the host — not required to build them
+- FUSE (`libfuse2`/`libfuse2t64`) to build with `appimagetool` and to run AppImages on the host
 
 ## Quick build
 
