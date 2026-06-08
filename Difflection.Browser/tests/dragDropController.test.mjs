@@ -159,6 +159,9 @@ function createDocument() {
                 return child;
             },
         },
+        getElementById() {
+            return null;
+        },
         createElement() {
             const elementListeners = {};
             return {
