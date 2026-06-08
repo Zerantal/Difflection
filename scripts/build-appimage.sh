@@ -7,6 +7,9 @@ PUBLISH_DIR="${PUBLISH_DIR:-$ROOT/artifacts/linux-x64}"
 APPDIR="${APPDIR:-$ROOT/artifacts/Difflection.AppDir}"
 APPIMAGE_OUT="${APPIMAGE_OUT:-$ROOT/artifacts/difflection-x86_64.AppImage}"
 APPIMAGETOOL="${APPIMAGETOOL:-$ROOT/artifacts/appimagetool-x86_64.AppImage}"
+APPIMAGETOOL_VERSION="12"
+APPIMAGETOOL_SHA256="d918b4df547b388ef253f3c9e7f6529ca81a885395c31f619d9aaf7030499a13"
+APPIMAGETOOL_URL="https://github.com/AppImage/AppImageKit/releases/download/${APPIMAGETOOL_VERSION}/appimagetool-x86_64.AppImage"
 SKIP_PUBLISH=false
 
 usage() {
@@ -75,10 +78,10 @@ chmod +x "$APPDIR/AppRun"
 
 mkdir -p "$ROOT/artifacts"
 if [[ ! -x "$APPIMAGETOOL" ]]; then
-    curl -fsSL -o "$APPIMAGETOOL" \
-        https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
+    curl -fsSL -o "$APPIMAGETOOL" "$APPIMAGETOOL_URL"
     chmod +x "$APPIMAGETOOL"
 fi
+echo "$APPIMAGETOOL_SHA256  $APPIMAGETOOL" | sha256sum -c -
 
 ARCH=x86_64 "$APPIMAGETOOL" "$APPDIR" "$APPIMAGE_OUT"
 echo "Wrote $APPIMAGE_OUT"
