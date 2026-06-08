@@ -52,6 +52,12 @@ jobs:
         if: matrix.rid == 'linux-x64'
         run: tar -czf ./artifacts/${{ matrix.archive }} -C ./artifacts/${{ matrix.rid }} .
 
+      - name: Install AppImage build dependencies
+        if: matrix.rid == 'linux-x64'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libfuse2t64
+
       - name: Build AppImage
         if: matrix.rid == 'linux-x64'
         run: |
